@@ -5,14 +5,14 @@ description: Work a Linear card interactively with the user and manage its lifec
 
 # Interactive Card
 
-The manager does not drive this card. You move the card and open the PR yourself while working with the user. Use the `mise linear:*` tasks described in `AGENTS.md`.
+The manager does not drive this card. You move the card and open the PR yourself while working with the user. Use the `mise linear` commands described in `AGENTS.md`.
 
 The card branch is the lowercased card identifier, for example `moto-1` for `MOTO-1`.
 
 ## Start
 
-1. Read the card with `mise linear:show <card>`.
-2. Tag the card with `mise linear:tag <card> interactive`. The manager does not pick up `interactive` cards from `ready`.
+1. Read the card with `mise linear issues read <card> --with-comment-threads --with-attachments`.
+2. Tag the card `interactive`. The manager does not pick up `interactive` cards from `ready`.
 3. Move the card to `working`.
 4. Set up the checkout:
    - In a worktree (`git rev-parse --git-dir` differs from `git rev-parse --git-common-dir`), stay on its current branch. Copy the env files and `backend/db/schema.rb` from the main checkout if they are missing.
@@ -42,5 +42,5 @@ If the user tells you the card is approved:
 
 1. Rebase the PR onto `origin/master`. Resolve merge conflicts and push with `--force-with-lease`.
 2. Merge the PR with `gh pr merge` using `GITHUB_TOKEN`.
-3. If you are in the main checkout rather than a worktree, run `git checkout master` and `git pull --ff-only origin master`.
+3. If the main checkout is on master or main and has no uncommitted changes, run `git pull --ff-only` there. Do not switch branches.
 4. Move the card to `completed`.
