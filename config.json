@@ -1,0 +1,168 @@
+{
+  "domain": "freyaplayer.com",
+  "githubRepo": "git@github.com:grahamotte/freyaplayer.com.git",
+  "database": "freyaplayer",
+  "site": {
+    "title": "Freya Player",
+    "description": "A native Apple video player for personal Plex and Jellyfin libraries",
+    "themeColor": "oklch(0 0 0)"
+  },
+  "subdomains": [
+    {
+      "name": "www",
+      "subdomains": [
+        "",
+        "www"
+      ],
+      "directory": "frontend/subdomains/www"
+    },
+    {
+      "name": "hc",
+      "subdomains": [
+        "hc"
+      ],
+      "directory": "frontend/subdomains/hc"
+    },
+    {
+      "name": "jobs",
+      "subdomains": [
+        "jobs"
+      ],
+      "backend": true
+    },
+    {
+      "name": "errors",
+      "subdomains": [
+        "errors"
+      ],
+      "backend": true
+    }
+  ],
+  "instance": {
+    "region": "sfo3",
+    "size": "s-1vcpu-2gb"
+  },
+  "secrets": {
+    "development": "op://Projects/Freya Player Development/notesPlain",
+    "production": "op://Projects/Freya Player Production/notesPlain"
+  },
+  "linear": {
+    "workspace": "gotte",
+    "team": "FP"
+  },
+  "agent": {
+    "runner": "openchamber",
+    "model": "xai/grok-4.6",
+    "variant": "medium"
+  },
+  "apps": {
+    "build": "1.22.3",
+    "contactEmail": "graham.otte@gmail.com",
+    "contactFirstName": "Graham",
+    "contactLastName": "Otte",
+    "contactPhone": "7142279963",
+    "copyright": "2026 Graham Otte",
+    "demoAccountName": "jellyfin",
+    "demoAccountPassword": "jellyfin",
+    "demoAccountRequired": true,
+    "description": "Freya Player is a native client for your personal Jellyfin or Plex server. Play your media using a fully native tvOS experience.\n\nA Jellyfin or Plex server is required to use this client player. Freya Player does not provide a server or any content itself.",
+    "keywords": "movies, video, tv, show, tv show, media, plex, jellyfin, native, library, video player",
+    "marketingUrl": "https://codeberg.org/grahamotte/freyaplayer.com",
+    "name": "Freya Player",
+    "notes": "To login, please login by first selecting the \"Jellyfin\" path, clicking \"http\", then enter the server url \"graham.lol\". The username and password for this server are both lowercase \"jellyfin\".\n\ntoggle: 'http'\nserver url: graham.lol\nusername: jellyfin\npassword: jellyfin\n\nNote: plex is an alternate login method, but there is not a login for it as the app has the exact same functionality for all login methods. Use the Jellyfin login please.\n\nFreya player does not contain any copyrighted material. All TV Shows and Movies used in screenshots are in the public domain.",
+    "primaryLocale": "en-US",
+    "promotionalText": "Watch your personal Plex or Jellyfin library in a native Apple platform experience.",
+    "releaseType": "AFTER_APPROVAL",
+    "supportUrl": "https://codeberg.org/grahamotte/freyaplayer.com",
+    "targets": {
+      "apple": {
+        "ios": {
+          "archiveDestination": "generic/platform=iOS",
+          "bundleIdentifier": "com.grahamotte.freyaplayer",
+          "platform": "IOS",
+          "project": "apps/apple/App.xcodeproj",
+          "scheme": "freya-player-ios-macos",
+          "screenshots": [
+            {
+              "displayType": "APP_IPHONE_65",
+              "path": "apps/screenshots/ios-iphone-1.png"
+            },
+            {
+              "displayType": "APP_IPHONE_65",
+              "path": "apps/screenshots/ios-iphone-2.png"
+            },
+            {
+              "displayType": "APP_IPAD_PRO_3GEN_129",
+              "path": "apps/screenshots/ios-ipad-1.png"
+            },
+            {
+              "displayType": "APP_IPAD_PRO_3GEN_129",
+              "path": "apps/screenshots/ios-ipad-2.png"
+            }
+          ],
+          "simulatorDestination": "generic/platform=iOS Simulator",
+          "simulatorProduct": "Debug-iphonesimulator/freya-player-ios-macos.app",
+          "simulators": {
+            "ipad": "iPad",
+            "iphone": "iPhone"
+          }
+        },
+        "macos": {
+          "archiveDestination": "generic/platform=macOS,variant=Mac Catalyst",
+          "bundleIdentifier": "com.grahamotte.freyaplayer",
+          "platform": "MAC_OS",
+          "project": "apps/apple/App.xcodeproj",
+          "scheme": "freya-player-ios-macos",
+          "screenshots": [
+            {
+              "displayType": "APP_DESKTOP",
+              "path": "apps/screenshots/macos-1.png"
+            },
+            {
+              "displayType": "APP_DESKTOP",
+              "path": "apps/screenshots/macos-2.png"
+            },
+            {
+              "displayType": "APP_DESKTOP",
+              "path": "apps/screenshots/macos-3.png"
+            }
+          ],
+          "simulatorDestination": "platform=macOS,variant=Mac Catalyst",
+          "simulatorProduct": "Debug-maccatalyst/freya-player-macos.app",
+          "simulators": {
+            "macos": "Mac"
+          }
+        },
+        "tvos": {
+          "archiveDestination": "generic/platform=tvOS",
+          "bundleIdentifier": "com.grahamotte.freyaplayer",
+          "platform": "TV_OS",
+          "project": "apps/apple/App.xcodeproj",
+          "scheme": "freya-player-tvos",
+          "screenshots": [
+            {
+              "displayType": "APP_APPLE_TV",
+              "path": "apps/screenshots/tvos-1.png"
+            },
+            {
+              "displayType": "APP_APPLE_TV",
+              "path": "apps/screenshots/tvos-2.png"
+            },
+            {
+              "displayType": "APP_APPLE_TV",
+              "path": "apps/screenshots/tvos-3.png"
+            }
+          ],
+          "simulatorDestination": "generic/platform=tvOS Simulator",
+          "simulatorProduct": "Debug-appletvsimulator/freya-player-tvos.app",
+          "simulators": {
+            "tv": "Apple TV"
+          }
+        }
+      },
+      "android": {}
+    },
+    "version": "1.22.3",
+    "whatsNew": "Polished visual design with more consistent buttons, focus effects, and spacing across the app."
+  }
+}
