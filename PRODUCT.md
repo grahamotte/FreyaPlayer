@@ -45,7 +45,7 @@ Freya Player keeps native playback first and stock platform behavior everywhere.
 ## Evidence on Hand
 
 - App Store listing: https://apps.apple.com/us/app/freya-player/id6761883699
-- Store metadata and release configuration: `apps/config.json`
+- Store metadata and release configuration: `apps` in `config.json`
 - Screenshots: `assets/screenshots/` (iOS, macOS, tvOS, repo) and `apps/screenshots/`
 - Provider marks: `assets/plex.svg`, `assets/jellyfin.svg`
 - Public-domain sample media: `assets/samples/` (sources in `sources.txt`)
