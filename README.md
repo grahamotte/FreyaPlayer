@@ -12,16 +12,58 @@ Freya Player is a native Apple tvOS, iOS, and Mac app for watching video from Je
   </a>
 </p>
 
+This repository is built on Code Moto, a shared foundation for a Rails API, a React website, native Apple apps, and project tooling. It keeps its own Git history and configuration, and merges foundation updates without replacing that history. Components can be added or removed to suit the app. New projects are spawned from Code Moto, not from this app repository.
+
+## What's included
+
+- **Backend:** Ruby on Rails with PostgreSQL and GoodJob background jobs.
+- **Frontend:** React, TypeScript, Vite, and Tailwind CSS, with separate sites for configured subdomains.
+- **Apps:** Swift apps targeting iOS, macOS, and tvOS, with simulator and App Store publishing tools.
+- **Operations:** Server provisioning and deployment, backups, and shared Ruby gems.
+- **Agent workflow:** A manager that picks up Linear cards, launches coding agents in Git worktrees, and merges approved pull requests.
+
+## Local development
+
+Install mise and PostgreSQL, and have PostgreSQL running locally. Apple app development and tests also require macOS with Xcode.
+
+1. Run `mise install` to install the tool versions pinned in `mise.toml`.
+2. Create `.env.development` and `.env.production` from `.env.default` and fill in the required values. Existing projects with configured 1Password references can use `mise manager:secrets` with a service account instead.
+3. Run `mise dependencies` to install project dependencies.
+4. Run `mise db:migrate` to prepare the development database.
+5. Run `mise start` to start the API, background jobs, and frontend sites. It prints the local URLs; the API runs at `http://localhost:3000`.
+
+Non-secret project settings live in `config.json`, including the domain, GitHub repository, database name, subdomains, agent defaults, and app release details. Credentials live in the gitignored `.env.*` files.
+
 ## Contributing
 
 Issues and PRs welcome.
 
-Tools:
+| Command | Purpose |
+| --- | --- |
+| `mise test` | Run the complete web, deployment, shared-gem, and portable Apple logic test suite, including frontend type checking |
+| `mise tsc` | Type-check the frontend |
+| `mise console` | Open the Rails development console |
+| `mise simulate iphone\|ipad\|macos\|tv` | Build and launch one Apple target |
+| `mise xcode` | Open the project in Xcode |
+| `mise manager:trigger` | Process eligible cards for the configured Linear team |
+| `$publish` | Version, test, push, archive, upload, and submit every configured Apple target |
 
-- `mise test` – run the complete web, deployment, shared-gem, and portable Apple logic test suite
-- `mise simulate iphone|ipad|macos|tv` – build and launch one Apple target
-- `mise xcode` – open the project in Xcode
-- `$publish` – version, test, push, archive, upload, and submit every configured Apple target
+Deployment, upstream merges, and publishing follow the card and pull request workflow described in [AGENTS.md](AGENTS.md), using the corresponding skills in [.agents/skills](.agents/skills).
+
+## Repository guide
+
+| Directory | Contents |
+| --- | --- |
+| `backend/` | Rails API and background jobs |
+| `frontend/` | React sites and shared frontend code |
+| `apps/` | Native apps and screenshots |
+| `gems/` | Shared Ruby libraries |
+| `deploy/` | Infrastructure and deployment tooling |
+| `publish/` | App versioning, simulation, and publishing |
+| `manager/` | Linear workflow, agent runners, and project creation |
+| `scripts/` | Scripts behind mise tasks |
+
+See [manager runners and labels](docs/manager.md) for agent configuration, [Apple credentials](docs/apple-credentials.md) for publishing setup, and [AGENTS.md](AGENTS.md) for contribution rules.
 
 ## License
 
