@@ -12,6 +12,21 @@ struct JellyfinSetupContent: View {
     @FocusState private var focusedField: Field?
 
     var body: some View {
+        Group {
+            if case .connecting(let message) = model.connectionState {
+                ProgressView(message)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                form
+            }
+        }
+        .background(AppBackground())
+        .task {
+            model.prepareJellyfinSetup()
+        }
+    }
+
+    private var form: some View {
         VStack(spacing: AppTheme.Spacing.xLarge) {
             Spacer()
 
@@ -62,8 +77,6 @@ struct JellyfinSetupContent: View {
                 if case .failed(let message) = model.connectionState {
                     Text(message)
                         .foregroundStyle(AppTheme.secondaryText)
-                } else if case .connecting(let message) = model.connectionState {
-                    ProgressView(message)
                 }
 
                 HStack(spacing: AppTheme.Spacing.medium) {
@@ -77,6 +90,7 @@ struct JellyfinSetupContent: View {
                         }
                     }
                     .buttonStyle(MediaGlassButtonStyle())
+                    .focused($focusedField, equals: .connect)
                     .disabled(serverURL == nil || username.isEmpty || password.isEmpty)
 
                     Button("Cancel") {
@@ -93,9 +107,8 @@ struct JellyfinSetupContent: View {
         }
         .padding(PlatformMetadata.pageGutter)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppBackground())
-        .task {
-            model.prepareJellyfinSetup()
+        .onChange(of: serverProtocol) { _, newValue in
+            applyDefaultPort(for: newValue)
         }
     }
 
@@ -143,43 +156,58 @@ struct JellyfinSetupContent: View {
         }
     }
 
-    @ViewBuilder
     private func setupTextField(
         _ title: String,
         text: Binding<String>,
         placeholder: String,
         field: Field
     ) -> some View {
-        #if os(tvOS)
-            let isFocused = focusedField == field
-            let prompt = Text(title)
-                .foregroundStyle(isFocused ? AppTheme.inverseText : AppTheme.secondaryText)
+        let isFocused = focusedField == field
+        let prompt = Text(placeholder)
+            .foregroundStyle(AppTheme.secondaryText)
 
-            setupField(title) {
-                TextField(title, text: text, prompt: prompt)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .focused($focusedField, equals: field)
-                    .foregroundStyle(isFocused ? AppTheme.inverseText : AppTheme.primaryText)
-                    .controlSize(.large)
-            }
-        #else
-            let isFocused = focusedField == field
-            let prompt = Text(placeholder)
-                .foregroundStyle(AppTheme.secondaryText)
+        return setupField(title) {
+            TextField(title, text: text, prompt: prompt)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .focused($focusedField, equals: field)
+                .submitLabel(field == .password ? .done : .next)
+                .onSubmit { advance(from: field) }
+                .textFieldStyle(.plain)
+                .font(PlatformMetadata.labelFont)
+                .foregroundStyle(AppTheme.primaryText)
+                .padding(.horizontal, AppTheme.Spacing.medium)
+                .frame(maxWidth: .infinity, minHeight: fieldHeight, maxHeight: fieldHeight, alignment: .leading)
+                .background(AppTheme.surfaceFill, in: Capsule())
+                .overlay {
+                    Capsule().stroke(
+                        isFocused ? AppTheme.focusStroke : AppTheme.surfaceBorder,
+                        lineWidth: isFocused ? 2 : 1
+                    )
+                }
+        }
+    }
 
-            setupField(title) {
-                TextField(title, text: text, prompt: prompt)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .focused($focusedField, equals: field)
-                    .textFieldStyle(.plain)
-                    .foregroundStyle(AppTheme.primaryText)
-                    .padding(.horizontal, AppTheme.Spacing.small)
-                    .padding(.vertical, AppTheme.Spacing.small)
-                    .glassField(isFocused: isFocused)
-            }
-        #endif
+    private var fieldHeight: CGFloat {
+        PlatformMetadata.isTV ? 80 : 44
+    }
+
+    private func advance(from field: Field) {
+        switch field {
+        case .protocol: focusedField = .address
+        case .address: focusedField = .port
+        case .port: focusedField = .username
+        case .username: focusedField = .password
+        case .password, .connect: focusedField = .connect
+        }
+    }
+
+    private func applyDefaultPort(for serverProtocol: String) {
+        switch serverProtocol.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "https": port = "443"
+        case "http": port = "8096"
+        default: break
+        }
     }
 
     private enum Field: Hashable {
@@ -188,5 +216,6 @@ struct JellyfinSetupContent: View {
         case port
         case username
         case password
+        case connect
     }
 }
