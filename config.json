@@ -51,7 +51,7 @@
     "team": "FP"
   },
   "apps": {
-    "build": "1.22.5",
+    "build": "1.22.6",
     "contactEmail": "graham.otte@gmail.com",
     "contactFirstName": "Graham",
     "contactLastName": "Otte",
@@ -157,7 +157,7 @@
       },
       "android": {}
     },
-    "version": "1.22.5",
+    "version": "1.22.6",
     "whatsNew": "Apple TV now plays original audio directly again instead of converting it on the server."
   }
 }
