@@ -89,8 +89,7 @@ final class PlexClient {
         offsetMilliseconds: Int? = nil
     ) async throws -> MediaPlaybackResource {
         let metadata = try await playbackMetadata(for: ratingKey, connection: connection)
-        let requiresTranscodedAudio = PlatformMetadata.requiresTranscodedPlaybackAudio
-        let directStreamAudio = !requiresTranscodedAudio && metadata.canDirectStreamAudio(selection?.audioID)
+        let directStreamAudio = metadata.canDirectStreamAudio(selection?.audioID)
         let includesSubtitles = metadata.canStreamSubtitle(selection?.subtitleID)
         let usesCustomAudio = selection.map { $0.audioID != $0.defaultAudioID } == true
         let changesSubtitle = selection.map { $0.subtitleID != $0.defaultSubtitleID } == true
@@ -146,8 +145,7 @@ final class PlexClient {
             )
         }
 
-        if !requiresTranscodedAudio,
-           selection?.quality ?? .automatic == .automatic,
+        if selection?.quality ?? .automatic == .automatic,
            let url = directPlayURL(
                from: metadata,
                connection: connection,
@@ -958,8 +956,7 @@ private struct PlexPlaybackMetadata: Decodable {
             return nil
         }
 
-        let requiresTranscodedAudio = PlatformMetadata.requiresTranscodedPlaybackAudio
-        let audioOptions = part.audioOptions(requiresTranscoding: requiresTranscodedAudio)
+        let audioOptions = part.audioOptions()
         let subtitleOptions = part.subtitleOptions
         let selectedAudioID = part.selectedAudioID ?? audioOptions.first?.id
         let selectedSubtitleID = part.selectedSubtitleID.flatMap { subtitleID in
@@ -1116,7 +1113,7 @@ private struct PlexPlaybackMetadata: Decodable {
         let container: String?
         let streams: [Stream]?
 
-        func audioOptions(requiresTranscoding: Bool) -> [MediaPlaybackOption] {
+        func audioOptions() -> [MediaPlaybackOption] {
             streams?
                 .filter { $0.streamType == 2 }
                 .compactMap { stream in
@@ -1127,7 +1124,7 @@ private struct PlexPlaybackMetadata: Decodable {
                     return MediaPlaybackOption(
                         id: id,
                         title: stream.displayName,
-                        transcodingTitle: requiresTranscoding || !canDirectStream ? "AAC" : nil,
+                        transcodingTitle: !canDirectStream ? "AAC" : nil,
                         sourceFormat: MediaTranscoding.audio(
                             codec: stream.codec,
                             channels: stream.channels,

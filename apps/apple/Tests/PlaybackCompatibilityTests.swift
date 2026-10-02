@@ -48,6 +48,15 @@ final class PlaybackCompatibilityTests: XCTestCase {
         )
     }
 
+    func testAudioCodecsExcludeUndetectedDolbyFormats() {
+        XCTAssertEqual(
+            PlaybackCompatibility.directPlayAudioCodecs(
+                isPlayable: { $0 == "audio/mp4; codecs=\"mp4a.40.2\"" }
+            ),
+            ["aac", "mp4a"]
+        )
+    }
+
     func testHEVCStreamingRequiresCompatibleSourceDeviceAndDisplayRoute() {
         let supportedCodecs: Set<String> = ["h264", "hevc"]
         let canStream: (
@@ -186,16 +195,6 @@ final class PlaybackCompatibilityTests: XCTestCase {
             PlaybackCompatibility.effectiveVideoHeight(sourceHeight: 2160, maximumHeight: nil),
             2160
         )
-    }
-
-    func testRequiresTranscodedAudioForAllTvOS27Builds() {
-        XCTAssertTrue(PlaybackCompatibility.requiresTranscodedAudio(majorVersion: 27))
-    }
-
-    func testDoesNotRequireTranscodedAudioForOtherTvOSVersions() {
-        for majorVersion in [18, 26, 28] {
-            XCTAssertFalse(PlaybackCompatibility.requiresTranscodedAudio(majorVersion: majorVersion))
-        }
     }
 
     func testCapabilitiesDistinguishDetectedConditionalAndUnavailableSupport() {

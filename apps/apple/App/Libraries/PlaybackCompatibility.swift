@@ -73,16 +73,6 @@ enum PlaybackCompatibility {
         )
     }
 
-    static var requiresTranscodedAudio: Bool {
-        #if os(tvOS)
-        return requiresTranscodedAudio(
-            majorVersion: ProcessInfo.processInfo.operatingSystemVersion.majorVersion
-        )
-        #else
-        return false
-        #endif
-    }
-
     static func directPlayVideoCodecs(
         isPlayable: (String) -> Bool,
         hasHardwareAV1Decoder: Bool
@@ -174,10 +164,6 @@ enum PlaybackCompatibility {
     static func effectiveVideoHeight(sourceHeight: Int?, maximumHeight: Int? = maximumVideoHeight) -> Int? {
         guard let maximumHeight else { return sourceHeight }
         return min(sourceHeight ?? maximumHeight, maximumHeight)
-    }
-
-    static func requiresTranscodedAudio(majorVersion: Int) -> Bool {
-        majorVersion == 27
     }
 
     static func capabilities(
