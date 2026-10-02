@@ -43,8 +43,8 @@
     "size": "s-1vcpu-2gb"
   },
   "secrets": {
-    "development": "op://Projects/Freya Player Development/notesPlain",
-    "production": "op://Projects/Freya Player Production/notesPlain"
+    "development": "op://Projects/Freya Player Development",
+    "production": "op://Projects/Freya Player Production"
   },
   "linear": {
     "workspace": "gotte",
