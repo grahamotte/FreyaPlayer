@@ -56,7 +56,7 @@
     "variant": "medium"
   },
   "apps": {
-    "build": "1.22.3",
+    "build": "1.22.4",
     "contactEmail": "graham.otte@gmail.com",
     "contactFirstName": "Graham",
     "contactLastName": "Otte",
@@ -162,7 +162,7 @@
       },
       "android": {}
     },
-    "version": "1.22.3",
-    "whatsNew": "Polished visual design with more consistent buttons, focus effects, and spacing across the app."
+    "version": "1.22.4",
+    "whatsNew": "Apple TV now plays original audio directly again instead of converting it on the server."
   }
 }
