@@ -156,36 +156,64 @@ struct JellyfinSetupContent: View {
         }
     }
 
+    @ViewBuilder
     private func setupTextField(
         _ title: String,
         text: Binding<String>,
         placeholder: String,
         field: Field
     ) -> some View {
-        let isFocused = focusedField == field
-        let prompt = Text(placeholder)
-            .foregroundStyle(AppTheme.secondaryText)
+        #if os(tvOS)
+            setupField(title) {
+                inputField(title, text: text, prompt: Text(title), field: field)
+                    .frame(maxWidth: .infinity, minHeight: fieldHeight, maxHeight: fieldHeight)
+            }
+        #else
+            let isFocused = focusedField == field
+            let prompt = Text(placeholder)
+                .font(fieldFont)
+                .foregroundStyle(AppTheme.secondaryText)
 
-        return setupField(title) {
-            TextField(title, text: text, prompt: prompt)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .focused($focusedField, equals: field)
-                .submitLabel(field == .password ? .done : .next)
-                .onSubmit { advance(from: field) }
-                .textFieldStyle(.plain)
-                .font(PlatformMetadata.labelFont)
-                .foregroundStyle(AppTheme.primaryText)
-                .padding(.horizontal, AppTheme.Spacing.medium)
-                .frame(maxWidth: .infinity, minHeight: fieldHeight, maxHeight: fieldHeight, alignment: .leading)
-                .background(AppTheme.surfaceFill, in: Capsule())
-                .overlay {
-                    Capsule().stroke(
-                        isFocused ? AppTheme.focusStroke : AppTheme.surfaceBorder,
-                        lineWidth: isFocused ? 2 : 1
-                    )
-                }
+            setupField(title) {
+                inputField(title, text: text, prompt: prompt, field: field)
+                    .textFieldStyle(.plain)
+                    .foregroundStyle(AppTheme.primaryText)
+                    .padding(.horizontal, AppTheme.Spacing.medium)
+                    .frame(maxWidth: .infinity, minHeight: fieldHeight, maxHeight: fieldHeight, alignment: .leading)
+                    .background(AppTheme.surfaceFill, in: Capsule())
+                    .overlay {
+                        Capsule().stroke(
+                            isFocused ? AppTheme.focusStroke : AppTheme.surfaceBorder,
+                            lineWidth: isFocused ? 2 : 1
+                        )
+                    }
+            }
+        #endif
+    }
+
+    private func inputField(
+        _ title: String,
+        text: Binding<String>,
+        prompt: Text,
+        field: Field
+    ) -> some View {
+        Group {
+            if field == .password {
+                SecureField(title, text: text, prompt: prompt)
+            } else {
+                TextField(title, text: text, prompt: prompt)
+            }
         }
+        .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
+        .focused($focusedField, equals: field)
+        .submitLabel(field == .password ? .done : .next)
+        .onSubmit { advance(from: field) }
+        .font(fieldFont)
+    }
+
+    private var fieldFont: Font {
+        .body
     }
 
     private var fieldHeight: CGFloat {
