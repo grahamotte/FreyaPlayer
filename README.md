@@ -20,7 +20,7 @@ This repository is built on Code Moto, a shared foundation for a Rails API, a Re
 - **Frontend:** React, TypeScript, Vite, and Tailwind CSS, with separate sites for configured subdomains.
 - **Apps:** Swift apps targeting iOS, macOS, and tvOS, with simulator and App Store publishing tools.
 - **Operations:** Server provisioning and deployment, backups, and shared Ruby gems.
-- **Agent workflow:** A manager that picks up Linear cards, launches coding agents in Git worktrees, and merges approved pull requests.
+- **Agent workflow:** Linear cards are worked by coding agents in Git worktrees, dispatched by the sister repository [Mr. Moto](https://github.com/grahamotte/mr-moto).
 
 ## Local development
 
@@ -45,7 +45,6 @@ Issues and PRs welcome.
 | `mise console` | Open the Rails development console |
 | `mise simulate iphone\|ipad\|macos\|tv` | Build and launch one Apple target |
 | `mise xcode` | Open the project in Xcode |
-| `mise manager:trigger` | Process eligible cards for the configured Linear team |
 | `$publish` | Version, test, push, archive, upload, and submit every configured Apple target |
 
 Deployment, upstream merges, and publishing follow the card and pull request workflow described in [AGENTS.md](AGENTS.md), using the corresponding skills in [.agents/skills](.agents/skills).
@@ -60,10 +59,10 @@ Deployment, upstream merges, and publishing follow the card and pull request wor
 | `gems/` | Shared Ruby libraries |
 | `deploy/` | Infrastructure and deployment tooling |
 | `publish/` | App versioning, simulation, and publishing |
-| `manager/` | Linear workflow, agent runners, and project creation |
+| `manager/` | Secrets refresh, project creation, and Code Moto merges |
 | `scripts/` | Scripts behind mise tasks |
 
-See [manager runners and labels](docs/manager.md) for agent configuration, [Apple credentials](docs/apple-credentials.md) for publishing setup, and [AGENTS.md](AGENTS.md) for contribution rules.
+See [manager](docs/manager.md) for how Code Moto works with Mr. Moto, [Apple credentials](docs/apple-credentials.md) for publishing setup, and [AGENTS.md](AGENTS.md) for contribution rules.
 
 ## License
 
