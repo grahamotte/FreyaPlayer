@@ -42,14 +42,6 @@
     "region": "sfo3",
     "size": "s-1vcpu-2gb"
   },
-  "secrets": {
-    "development": "op://Projects/Freya Player Development",
-    "production": "op://Projects/Freya Player Production"
-  },
-  "linear": {
-    "workspace": "gotte",
-    "team": "FP"
-  },
   "apps": {
     "build": "1.22.6",
     "contactEmail": "graham.otte@gmail.com",
