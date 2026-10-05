@@ -54,13 +54,13 @@
     "demoAccountRequired": true,
     "description": "Freya Player is a native client for your personal Jellyfin or Plex server. Play your media using a fully native tvOS experience.\n\nA Jellyfin or Plex server is required to use this client player. Freya Player does not provide a server or any content itself.",
     "keywords": "movies, video, tv, show, tv show, media, plex, jellyfin, native, library, video player",
-    "marketingUrl": "https://codeberg.org/grahamotte/FreyaPlayer",
+    "marketingUrl": "https://github.com/grahamotte/FreyaPlayer",
     "name": "Freya Player",
     "notes": "To login, please login by first selecting the \"Jellyfin\" path, clicking \"http\", then enter the server url \"graham.lol\". The username and password for this server are both lowercase \"jellyfin\".\n\ntoggle: 'http'\nserver url: graham.lol\nusername: jellyfin\npassword: jellyfin\n\nNote: plex is an alternate login method, but there is not a login for it as the app has the exact same functionality for all login methods. Use the Jellyfin login please.\n\nFreya player does not contain any copyrighted material. All TV Shows and Movies used in screenshots are in the public domain.",
     "primaryLocale": "en-US",
     "promotionalText": "Watch your personal Plex or Jellyfin library in a native Apple platform experience.",
     "releaseType": "AFTER_APPROVAL",
-    "supportUrl": "https://codeberg.org/grahamotte/FreyaPlayer",
+    "supportUrl": "https://github.com/grahamotte/FreyaPlayer",
     "targets": {
       "apple": {
         "ios": {

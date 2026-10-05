@@ -33,7 +33,7 @@ struct AboutPage: View {
                     Text("Open an issue!")
                         .foregroundStyle(AppTheme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("https://codeberg.org/grahamotte/freya-player")
+                    Text("https://github.com/grahamotte/FreyaPlayer")
                         .font(.body.monospaced())
                         .foregroundStyle(AppTheme.primaryText)
                         .userSelectableText()
