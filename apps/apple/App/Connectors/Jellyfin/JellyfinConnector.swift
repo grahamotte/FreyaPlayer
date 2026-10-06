@@ -148,7 +148,9 @@ final class JellyfinConnector: JellyfinConnecting {
             return nil
         }
 
-        return mediaSource.playbackOptions()
+        return mediaSource.playbackOptions(
+            requiresTranscodedAudio: PlatformMetadata.requiresTranscodedPlaybackAudio
+        )
     }
 
     func playbackURL(

@@ -117,7 +117,7 @@ struct JellyfinMediaStream: Decodable, Hashable {
 }
 
 extension JellyfinMediaSource {
-    func playbackOptions() -> MediaPlaybackOptions {
+    func playbackOptions(requiresTranscodedAudio: Bool) -> MediaPlaybackOptions {
         let streams = mediaStreams ?? []
         let video = streams.first(where: { $0.type == "Video" })
         let sourceVideoHeight = video?.height
@@ -135,7 +135,7 @@ extension JellyfinMediaSource {
             isInterlaced: video?.isInterlaced
         )
         let transcodesVideo = requiresServerStream && (!supportsDirectStream || !canDirectStreamVideo)
-        let transcodesAllAudio = requiresServerStream && !supportsDirectStream
+        let transcodesAllAudio = requiresTranscodedAudio || (requiresServerStream && !supportsDirectStream)
         let audioOptions = streams
             .filter { $0.type == "Audio" }
             .map { stream in

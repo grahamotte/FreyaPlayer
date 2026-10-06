@@ -10,7 +10,7 @@ final class JellyfinPlaybackModelsTests: XCTestCase {
             supportsDirectPlay: true,
             supportsDirectStream: true
         )
-        let options = source.playbackOptions()
+        let options = source.playbackOptions(requiresTranscodedAudio: false)
         let plan = options.playbackPlan(for: MediaPlaybackSelection(
             quality: .automatic,
             audioID: "1",
@@ -73,7 +73,7 @@ final class JellyfinPlaybackModelsTests: XCTestCase {
             dynamicRange: "SDR",
             profile: "Main"
         )
-        let options = source.playbackOptions()
+        let options = source.playbackOptions(requiresTranscodedAudio: false)
         let plan = options.playbackPlan(for: MediaPlaybackSelection(
             quality: .automatic,
             audioID: "1",
@@ -96,7 +96,7 @@ final class JellyfinPlaybackModelsTests: XCTestCase {
             supportsDirectStream: true,
             dynamicRange: "BT709"
         )
-        let options = source.playbackOptions()
+        let options = source.playbackOptions(requiresTranscodedAudio: false)
         let plan = options.playbackPlan(for: MediaPlaybackSelection(
             quality: .automatic,
             audioID: "1",
@@ -120,7 +120,7 @@ final class JellyfinPlaybackModelsTests: XCTestCase {
             dynamicRange: "Dolby Vision",
             profile: "Main 10"
         )
-        let options = source.playbackOptions()
+        let options = source.playbackOptions(requiresTranscodedAudio: false)
 
         XCTAssertEqual(options.defaultVideoTranscoding, "H.264")
         XCTAssertEqual(options.streamingVideoTranscoding, "H.264")
@@ -136,7 +136,7 @@ final class JellyfinPlaybackModelsTests: XCTestCase {
             dynamicRange: "SDR",
             profile: "Main"
         )
-        let options = source.playbackOptions()
+        let options = source.playbackOptions(requiresTranscodedAudio: false)
         let plan = options.playbackPlan(for: MediaPlaybackSelection(
             quality: .automatic,
             audioID: "1",
@@ -158,7 +158,7 @@ final class JellyfinPlaybackModelsTests: XCTestCase {
                 supportsDirectPlay: supportsDirectPlay,
                 supportsDirectStream: true
             )
-            let options = source.playbackOptions()
+            let options = source.playbackOptions(requiresTranscodedAudio: false)
             let plan = options.playbackPlan(for: MediaPlaybackSelection(
                 quality: .automatic,
                 audioID: "1",
@@ -173,6 +173,32 @@ final class JellyfinPlaybackModelsTests: XCTestCase {
         }
     }
 
+    func testAudioWorkaroundOverridesDirectPlayAndRemuxWithoutConvertingVideo() throws {
+        for supportsDirectPlay in [true, false] {
+            let source = try mediaSource(
+                container: supportsDirectPlay ? "mp4" : "mkv",
+                videoCodec: "h264",
+                audioCodec: "aac",
+                supportsDirectPlay: supportsDirectPlay,
+                supportsDirectStream: true
+            )
+            let options = source.playbackOptions(requiresTranscodedAudio: true)
+            let plan = options.playbackPlan(for: MediaPlaybackSelection(
+                quality: .automatic,
+                audioID: "1",
+                subtitleID: nil,
+                defaultAudioID: "1"
+            ))
+
+            XCTAssertEqual(options.audioOptions.first?.transcodingTitle, "AAC")
+            XCTAssertEqual(options.defaultAudioTranscoding, "AAC")
+            XCTAssertNil(options.defaultVideoTranscoding)
+            XCTAssertNil(options.streamingVideoTranscoding)
+            XCTAssertEqual(plan.path, .transcode)
+            XCTAssertEqual(plan.conversions.first(where: { $0.element == .audio })?.description, "AAC • Stereo → AAC")
+        }
+    }
+
     func testServerRequiringTranscodingStillConvertsNativeAudio() throws {
         let source = try mediaSource(
             container: "mkv",
@@ -181,7 +207,7 @@ final class JellyfinPlaybackModelsTests: XCTestCase {
             supportsDirectPlay: false,
             supportsDirectStream: false
         )
-        let options = source.playbackOptions()
+        let options = source.playbackOptions(requiresTranscodedAudio: false)
 
         XCTAssertEqual(options.audioOptions.first?.transcodingTitle, "AAC")
         XCTAssertEqual(options.defaultAudioTranscoding, "AAC")

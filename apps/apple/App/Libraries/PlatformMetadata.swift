@@ -137,6 +137,9 @@ enum PlatformMetadata {
         isTV || isMac
     }
 
+    static var requiresTranscodedPlaybackAudio: Bool {
+        PlaybackCompatibility.requiresTranscodedAudio
+    }
 }
 
 extension PlatformMetadata {
