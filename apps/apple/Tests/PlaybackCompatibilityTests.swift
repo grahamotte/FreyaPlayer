@@ -197,6 +197,18 @@ final class PlaybackCompatibilityTests: XCTestCase {
         )
     }
 
+    func testRequiresTranscodedAudioForTvOS27AndLater() {
+        for majorVersion in [27, 28, 29] {
+            XCTAssertTrue(PlaybackCompatibility.requiresTranscodedAudio(majorVersion: majorVersion))
+        }
+    }
+
+    func testDoesNotRequireTranscodedAudioForOlderTvOSVersions() {
+        for majorVersion in [18, 26] {
+            XCTAssertFalse(PlaybackCompatibility.requiresTranscodedAudio(majorVersion: majorVersion))
+        }
+    }
+
     func testCapabilitiesDistinguishDetectedConditionalAndUnavailableSupport() {
         let playableTypes: Set<String> = [
             "video/mp4; codecs=\"avc1.640028\"",

@@ -140,7 +140,7 @@ final class JellyfinClient {
                 MaxStreamingBitrate: selection?.quality.maxStreamingBitrate,
                 AudioStreamIndex: selection.map { $0.audioID.flatMap(Int.init) ?? -1 },
                 SubtitleStreamIndex: selection.map { $0.subtitleID.flatMap(Int.init) ?? -1 },
-                EnableDirectPlay: usesAutomaticQuality,
+                EnableDirectPlay: usesAutomaticQuality && !PlatformMetadata.requiresTranscodedPlaybackAudio,
                 EnableDirectStream: usesAutomaticQuality,
                 EnableTranscoding: true
             )
@@ -162,6 +162,7 @@ final class JellyfinClient {
             throw MediaConnectorError.unavailable
         }
 
+        let requiresTranscodedAudio = PlatformMetadata.requiresTranscodedPlaybackAudio
         let usesDefaultAudio = selection == nil || selection?.audioID == selection?.defaultAudioID
         let quality = (selection?.quality ?? .automatic).constrained(
             toMaximumVideoHeight: PlaybackCompatibility.maximumVideoHeight,
@@ -177,7 +178,7 @@ final class JellyfinClient {
             )
         }
         let playbackPlan = mediaSource
-            .playbackOptions()
+            .playbackOptions(requiresTranscodedAudio: requiresTranscodedAudio)
             .playbackPlan(for: effectiveSelection ?? MediaPlaybackSelection(
                 quality: quality,
                 audioID: mediaSource.defaultAudioStreamIndex.map(String.init),
@@ -186,7 +187,8 @@ final class JellyfinClient {
                 defaultSubtitleID: mediaSource.defaultSubtitleStreamIndex.map(String.init)
             ))
 
-        if selection?.quality ?? .automatic == .automatic,
+        if !requiresTranscodedAudio,
+           selection?.quality ?? .automatic == .automatic,
            usesDefaultAudio,
            selection?.subtitleID == nil,
            mediaSource.supportsDirectPlay,
@@ -217,7 +219,7 @@ final class JellyfinClient {
         let canCopyVideo = mediaSource.supportsDirectStream
             && mediaSource.canCopyVideo
             && quality == .automatic
-        let canCopyAudio = mediaSource.canCopyAudio(selection: selection)
+        let canCopyAudio = !requiresTranscodedAudio && mediaSource.canCopyAudio(selection: selection)
         let videoCodecs = PlaybackCompatibility.streamingVideoCodecNames(
             copying: mediaSource.videoCodec,
             canCopy: canCopyVideo
