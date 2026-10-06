@@ -43,7 +43,7 @@
     "size": "s-1vcpu-2gb"
   },
   "apps": {
-    "build": "1.22.6",
+    "build": "1.22.7",
     "contactEmail": "graham.otte@gmail.com",
     "contactFirstName": "Graham",
     "contactLastName": "Otte",
@@ -149,7 +149,7 @@
       },
       "android": {}
     },
-    "version": "1.22.6",
-    "whatsNew": "Apple TV now plays original audio directly again instead of converting it on the server."
+    "version": "1.22.7",
+    "whatsNew": "Fixed audio playback on Apple TV when using HomePod and other compatible speakers."
   }
 }
