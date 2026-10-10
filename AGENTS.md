@@ -73,6 +73,10 @@ For card work, use Mr. Moto's `mr` CLI: run `mr card claim <CARD>` and follow it
 
 ## Repo Specific
 
+### Deployment
+
+This repository is not deployed. Do not run `mise deploy` or the `deploy` skill. The `deploy/` tooling is inherited from Code Moto and unused.
+
 ### Freya Player
 
 Freya Player is a native Apple client for personal Plex and Jellyfin servers. The stated goal of Freya Player is to play everything Apple supports natively, exceptionally well. Use server conversion only for what Apple genuinely cannot play.
