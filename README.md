@@ -45,6 +45,7 @@ Issues and PRs welcome.
 | `mise simulate iphone\|ipad\|macos\|tv` | Build and launch one Apple target |
 | `mise xcode` | Open the project in Xcode |
 | `$publish` | Version, test, push, archive, upload, and submit every configured Apple target |
+| `mise keychain` | Restore keychain settings left by an interrupted signing run; `--repair` resets the login keychain |
 
 Deployment, basis merges, and publishing use the project-specific instructions in [.agents/skills](.agents/skills). Mr. Moto owns card tracking, enqueueing, and the review workflow.
 
