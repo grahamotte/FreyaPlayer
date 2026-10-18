@@ -44,10 +44,10 @@ Issues and PRs welcome.
 | `mise console` | Open the Rails development console |
 | `mise simulate iphone\|ipad\|macos\|tv` | Build and launch one Apple target |
 | `mise xcode` | Open the project in Xcode |
-| `$publish` | Version, test, push, archive, upload, and submit every configured Apple target |
+| the [publish runbook](runbooks/publish.md) | Version, test, push, archive, upload, and submit every configured Apple target |
 | `mise keychain` | Restore keychain settings left by an interrupted signing run; `--repair` resets the login keychain |
 
-Deployment, basis merges, and publishing use the project-specific instructions in [.agents/skills](.agents/skills). Mr. Moto owns card tracking, enqueueing, and the review workflow.
+Deployment and publishing use the project-specific instructions in [runbooks](runbooks). Mr. Moto owns card tracking, enqueueing, the review workflow, and the Code Moto merge rollout.
 
 ## Repository guide
 
@@ -60,6 +60,7 @@ Deployment, basis merges, and publishing use the project-specific instructions i
 | `deploy/` | Infrastructure and deployment tooling |
 | `publish/` | App versioning, simulation, and publishing |
 | `manager/` | Project creation and Code Moto merges |
+| `runbooks/` | Deployment and publishing instructions |
 | `scripts/` | Scripts behind mise tasks |
 
 See [manager](docs/manager.md) for how Code Moto works with Mr. Moto, [Apple credentials](docs/apple-credentials.md) for publishing setup, [logging](docs/logging.md) for Grafana logs, and [AGENTS.md](AGENTS.md) for contribution rules.
