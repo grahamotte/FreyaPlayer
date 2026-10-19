@@ -4,92 +4,21 @@ struct JellyfinSetupContent: View {
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var serverProtocol = "https"
+    @State private var serverProtocol = ServerProtocol.https
     @State private var address = ""
-    @State private var port = "443"
+    @State private var port = ServerProtocol.https.defaultPort
     @State private var username = ""
     @State private var password = ""
     @FocusState private var focusedField: Field?
+    @State private var focusAfterEditing: Field?
 
     var body: some View {
-        VStack(spacing: AppTheme.Spacing.xLarge) {
-            Spacer()
-
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                MediaProviderLabel(providerID: .jellyfin)
-                    .font(PlatformMetadata.sectionTitleFont)
-
-                serverAddressLayout {
-                    setupTextField(
-                        "Protocol",
-                        text: $serverProtocol,
-                        placeholder: "https",
-                        field: .protocol
-                    )
-                    .frame(width: usesCompactLayout ? nil : shortFieldWidth)
-
-                    setupTextField(
-                        "Address",
-                        text: $address,
-                        placeholder: "64.23.154.109",
-                        field: .address
-                    )
-                    .frame(maxWidth: .infinity)
-
-                    setupTextField(
-                        "Port",
-                        text: $port,
-                        placeholder: serverProtocol == "https" ? "443" : "8096",
-                        field: .port
-                    )
-                    .frame(width: usesCompactLayout ? nil : shortFieldWidth)
-                }
-
-                setupTextField(
-                    "Username",
-                    text: $username,
-                    placeholder: "Username",
-                    field: .username
-                )
-
-                setupTextField(
-                    "Password",
-                    text: $password,
-                    placeholder: "Password",
-                    field: .password
-                )
-
-                if case .failed(let message) = model.connectionState {
-                    Text(message)
-                        .foregroundStyle(AppTheme.secondaryText)
-                } else if case .connecting(let message) = model.connectionState {
-                    ProgressView(message)
-                }
-
-                HStack(spacing: AppTheme.Spacing.medium) {
-                    Button("Connect") {
-                        if let serverURL {
-                            model.connectJellyfin(
-                                serverURL: serverURL,
-                                username: username,
-                                password: password
-                            )
-                        }
-                    }
-                    .buttonStyle(MediaGlassButtonStyle())
-                    .disabled(serverURL == nil || username.isEmpty || password.isEmpty)
-
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .buttonStyle(MediaGlassButtonStyle())
-                }
+        Group {
+            if case .connecting(let message) = model.connectionState {
+                ProgressView(message)
+            } else {
+                form
             }
-            .frame(maxWidth: 720, alignment: .leading)
-            .padding(PlatformMetadata.panelPadding)
-            .background(PanelBackground())
-
-            Spacer()
         }
         .padding(PlatformMetadata.pageGutter)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -99,87 +28,201 @@ struct JellyfinSetupContent: View {
         }
     }
 
+    private var form: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+            MediaProviderLabel(providerID: .jellyfin)
+                .font(PlatformMetadata.sectionTitleFont)
+
+            serverFields
+
+            setupField("Username") {
+                setupTextField("Username", text: $username, placeholder: "Username", field: .username)
+                    .textContentType(.username)
+            }
+
+            setupField("Password") {
+                setupTextField("Password", text: $password, placeholder: "Password", field: .password)
+                    .textContentType(.password)
+            }
+
+            if case .failed(let message) = model.connectionState {
+                Text(message)
+                    .foregroundStyle(AppTheme.secondaryText)
+            }
+
+            HStack(spacing: AppTheme.Spacing.medium) {
+                Button("Connect") {
+                    connect()
+                }
+                .buttonStyle(MediaGlassButtonStyle())
+                .focused($focusedField, equals: .connect)
+                .disabled(!canConnect)
+
+                Button("Cancel") {
+                    dismiss()
+                }
+                .buttonStyle(MediaGlassButtonStyle())
+            }
+        }
+        .frame(maxWidth: formWidth, alignment: .leading)
+        .padding(PlatformMetadata.panelPadding)
+        .background(PanelBackground())
+        .defaultFocus($focusedField, canConnect ? .connect : .address)
+        .onChange(of: serverProtocol) { _, serverProtocol in
+            port = serverProtocol.defaultPort
+        }
+        .onChange(of: focusedField) { _, field in
+            guard let target = focusAfterEditing else { return }
+            focusAfterEditing = nil
+            guard field != target else { return }
+            Task {
+                await Task.yield()
+                focusedField = target
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var serverFields: some View {
+        if usesCompactLayout {
+            setupField("Protocol") {
+                protocolPicker
+            }
+
+            setupField("Address") {
+                addressField
+            }
+
+            setupField("Port") {
+                portField
+            }
+        } else {
+            Grid(
+                alignment: .leading,
+                horizontalSpacing: AppTheme.Spacing.medium,
+                verticalSpacing: AppTheme.Spacing.xSmall
+            ) {
+                GridRow {
+                    fieldLabel("Protocol")
+                    fieldLabel("Address")
+                    fieldLabel("Port")
+                }
+
+                GridRow {
+                    protocolPicker
+                        .fixedSize()
+
+                    addressField
+
+                    portField
+                        .frame(width: portFieldWidth)
+                }
+            }
+        }
+    }
+
+    private var protocolPicker: some View {
+        Picker("Protocol", selection: $serverProtocol) {
+            ForEach(ServerProtocol.allCases, id: \.self) { serverProtocol in
+                Text(serverProtocol.title)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .focused($focusedField, equals: .protocol)
+    }
+
+    private var addressField: some View {
+        setupTextField("Address", text: $address, placeholder: "jellyfin.example.com", field: .address)
+            .keyboardType(.URL)
+    }
+
+    private var portField: some View {
+        setupTextField("Port", text: $port, placeholder: serverProtocol.defaultPort, field: .port)
+            .keyboardType(.numberPad)
+    }
+
     private var serverURL: String? {
-        let serverProtocol = serverProtocol.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let address = address.trimmingCharacters(in: .whitespacesAndNewlines)
         let port = port.trimmingCharacters(in: .whitespacesAndNewlines)
         guard
-            serverProtocol == "http" || serverProtocol == "https",
             !address.isEmpty,
             let port = Int(port),
             1...65_535 ~= port
         else { return nil }
-        return "\(serverProtocol)://\(address):\(port)"
+        return "\(serverProtocol.rawValue)://\(address):\(port)"
+    }
+
+    private var canConnect: Bool {
+        serverURL != nil && !username.isEmpty && !password.isEmpty
     }
 
     private var usesCompactLayout: Bool {
         horizontalSizeClass == .compact
     }
 
-    private var fieldLabelFont: Font {
-        PlatformMetadata.labelFont.weight(.semibold)
+    private var formWidth: CGFloat {
+        PlatformMetadata.isTV ? 1000 : 720
     }
 
-    private var shortFieldWidth: CGFloat {
-        PlatformMetadata.isTV ? 160 : 120
+    private var portFieldWidth: CGFloat {
+        PlatformMetadata.isTV ? 200 : 100
     }
 
-    private func serverAddressLayout<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        let layout = usesCompactLayout
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: AppTheme.Spacing.medium))
-            : AnyLayout(HStackLayout(alignment: .bottom, spacing: AppTheme.Spacing.medium))
-        return layout {
-            content()
+    private func connect() {
+        guard let serverURL else { return }
+        model.connectJellyfin(serverURL: serverURL, username: username, password: password)
+    }
+
+    private func nextField(after field: Field) -> Field {
+        switch field {
+        case .protocol: .address
+        case .address: .port
+        case .port: .username
+        case .username: .password
+        case .password, .connect: .connect
         }
+    }
+
+    private func fieldLabel(_ title: String) -> some View {
+        Text(title)
+            .font(PlatformMetadata.labelFont.weight(.semibold))
+            .foregroundStyle(AppTheme.secondaryText)
     }
 
     private func setupField<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-            Text(title)
-                .font(fieldLabelFont)
-                .foregroundStyle(AppTheme.secondaryText)
+            fieldLabel(title)
 
             content()
         }
     }
 
-    @ViewBuilder
     private func setupTextField(
         _ title: String,
         text: Binding<String>,
         placeholder: String,
         field: Field
     ) -> some View {
-        #if os(tvOS)
-            let isFocused = focusedField == field
-            let prompt = Text(title)
-                .foregroundStyle(isFocused ? AppTheme.inverseText : AppTheme.secondaryText)
-
-            setupField(title) {
+        let prompt = PlatformMetadata.isTV ? nil : Text(placeholder)
+        return Group {
+            if field == .password {
+                SecureField(title, text: text, prompt: prompt)
+            } else {
                 TextField(title, text: text, prompt: prompt)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .focused($focusedField, equals: field)
-                    .foregroundStyle(isFocused ? AppTheme.inverseText : AppTheme.primaryText)
-                    .controlSize(.large)
             }
-        #else
-            let isFocused = focusedField == field
-            let prompt = Text(placeholder)
-                .foregroundStyle(AppTheme.secondaryText)
-
-            setupField(title) {
-                TextField(title, text: text, prompt: prompt)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .focused($focusedField, equals: field)
-                    .textFieldStyle(.plain)
-                    .foregroundStyle(AppTheme.primaryText)
-                    .padding(.horizontal, AppTheme.Spacing.small)
-                    .padding(.vertical, AppTheme.Spacing.small)
-                    .glassField(isFocused: isFocused)
-            }
-        #endif
+        }
+        .font(PlatformMetadata.isTV ? .headline : nil)
+        .foregroundStyle(Color.primary)
+        .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
+        .focused($focusedField, equals: field)
+        .submitLabel(nextField(after: field) == .connect ? .done : .next)
+        .onSubmit {
+            focusAfterEditing = nextField(after: field)
+            focusedField = focusAfterEditing
+        }
+        .setupTextFieldStyle(isFocused: focusedField == field)
     }
 
     private enum Field: Hashable {
@@ -188,5 +231,40 @@ struct JellyfinSetupContent: View {
         case port
         case username
         case password
+        case connect
+    }
+
+    private enum ServerProtocol: String, CaseIterable {
+        case https
+        case http
+
+        var title: String {
+            rawValue.uppercased()
+        }
+
+        var defaultPort: String {
+            switch self {
+            case .https: "443"
+            case .http: "8096"
+            }
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func setupTextFieldStyle(isFocused: Bool) -> some View {
+        #if os(tvOS)
+            self
+        #else
+            textFieldStyle(.plain)
+                .padding(.horizontal, AppTheme.Spacing.medium)
+                .frame(minHeight: 48)
+                .background(AppTheme.glassFill, in: Capsule())
+                .overlay {
+                    Capsule()
+                        .strokeBorder(isFocused ? AppTheme.focusStroke : AppTheme.glassStroke, lineWidth: 1)
+                }
+        #endif
     }
 }
