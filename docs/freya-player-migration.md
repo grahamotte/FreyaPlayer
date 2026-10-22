@@ -11,7 +11,7 @@ This migration audited all 180 files tracked by `/Users/graham/Code/freya-player
 | `assets/**` | 27 | Moved byte-for-byte. |
 | `docs/**` | 4 | Moved byte-for-byte, including `docs/privacy-policy.md`. |
 | Root app files | 5 | `.gitignore` and `AGENTS.md` merged, `LICENSE` retained byte-for-byte, `README.md` workflow adapted, and `mise.toml` replaced by the foundation task graph. |
-| `.agents/**` | 2 | Merged into the foundation publish workflow. |
+| `.agents/**` | 2 | Merged into the foundation publish runbook. |
 | `releases/**` | 3 | Current metadata consolidated; historical 1.17.7 input retired. |
 | `scripts/**` | 9 | Replaced by foundation build, simulation, deployment, and publishing tooling. |
 | **Total** | **180** | Every tracked source file has a disposition below. |
@@ -37,15 +37,15 @@ A checksum review found no content differences in the 128 directly moved app-tre
 | `.gitignore` | `.gitignore` | Freya's `.build`, Xcode-user-state, local mise, credential, and environment exclusions were merged into Code Moto's broader ignore list. |
 | `AGENTS.md` | `AGENTS.md` | Freya architecture, model, layout, playback, and platform guidance was adapted to `apps/apple/App` and merged with the foundation rules. |
 | `LICENSE` | `LICENSE` | The files were byte-identical, so the existing destination copy was retained. |
-| `mise.toml` | `mise.toml` | The Code Moto task graph remains authoritative. `mise simulate` replaces Freya's build/start scripts, `$publish` replaces its release tasks, and a path-correct `mise xcode` task was added. |
+| `mise.toml` | `mise.toml` | The Code Moto task graph remains authoritative. `mise simulate` replaces Freya's build/start scripts, `mise publish` and the publish runbook replace its release tasks, and a path-correct `mise xcode` task was added. |
 | `releases/base.json` | `apps/config.json` | Description and keywords were consolidated into Code Moto's single App Store configuration. |
 | `releases/1.17.8.json` | `apps/config.json` | Current version and release notes were consolidated into the active configuration. |
 | `releases/1.17.7.json` | none | Historical input for the retired publisher; it is not read by Code Moto and remains available in the source repository history. |
 | `assets/screenshots/iOS/**` | `apps/screenshots/ios-*.png` | All four iPhone/iPad screenshots were also copied into normalized App Store paths. |
 | `assets/screenshots/macOS/**` | `apps/screenshots/macos-*.png` | All three Mac Catalyst screenshots were also copied into normalized App Store paths. |
 | `assets/screenshots/tvOS/**` | `apps/screenshots/tvos-*.png` | All three Apple TV screenshots were also copied into normalized App Store paths. |
-| `.agents/skills/publish/SKILL.md` | `.agents/skills/publish/SKILL.md` | Replaced by Code Moto's resumable multi-target publish workflow and branded for Freya Player. |
-| `.agents/skills/version-bump/SKILL.md` | `.agents/skills/publish/SKILL.md` | Its semantic-version analysis is already part of the Code Moto publish skill and `deploy:set-version` implementation. |
+| `.agents/skills/publish/SKILL.md` | `runbooks/publish.md` | Replaced by Code Moto's resumable multi-target publish workflow and branded for Freya Player. |
+| `.agents/skills/version-bump/SKILL.md` | `runbooks/publish.md` | Its semantic-version analysis is already part of the Code Moto publish workflow. |
 
 ## Retired source-only infrastructure
 
@@ -54,7 +54,7 @@ A checksum review found no content differences in the 128 directly moved app-tre
 | `FreyaPlayer.xcodeproj/project.xcworkspace/contents.xcworkspacedata` | Xcode-generated single-project workspace shell; the migrated project generates it when needed. |
 | `scripts/ExportOptions-AppStoreConnect.plist` | Replaced by `apps/apple/App/Config/ExportOptions.plist`. |
 | `scripts/app-store-submit.rb` | Replaced by `deploy/lib/apps/app_store_connect.rb` and the deployment patch pipeline. |
-| `scripts/publish.sh` | Replaced by `mise deploy:publish` and `$publish`. |
+| `scripts/publish.sh` | Replaced by `mise publish` and the publish runbook. |
 | `scripts/build-ios.sh` | Replaced by the configured iOS target used by `mise simulate` and the archive pipeline. |
 | `scripts/build-macos.sh` | Replaced by the configured Mac Catalyst target used by `mise simulate` and the archive pipeline. |
 | `scripts/build-tvos.sh` | Replaced by the configured tvOS target used by `mise simulate` and the archive pipeline. |
@@ -64,6 +64,6 @@ A checksum review found no content differences in the 128 directly moved app-tre
 
 ## Foundation files intentionally retained
 
-The Rails backend, React frontend/toolchain, deploy system, shared gems, Android placeholder, foundation test suites, root dependency configuration, and Code Moto maintenance skills remain in place. The template `FocusTimer` app, its test, template icons, placeholder screenshots, and `README.txt` were removed because Freya Player replaces that example application.
+The Rails backend, React frontend/toolchain, deploy system, shared gems, Android placeholder, foundation test suites, root dependency configuration, and Code Moto operation runbooks remain in place. The template `FocusTimer` app, its test, template icons, placeholder screenshots, and `README.txt` were removed because Freya Player replaces that example application.
 
 The source repository's ignored `.build/`, `dist/`, `.env`, `creds.txt`, `xcuserdata/`, `.DS_Store`, and Git metadata were not transferred because they are generated, secret, user-specific, or repository-local state.

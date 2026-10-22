@@ -20,7 +20,7 @@ Every card invokes the merge skill and requests `agent.runner: t3` and `agent.mo
 [FP-15](https://linear.app/gotte/issue/FP-15/merge) — reviewed downstream master `025c0a43ead79766ad3a8268b6f6ffa325a59f65`.
 
 - Trial merge reports an add/add conflict in `README.md`: Freya Player has app introduction, screenshots, App Store links, and Apple workflow instructions; incoming Code Moto adds framework documentation.
-- `AGENTS.md` has Freya Player architecture and playback rules. The downstream `.agents/skills/impeccable/` package is app-specific.
+- `AGENTS.md` has Freya Player architecture and playback rules.
 
 ### good.gratis
 
