@@ -809,21 +809,8 @@ private struct MediaArtworkView: View {
         shape
             .fill(AppTheme.surfaceFill)
             .overlay {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    default:
-                        Image(systemName: "film.fill")
-                            .font(.largeTitle.weight(.semibold))
-                            .foregroundStyle(AppTheme.secondaryText)
-                    }
-                }
-                .padding(1)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
+                ArtworkImage(url: url, style: style)
+                    .padding(1)
             }
         .aspectRatio(style.aspectRatio, contentMode: .fit)
         .clipShape(shape)

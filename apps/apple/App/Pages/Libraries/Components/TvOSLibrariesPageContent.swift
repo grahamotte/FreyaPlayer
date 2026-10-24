@@ -362,7 +362,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
 
             switch section.kind {
             case .library(let style):
-                let cellSize = style.cellSize(
+                let cellSize = style.shelfCellSize(
                     for: environment.container.effectiveContentSize.width - (horizontalInset * 2)
                 )
                 let itemSize = NSCollectionLayoutSize(
@@ -427,7 +427,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
     private func makeSections(from server: ConnectedServer) -> [LibrariesSection] {
         let projection = LibrariesHomeProjection(server: server, cache: model.libraryCache)
         let librarySections = projection.shelves.map { shelf in
-            let style = shelf.artworkStyle == .poster ? LibrariesShelfStyle.poster : .wide
+            let style = shelf.artworkStyle
             let openItem = LibrariesItem(
                 id: "\(shelf.id)-open",
                 title: "Open Library",
@@ -445,7 +445,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                 LibrariesItem(
                     id: item.id,
                     title: item.title,
-                    artworkURL: item.artwork.url(for: style.mediaArtworkStyle),
+                    artworkURL: item.artwork.url(for: style),
                     progress: item.progress,
                     isWatched: item.isWatched,
                     mediaItem: item,
@@ -479,7 +479,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                     isWatched: false,
                     mediaItem: nil,
                     route: nil,
-                    style: .wide,
+                    style: .landscape,
                     kind: .refresh,
                     iconName: nil
                 ),
@@ -491,7 +491,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                     isWatched: false,
                     mediaItem: nil,
                     route: projection.manageRoute,
-                    style: .wide,
+                    style: .landscape,
                     kind: .manageServer,
                     iconName: nil
                 ),
@@ -503,7 +503,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                     isWatched: false,
                     mediaItem: nil,
                     route: .about,
-                    style: .wide,
+                    style: .landscape,
                     kind: .manageServer,
                     iconName: nil
                 )
@@ -764,7 +764,7 @@ private struct LibrariesSection: Hashable {
 }
 
 private enum LibrariesSectionKind: Hashable {
-    case library(LibrariesShelfStyle)
+    case library(MediaArtworkStyle)
     case manage
 }
 
@@ -776,7 +776,7 @@ private struct LibrariesItem: Hashable {
     let isWatched: Bool
     let mediaItem: MediaItem?
     let route: AppRoute?
-    let style: LibrariesShelfStyle
+    let style: MediaArtworkStyle
     let kind: LibrariesItemKind
     let iconName: String?
 }
@@ -798,26 +798,20 @@ private struct LibrariesItemReloadKey: Equatable {
     let id: String
     let artworkURL: URL?
     let route: AppRoute?
-    let style: LibrariesShelfStyle
+    let style: MediaArtworkStyle
     let kind: LibrariesItemKind
     let iconName: String?
 }
 
 private final class LibraryTileCell: UICollectionViewCell {
     static let reuseIdentifier = "LibraryTileCell"
-    private static let placeholderImage = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).image { context in
-        AppTheme.uiSurfaceFill.setFill()
-        context.fill(CGRect(origin: .zero, size: CGSize(width: 8, height: 8)))
-    }
 
     private let imageView = UIImageView()
     private let progressView = ArtworkProgressIndicatorView()
+    private let artworkLoader = ArtworkImageLoader()
     private let placeholderStack = UIStackView()
     private let iconView = UIImageView()
     private let titleLabel = UILabel()
-    private var imageTask: Task<Void, Never>?
-    private var currentArtworkURL: URL?
-    private var isShowingArtwork = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -877,62 +871,26 @@ private final class LibraryTileCell: UICollectionViewCell {
 
     func configure(item: LibrariesItem) {
         let artworkURL = item.artworkURL
-        let didChangeArtwork = currentArtworkURL != artworkURL
 
         accessibilityLabel = item.title
-        currentArtworkURL = artworkURL
         titleLabel.text = item.title
         iconView.image = UIImage(systemName: item.iconName ?? item.style.placeholderIconName)
         progressView.setProgress(item.progress, isWatched: item.isWatched)
 
-        if didChangeArtwork {
-            imageTask?.cancel()
-            imageTask = nil
-            isShowingArtwork = false
-            imageView.image = Self.placeholderImage
-            placeholderStack.isHidden = false
+        artworkLoader.load(artworkURL) { [weak self] image in
+            self?.showArtwork(image)
         }
+    }
 
-        guard let artworkURL else {
-            imageView.image = Self.placeholderImage
-            placeholderStack.isHidden = false
-            isShowingArtwork = false
-            return
-        }
-
-        guard !isShowingArtwork else { return }
-        guard imageTask == nil else { return }
-
-        if let image = ArtworkImageCache.shared.image(for: artworkURL) {
-            imageView.image = image
-            placeholderStack.isHidden = true
-            isShowingArtwork = true
-            return
-        }
-
-        imageTask = Task { [weak self] in
-            let image = await ArtworkImageCache.shared.loadImage(from: artworkURL)
-            guard !Task.isCancelled else { return }
-
-            await MainActor.run {
-                guard let self, self.currentArtworkURL == artworkURL else { return }
-                self.imageTask = nil
-                guard let image else { return }
-                self.imageView.image = image
-                self.placeholderStack.isHidden = true
-                self.isShowingArtwork = true
-            }
-        }
+    private func showArtwork(_ image: UIImage?) {
+        imageView.image = image ?? ArtworkImageLoader.placeholderImage
+        placeholderStack.isHidden = image != nil
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        imageTask?.cancel()
-        imageTask = nil
-        currentArtworkURL = nil
-        isShowingArtwork = false
-        imageView.image = Self.placeholderImage
-        placeholderStack.isHidden = false
+        artworkLoader.reset()
+        showArtwork(nil)
         progressView.setProgress(nil, isWatched: false)
     }
 }
@@ -1131,50 +1089,20 @@ private final class LibrariesSectionHeaderView: UICollectionReusableView {
     }
 }
 
-private enum LibrariesShelfStyle: Hashable {
-    case poster
-    case wide
-
-    var aspectRatio: CGFloat {
-        switch self {
-        case .poster:
-            return 2 / 3
-        case .wide:
-            return 16 / 9
-        }
-    }
-
-    var columns: CGFloat {
+private extension MediaArtworkStyle {
+    var shelfColumns: CGFloat {
         switch self {
         case .poster:
             return 6
-        case .wide:
+        case .landscape:
             return 4
         }
     }
 
-    var mediaArtworkStyle: MediaArtworkStyle {
-        switch self {
-        case .poster:
-            return .poster
-        case .wide:
-            return .landscape
-        }
-    }
-
-    func cellSize(for availableWidth: CGFloat) -> CGSize {
+    func shelfCellSize(for availableWidth: CGFloat) -> CGSize {
         let spacing = PlatformMetadata.tileSpacing
-        let width = floor((availableWidth - (spacing * (columns - 1))) / columns)
+        let width = floor((availableWidth - (spacing * (shelfColumns - 1))) / shelfColumns)
         let height = floor(width / aspectRatio)
         return CGSize(width: width, height: height)
-    }
-
-    var placeholderIconName: String {
-        switch self {
-        case .poster:
-            return "film.stack.fill"
-        case .wide:
-            return "tv.fill"
-        }
     }
 }

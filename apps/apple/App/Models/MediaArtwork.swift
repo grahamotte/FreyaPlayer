@@ -30,6 +30,15 @@ enum MediaArtworkStyle: String, Hashable, Codable {
         }
     }
 
+    var placeholderIconName: String {
+        switch self {
+        case .poster:
+            return "film.stack.fill"
+        case .landscape:
+            return "tv.fill"
+        }
+    }
+
     var width: CGFloat {
         switch self {
         case .poster:

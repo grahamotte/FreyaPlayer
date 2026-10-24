@@ -24,6 +24,8 @@ final class MediaArtworkTests: XCTestCase {
         XCTAssertEqual(artwork.url(for: .landscape), landscape)
         XCTAssertEqual(thumbnailOnlyArtwork.url(for: .poster), thumbnail)
         XCTAssertEqual(thumbnailOnlyArtwork.url(for: .landscape), thumbnail)
+        XCTAssertEqual(MediaArtworkStyle.poster.placeholderIconName, "film.stack.fill")
+        XCTAssertEqual(MediaArtworkStyle.landscape.placeholderIconName, "tv.fill")
         XCTAssertEqual(MediaArtworkStyle.poster.imageRequestWidth, 960)
         XCTAssertEqual(MediaArtworkStyle.poster.imageRequestHeight, 1440)
 

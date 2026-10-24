@@ -96,26 +96,13 @@ struct IOSLibraryPageContent: View {
                 .lineLimit(1)
 
             HStack(alignment: .top, spacing: PlatformMetadata.controlSpacing) {
-                LibraryPageFilterControl(filter: state.filter, onChange: state.setFilter)
-
-                LibraryPageSortControl(
-                    sort: state.sort,
-                    order: state.sortOrder,
-                    onSortChange: state.setSort,
-                    onSortOrderChange: state.setSortOrder
-                )
-
+                filterAndSortControls
                 Spacer(minLength: 0)
             }
 
-            if let item = state.libraryWatchStatusItem {
+            if state.libraryWatchStatusItem != nil {
                 HStack(spacing: PlatformMetadata.controlSpacing) {
-                    MediaPlayAllButton(model: model, items: state.displayedPlayableItems)
-                    MediaCollectionWatchStatusButton(
-                        model: model,
-                        libraryItem: item,
-                        libraryID: state.library.id
-                    )
+                    collectionControls
                 }
             }
 
@@ -140,49 +127,41 @@ struct IOSLibraryPageContent: View {
 
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .top, spacing: PlatformMetadata.controlSpacing) {
-                    LibraryPageFilterControl(filter: state.filter, onChange: state.setFilter)
-
-                    LibraryPageSortControl(
-                        sort: state.sort,
-                        order: state.sortOrder,
-                        onSortChange: state.setSort,
-                        onSortOrderChange: state.setSortOrder
-                    )
-
+                    filterAndSortControls
                     Spacer(minLength: 0)
-
-                    if let item = state.libraryWatchStatusItem {
-                        MediaPlayAllButton(model: model, items: state.displayedPlayableItems)
-
-                        MediaCollectionWatchStatusButton(
-                            model: model,
-                            libraryItem: item,
-                            libraryID: state.library.id
-                        )
-                    }
+                    collectionControls
                 }
 
                 VStack(alignment: .leading, spacing: PlatformMetadata.controlSpacing) {
-                    LibraryPageFilterControl(filter: state.filter, onChange: state.setFilter)
-
-                    LibraryPageSortControl(
-                        sort: state.sort,
-                        order: state.sortOrder,
-                        onSortChange: state.setSort,
-                        onSortOrderChange: state.setSortOrder
-                    )
-
-                    if let item = state.libraryWatchStatusItem {
-                        MediaPlayAllButton(model: model, items: state.displayedPlayableItems)
-
-                        MediaCollectionWatchStatusButton(
-                            model: model,
-                            libraryItem: item,
-                            libraryID: state.library.id
-                        )
-                    }
+                    filterAndSortControls
+                    collectionControls
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var filterAndSortControls: some View {
+        LibraryPageFilterControl(filter: state.filter, onChange: state.setFilter)
+
+        LibraryPageSortControl(
+            sort: state.sort,
+            order: state.sortOrder,
+            onSortChange: state.setSort,
+            onSortOrderChange: state.setSortOrder
+        )
+    }
+
+    @ViewBuilder
+    private var collectionControls: some View {
+        if let item = state.libraryWatchStatusItem {
+            MediaPlayAllButton(model: model, items: state.displayedPlayableItems)
+
+            MediaCollectionWatchStatusButton(
+                model: model,
+                libraryItem: item,
+                libraryID: state.library.id
+            )
         }
     }
 }

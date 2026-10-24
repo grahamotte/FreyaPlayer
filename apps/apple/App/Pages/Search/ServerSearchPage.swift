@@ -1,6 +1,5 @@
 import Fuse
 import SwiftUI
-import UIKit
 
 struct ServerSearchPage: View {
     @StateObject private var search: ServerTitleSearch
@@ -176,41 +175,16 @@ private struct SearchResultRow: View {
 private struct SearchResultArtwork: View {
     let item: MediaItem
 
-    @State private var image: UIImage?
-
     private var style: MediaArtworkStyle {
         item.kind.artworkStyle
     }
 
-    private var artworkURL: URL? {
-        item.artwork.url(for: style)
-    }
-
     var body: some View {
-        ZStack {
-            if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: imageSize.width, height: imageSize.height)
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            } else {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(AppTheme.surfaceFill)
-                    .frame(width: imageSize.width, height: imageSize.height)
-                    .overlay {
-                        Image(systemName: style == .poster ? "film.stack.fill" : "tv.fill")
-                            .font(.title2.weight(.semibold))
-                            .foregroundStyle(AppTheme.secondaryText)
-                    }
-            }
-        }
-        .frame(width: previewDimension, height: previewDimension)
-        .task(id: artworkURL) {
-            image = nil
-            guard let artworkURL else { return }
-            image = await ArtworkImageCache.shared.loadImage(from: artworkURL)
-        }
+        ArtworkImage(url: item.artwork.url(for: style), style: style)
+            .background(AppTheme.surfaceFill)
+            .frame(width: imageSize.width, height: imageSize.height)
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.inline, style: .continuous))
+            .frame(width: previewDimension, height: previewDimension)
     }
 
     private var previewDimension: CGFloat {
@@ -230,9 +204,5 @@ private struct SearchResultArtwork: View {
             width: previewDimension * style.aspectRatio,
             height: previewDimension
         )
-    }
-
-    private var cornerRadius: CGFloat {
-        AppTheme.Radius.inline
     }
 }

@@ -264,12 +264,12 @@ private final class LibraryPageCollectionViewController: UIViewController, UICol
         updateHeaderFocusGuide()
     }
 
-    private var tileStyle: LibraryTileStyle {
-        state.library.artworkStyle == .poster ? .poster : .landscape
+    private var tileStyle: MediaArtworkStyle {
+        state.library.artworkStyle
     }
 
     private func artworkURL(for item: MediaItem) -> URL? {
-        item.artwork.url(for: tileStyle.mediaArtworkStyle)
+        item.artwork.url(for: tileStyle)
     }
 
     private var indexTitleTargets: [(title: String, indexPath: IndexPath)] {
@@ -478,18 +478,18 @@ private final class LibraryPageCollectionViewController: UIViewController, UICol
         ]
 
         return UICollectionViewCompositionalLayout(sectionProvider: { _, environment in
-            let columns = style.columns
+            let columns = style.gridColumns
             let availableWidth = environment.container.effectiveContentSize.width - (horizontalInset * 2)
-            let cellWidth = style.cellWidth(for: availableWidth, spacing: interItemSpacing)
+            let cellWidth = style.gridCellWidth(for: availableWidth, spacing: interItemSpacing)
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .absolute(cellWidth),
-                heightDimension: .absolute(style.cellHeight(for: cellWidth))
+                heightDimension: .absolute(style.gridCellHeight(for: cellWidth))
             )
             let item = NSCollectionLayoutItem(layoutSize: itemSize)
             let groupWidth = (cellWidth * CGFloat(columns)) + (interItemSpacing * CGFloat(columns - 1))
             let groupSize = NSCollectionLayoutSize(
                 widthDimension: .absolute(groupWidth),
-                heightDimension: .absolute(style.cellHeight(for: cellWidth))
+                heightDimension: .absolute(style.gridCellHeight(for: cellWidth))
             )
             let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, repeatingSubitem: item, count: columns)
             group.interItemSpacing = .fixed(interItemSpacing)
@@ -502,11 +502,8 @@ private final class LibraryPageCollectionViewController: UIViewController, UICol
     }
 }
 
-private enum LibraryTileStyle: Equatable {
-    case poster
-    case landscape
-
-    var columns: Int {
+private extension MediaArtworkStyle {
+    var gridColumns: Int {
         switch self {
         case .poster:
             return 4
@@ -515,46 +512,7 @@ private enum LibraryTileStyle: Equatable {
         }
     }
 
-    var aspectRatio: CGFloat {
-        switch self {
-        case .poster:
-            return 2 / 3
-        case .landscape:
-            return 16 / 9
-        }
-    }
-
-    var placeholderIconName: String {
-        switch self {
-        case .poster:
-            return "film.stack.fill"
-        case .landscape:
-            return "tv.fill"
-        }
-    }
-
-    var mediaArtworkStyle: MediaArtworkStyle {
-        switch self {
-        case .poster:
-            return .poster
-        case .landscape:
-            return .landscape
-        }
-    }
-
-    func cellWidth(for availableWidth: CGFloat, spacing: CGFloat) -> CGFloat {
-        floor((availableWidth - (spacing * CGFloat(columns - 1))) / CGFloat(columns))
-    }
-
-    func imageHeight(for width: CGFloat) -> CGFloat {
-        floor(width / aspectRatio)
-    }
-
-    func cellHeight(for width: CGFloat) -> CGFloat {
-        imageHeight(for: width) + textHeight
-    }
-
-    var textHeight: CGFloat {
+    var gridTextHeight: CGFloat {
         switch self {
         case .poster:
             return 112
@@ -562,26 +520,32 @@ private enum LibraryTileStyle: Equatable {
             return 96
         }
     }
+
+    func gridCellWidth(for availableWidth: CGFloat, spacing: CGFloat) -> CGFloat {
+        floor((availableWidth - (spacing * CGFloat(gridColumns - 1))) / CGFloat(gridColumns))
+    }
+
+    func gridImageHeight(for width: CGFloat) -> CGFloat {
+        floor(width / aspectRatio)
+    }
+
+    func gridCellHeight(for width: CGFloat) -> CGFloat {
+        gridImageHeight(for: width) + gridTextHeight
+    }
 }
 
 private final class LibraryGridCell: UICollectionViewCell {
     static let reuseIdentifier = "LibraryGridCell"
-    private static let placeholderImage = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).image { context in
-        AppTheme.uiSurfaceFill.setFill()
-        context.fill(CGRect(origin: .zero, size: CGSize(width: 8, height: 8)))
-    }
 
     private let imageView = UIImageView()
     private let progressView = ArtworkProgressIndicatorView()
+    private let artworkLoader = ArtworkImageLoader()
     private let placeholderStack = UIStackView()
     private let iconView = UIImageView()
     private let titleLabel = MarqueeLabel()
     private let subtitleLabel = UILabel()
     private var imageHeightConstraint: NSLayoutConstraint!
-    private var imageTask: Task<Void, Never>?
-    private var currentArtworkURL: URL?
-    private var isShowingArtwork = false
-    private var style: LibraryTileStyle = .landscape
+    private var style: MediaArtworkStyle = .landscape
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -657,73 +621,36 @@ private final class LibraryGridCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func configure(item: MediaItem, subtitle: String?, artworkURL: URL?, style: LibraryTileStyle) {
-        let didChangeArtwork = currentArtworkURL != artworkURL
-
+    func configure(item: MediaItem, subtitle: String?, artworkURL: URL?, style: MediaArtworkStyle) {
         self.style = style
         accessibilityLabel = item.title
-        currentArtworkURL = artworkURL
         titleLabel.text = item.title
         titleLabel.setMarqueeActive(isFocused)
         subtitleLabel.text = subtitle
         iconView.image = UIImage(systemName: style.placeholderIconName)
         progressView.setProgress(item.progress, isWatched: item.isWatched)
-        imageHeightConstraint.constant = style.imageHeight(for: bounds.width)
+        imageHeightConstraint.constant = style.gridImageHeight(for: bounds.width)
 
-        if didChangeArtwork {
-            imageTask?.cancel()
-            imageTask = nil
-            isShowingArtwork = false
-            imageView.image = Self.placeholderImage
-            placeholderStack.isHidden = false
+        artworkLoader.load(artworkURL) { [weak self] image in
+            self?.showArtwork(image)
         }
+    }
 
-        guard let artworkURL else {
-            imageView.image = Self.placeholderImage
-            placeholderStack.isHidden = false
-            isShowingArtwork = false
-            return
-        }
-
-        guard !isShowingArtwork else { return }
-        guard imageTask == nil else { return }
-
-        if let image = ArtworkImageCache.shared.image(for: artworkURL) {
-            imageView.image = image
-            placeholderStack.isHidden = true
-            isShowingArtwork = true
-            return
-        }
-
-        imageTask = Task { [weak self] in
-            let image = await ArtworkImageCache.shared.loadImage(from: artworkURL)
-            guard !Task.isCancelled else { return }
-
-            await MainActor.run {
-                guard let self, self.currentArtworkURL == artworkURL else { return }
-                self.imageTask = nil
-                guard let image else { return }
-                self.imageView.image = image
-                self.placeholderStack.isHidden = true
-                self.isShowingArtwork = true
-            }
-        }
+    private func showArtwork(_ image: UIImage?) {
+        imageView.image = image ?? ArtworkImageLoader.placeholderImage
+        placeholderStack.isHidden = image != nil
     }
 
     override func apply(_ layoutAttributes: UICollectionViewLayoutAttributes) {
         super.apply(layoutAttributes)
-        imageHeightConstraint.constant = layoutAttributes.size.height - style.textHeight
+        imageHeightConstraint.constant = layoutAttributes.size.height - style.gridTextHeight
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
         titleLabel.setMarqueeActive(false)
-        imageTask?.cancel()
-        imageTask = nil
-        currentArtworkURL = nil
-        isShowingArtwork = false
-        imageView.image = Self.placeholderImage
-        placeholderStack.isHidden = false
+        artworkLoader.reset()
+        showArtwork(nil)
         progressView.setProgress(nil, isWatched: false)
     }
 
