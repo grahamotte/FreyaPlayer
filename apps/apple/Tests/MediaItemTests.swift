@@ -20,6 +20,31 @@ final class MediaItemTests: XCTestCase {
         XCTAssertEqual(makeMediaItem().playButtonTitle, "Play")
     }
 
+    func testLibraryTileSubtitleShowsRuntimeOrAddedDate() {
+        let item = makeMediaItem(addedAt: 1_700_000_000, durationMilliseconds: 5_400_000)
+
+        XCTAssertEqual(item.libraryTileSubtitle(showsAddedAt: false), "1h 30m")
+        XCTAssertEqual(
+            item.libraryTileSubtitle(showsAddedAt: true),
+            DateFormatter.localizedString(from: Date(timeIntervalSince1970: 1_700_000_000), dateStyle: .medium, timeStyle: .none)
+        )
+        XCTAssertNil(makeMediaItem(addedAt: nil, durationMilliseconds: nil).libraryTileSubtitle(showsAddedAt: true))
+    }
+
+    func testRemainingTimeAndFactsLine() {
+        let resumed = makeMediaItem(durationMilliseconds: 5_400_000, resumeOffsetMilliseconds: 1_800_000)
+        let short = makeMediaItem(durationMilliseconds: 120_000, resumeOffsetMilliseconds: 90_000)
+        let watched = makeMediaItem(durationMilliseconds: 5_400_000, isWatched: true, resumeOffsetMilliseconds: 1_800_000)
+
+        XCTAssertEqual(resumed.remainingText, "1h left")
+        XCTAssertEqual(short.remainingText, "<1m left")
+        XCTAssertNil(watched.remainingText)
+        XCTAssertNil(makeMediaItem().remainingText)
+        XCTAssertEqual(resumed.factsLine, ["2026", "1h 30m"])
+        XCTAssertEqual(makeMediaItem(durationMilliseconds: nil).factsLine, ["2026"])
+        XCTAssertEqual(makeMediaItem(kind: .series).factsLine, ["2026"])
+    }
+
     func testWatchStatusAndDerivedProgress() {
         let item = makeMediaItem(progress: 0.5, resumeOffsetMilliseconds: 2_000)
         let watched = item.settingWatchStatus(true)

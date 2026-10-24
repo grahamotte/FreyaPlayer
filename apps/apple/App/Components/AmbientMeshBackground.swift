@@ -30,39 +30,8 @@ struct AmbientMeshBackground: View {
         }
     }
 
-    static func randomColors() -> [Color] {
-        let baseHue = Double.random(in: 0...1)
-        let hueSpread = Double.random(in: 0.45...0.8)
-        let hueOffsets = [
-            -0.34, -0.2, -0.08, 0.04,
-            0.18, -0.12, 0.28, 0.42,
-            0.1, 0.24, 0.54, 0.36,
-            0.48, 0.64, 0.76, 0.9
-        ]
-        let saturations = [
-            0.72, 0.78, 0.8, 0.76,
-            0.82, 0.84, 0.76, 0.72,
-            0.8, 0.74, 0.7, 0.78,
-            0.82, 0.76, 0.72, 0.8
-        ]
-        let brightnesses = [
-            0.98, 0.88, 0.93, 0.97,
-            0.96, 0.86, 0.92, 0.95,
-            0.94, 0.98, 0.9, 0.87,
-            0.96, 0.89, 0.94, 0.97
-        ]
-
-        return hueOffsets.enumerated().map { index, offset in
-            Color(
-                hue: wrappedHue(baseHue + (offset * hueSpread)),
-                saturation: saturations[index],
-                brightness: brightnesses[index]
-            )
-        }
-    }
-
     private static func meshColors(from colors: [Color]) -> [Color] {
-        guard !colors.isEmpty else { return randomColors() }
+        guard !colors.isEmpty else { return meshColors(from: AmbientPalette.neutral.colors) }
         guard colors.count < 16 else { return Array(colors.prefix(16)) }
 
         let pattern = [0, 1, 2, 3, 4, 1, 5, 2, 3, 0, 4, 5, 1, 2, 3, 4]
@@ -123,11 +92,6 @@ struct AmbientMeshBackground: View {
 
     private static func clamp(_ value: Float) -> Float {
         min(max(value, 0), 1)
-    }
-
-    private static func wrappedHue(_ value: Double) -> Double {
-        let wrapped = value.truncatingRemainder(dividingBy: 1)
-        return wrapped >= 0 ? wrapped : wrapped + 1
     }
 }
 
@@ -277,8 +241,8 @@ enum ArtworkPalette {
 
     private static func lifted(_ color: SIMD3<Double>) -> UIColor {
         let hsv = hsv(red: color.x, green: color.y, blue: color.z)
-        let saturation = max(hsv.saturation, 0.18)
-        let brightness = min(max(hsv.brightness, 0.3), 0.88)
+        let saturation = min(max(hsv.saturation, 0.35), 0.9)
+        let brightness = min(max(hsv.brightness, 0.45), 0.9)
 
         return UIColor(
             hue: hsv.hue,

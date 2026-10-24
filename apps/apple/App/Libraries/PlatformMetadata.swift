@@ -185,6 +185,14 @@ extension PlatformMetadata {
         #endif
     }
 
+    static func focusedBottomAnchor(for imageView: UIImageView) -> NSLayoutYAxisAnchor {
+        #if os(tvOS)
+        return imageView.focusedFrameGuide.bottomAnchor
+        #else
+        return imageView.bottomAnchor
+        #endif
+    }
+
     static func overlayContent(for imageView: UIImageView) -> UIView {
         #if os(tvOS)
         return imageView.overlayContentView

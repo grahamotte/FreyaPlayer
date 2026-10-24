@@ -37,6 +37,7 @@ struct AboutPage: View {
             }
         }
         .readableFormWidth()
+        .formBackdrop(.brand)
         .navigationTitle("About Freya Player")
     }
 

@@ -64,6 +64,7 @@ struct JellyfinSetupContent: View {
             }
         }
         .readableFormWidth()
+        .formBackdrop(.brand)
         .defaultFocus($focusedField, canConnect ? .connect : .address)
         .onChange(of: serverProtocol) { _, serverProtocol in
             port = serverProtocol.defaultPort

@@ -1,19 +1,10 @@
 import SwiftUI
 
-private struct MediaViewScrollActionKey: EnvironmentKey {
-    static let defaultValue: (String) -> Void = { _ in }
-}
-
-extension EnvironmentValues {
-    var mediaViewScrollTo: (String) -> Void {
-        get { self[MediaViewScrollActionKey.self] }
-        set { self[MediaViewScrollActionKey.self] = newValue }
-    }
-}
-
 struct MediaViewData {
     let title: String
-    let metadata: [Metadata]
+    let facts: [String]
+    let remainingText: String?
+    let progress: Double?
     let detailSections: [MediaItemDetailSection]
     let detailArtwork: [Artwork]
     let synopsis: String
@@ -24,13 +15,6 @@ struct MediaViewData {
     let hasResume: Bool
     let resumeOffsetMilliseconds: Int?
 
-    struct Metadata: Identifiable {
-        let label: String
-        let value: String
-
-        var id: String { label }
-    }
-
     struct Artwork: Identifiable {
         let label: String
         let url: URL
@@ -40,10 +24,11 @@ struct MediaViewData {
     }
 }
 
-struct MediaView<Content: View>: View {
+struct MediaView<Actions: View, Below: View>: View {
     @ObservedObject var model: AppModel
     let data: MediaViewData
-    let content: Content
+    let actions: Actions
+    let below: Below
     @State private var isShowingDetails = false
     @State private var detailScrollOffset: CGFloat = 0
     @FocusState private var focusedDetail: DetailFocus?
@@ -51,11 +36,13 @@ struct MediaView<Content: View>: View {
     init(
         model: AppModel,
         data: MediaViewData,
-        @ViewBuilder content: () -> Content
+        @ViewBuilder actions: () -> Actions,
+        @ViewBuilder below: () -> Below
     ) {
         self.model = model
         self.data = data
-        self.content = content()
+        self.actions = actions()
+        self.below = below()
     }
 
     var body: some View {
@@ -178,9 +165,6 @@ struct MediaView<Content: View>: View {
                     scrollProxy.scrollTo(Self.topID, anchor: .top)
                 }
             }
-            .environment(\.mediaViewScrollTo) { targetID in
-                scrollProxy.scrollTo(targetID, anchor: .center)
-            }
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 guard tracksOffset else { return 0 }
                 return max(geometry.contentOffset.y + geometry.contentInsets.top, 0)
@@ -211,29 +195,11 @@ struct MediaView<Content: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .id(Self.topID)
 
-            if !data.metadata.isEmpty || !data.detailSections.isEmpty {
-                ScrollView(.horizontal) {
-                    HStack(alignment: .top, spacing: metrics.horizontalItemSpacing) {
-                        ForEach(data.metadata) { entry in
-                            metadataTile(label: entry.label, value: entry.value, metrics: metrics)
-                                .padding(.vertical, AppTheme.Spacing.small)
-                                .padding(.horizontal, AppTheme.Spacing.medium)
-                                .background(
-                                    AppTheme.subtleSurfaceFill,
-                                    in: RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
-                                )
-                        }
-
-                        Button { isShowingDetails = true } label: {
-                            metadataTile(label: "More", value: "Details", metrics: metrics)
-                        }
-                        .buttonStyle(MediaDetailTileStyle())
-                        .focused($focusedDetail, equals: .moreDetails)
-                    }
-                }
-                .scrollIndicators(.hidden)
-                .frame(maxWidth: synopsisWidth, alignment: .leading)
-                .horizontalFade()
+            if !data.facts.isEmpty {
+                Text(data.facts.joined(separator: "  ·  "))
+                    .font(PlatformMetadata.isTV ? .callout.weight(.medium) : .subheadline.weight(.medium))
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .lineLimit(1)
             }
 
             Button {
@@ -242,7 +208,7 @@ struct MediaView<Content: View>: View {
                 Text(data.synopsis)
                     .font(.body)
                     .foregroundStyle(AppTheme.secondaryText)
-                    .lineLimit(5)
+                    .lineLimit(PlatformMetadata.isTV ? 4 : 5)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: synopsisWidth, alignment: .topLeading)
             }
@@ -250,7 +216,35 @@ struct MediaView<Content: View>: View {
             .focused($focusedDetail, equals: .synopsis)
             .accessibilityHint("Shows all details")
 
-            content
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                MediaItemActionRow {
+                    actions
+
+                    Button {
+                        isShowingDetails = true
+                    } label: {
+                        Label("Details", systemImage: "info")
+                    }
+                    .glassIconButton()
+                    .focused($focusedDetail, equals: .details)
+                }
+
+                if let remainingText = data.remainingText {
+                    HStack(spacing: AppTheme.Spacing.small) {
+                        ProgressView(value: min(max(data.progress ?? 0, 0), 1))
+                            .tint(AppTheme.accent)
+                            .frame(width: PlatformMetadata.isTV ? 180 : 96)
+
+                        Text(remainingText)
+                            .font(PlatformMetadata.labelFont.weight(.medium))
+                            .foregroundStyle(AppTheme.secondaryText)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .controlSize(.large)
+
+            below
         }
         .frame(maxWidth: synopsisWidth, alignment: .leading)
         .onChange(of: focusedDetail) { _, focusedDetail in
@@ -261,24 +255,12 @@ struct MediaView<Content: View>: View {
         }
     }
 
-    private func metadataTile(label: String, value: String, metrics: MediaViewMetrics) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-            Text(label)
-                .font(metrics.metadataLabelFont)
-                .foregroundStyle(AppTheme.secondaryText)
-
-            Text(value)
-                .font(metrics.metadataValueFont)
-        }
-        .frame(minWidth: metrics.metadataTileWidth, alignment: .leading)
-    }
-
     private static var topID: String {
         "media-view-top"
     }
 
     private enum DetailFocus: Hashable {
-        case moreDetails
+        case details
         case synopsis
     }
 }
@@ -301,9 +283,9 @@ struct MediaItemActionRow<Content: View>: View {
     }
 }
 
-extension MediaView where Content == EmptyView {
-    init(model: AppModel, data: MediaViewData) {
-        self.init(model: model, data: data) {
+extension MediaView where Below == EmptyView {
+    init(model: AppModel, data: MediaViewData, @ViewBuilder actions: () -> Actions) {
+        self.init(model: model, data: data, actions: actions) {
             EmptyView()
         }
     }
@@ -586,10 +568,6 @@ private struct MediaViewMetrics {
     let panelTrailingPadding: CGFloat
     let panelVerticalPadding: CGFloat
     let contentSpacing: CGFloat
-    let horizontalItemSpacing: CGFloat
-    let metadataTileWidth: CGFloat
-    let metadataLabelFont: Font
-    let metadataValueFont: Font
     let headerOffset: CGFloat
 
     var panelHorizontalPadding: CGFloat {
@@ -613,10 +591,6 @@ private struct MediaViewMetrics {
             panelTrailingPadding: 0,
             panelVerticalPadding: panelVerticalPadding,
             contentSpacing: contentSpacing,
-            horizontalItemSpacing: horizontalItemSpacing,
-            metadataTileWidth: metadataTileWidth,
-            metadataLabelFont: metadataLabelFont,
-            metadataValueFont: metadataValueFont,
             headerOffset: headerOffset
         )
     }
@@ -631,10 +605,6 @@ private struct MediaViewMetrics {
                 panelTrailingPadding: 36,
                 panelVerticalPadding: 24,
                 contentSpacing: 32,
-                horizontalItemSpacing: 12,
-                metadataTileWidth: 128,
-                metadataLabelFont: .caption.weight(.semibold),
-                metadataValueFont: .callout.weight(.medium),
                 headerOffset: 0
             )
         }
@@ -647,10 +617,6 @@ private struct MediaViewMetrics {
                 panelTrailingPadding: 40,
                 panelVerticalPadding: 16,
                 contentSpacing: 24,
-                horizontalItemSpacing: 12,
-                metadataTileWidth: 112,
-                metadataLabelFont: .footnote.weight(.semibold),
-                metadataValueFont: .headline.weight(.medium),
                 headerOffset: 18
             )
         }
@@ -663,10 +629,6 @@ private struct MediaViewMetrics {
                 panelTrailingPadding: 0,
                 panelVerticalPadding: 12,
                 contentSpacing: 16,
-                horizontalItemSpacing: 12,
-                metadataTileWidth: 96,
-                metadataLabelFont: .footnote.weight(.semibold),
-                metadataValueFont: .headline.weight(.medium),
                 headerOffset: 0
             )
         }
@@ -678,10 +640,6 @@ private struct MediaViewMetrics {
             panelTrailingPadding: 40,
             panelVerticalPadding: 16,
             contentSpacing: 24,
-            horizontalItemSpacing: 12,
-            metadataTileWidth: 112,
-            metadataLabelFont: .footnote.weight(.semibold),
-            metadataValueFont: .headline.weight(.medium),
             headerOffset: 0
         )
     }()
@@ -716,18 +674,6 @@ private struct MediaDetailTextButtonStyle: ButtonStyle {
     }
 }
 
-private struct MediaDetailTileStyle: ButtonStyle {
-    @Environment(\.isFocused) private var isFocused
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.vertical, AppTheme.Spacing.small)
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .focusSurface(isFocused: isFocused, restingFill: AppTheme.subtleSurfaceFill, cornerRadius: AppTheme.Radius.card)
-            .scaleEffect(configuration.isPressed ? AppTheme.pressedScale : 1)
-    }
-}
-
 private extension View {
     func tvExitCommand(_ action: @escaping () -> Void) -> some View {
         #if os(tvOS)
@@ -741,68 +687,34 @@ private extension View {
 private struct MediaBackdropView: View {
     let artworkURL: URL?
     let backdropURL: URL?
-    @State private var colors: [Color] = []
-
-    private var paletteURL: URL? {
-        artworkURL ?? backdropURL
-    }
 
     var body: some View {
         ZStack {
-            AppBackground()
-
-            if !colors.isEmpty {
-                AmbientMeshBackground(
-                    colors: colors,
-                    hueRotationRange: 0,
-                    blurRadius: 132,
-                    saturation: 0.9,
-                    opacity: 0.66
-                )
-                .ignoresSafeArea()
-            }
+            ArtworkLitBackground(url: artworkURL ?? backdropURL)
 
             AsyncImage(url: backdropURL) { phase in
                 if case .success(let image) = phase {
                     image
                         .resizable()
                         .scaledToFill()
-                        .blur(radius: 56)
-                        .opacity(0.16)
+                        .blur(radius: 40)
+                        .opacity(0.22)
                 }
             }
             .ignoresSafeArea()
 
             LinearGradient(
                 colors: [
-                    Color.black.opacity(0.2),
-                    Color.black.opacity(0.62)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-
-            LinearGradient(
-                colors: [
-                    Color.black.opacity(0.05),
+                    Color.black.opacity(0.55),
                     Color.black.opacity(0.1),
-                    Color.black.opacity(0.72)
+                    .clear
                 ],
-                startPoint: .trailing,
-                endPoint: .leading
+                startPoint: .leading,
+                endPoint: .trailing
             )
             .ignoresSafeArea()
         }
-        .task(id: paletteURL) {
-            colors = []
-            guard let paletteURL else { return }
-            guard let image = await ArtworkImageCache.shared.loadImage(from: paletteURL) else { return }
-
-            let palette = ArtworkPalette.colors(from: image)
-            guard !palette.isEmpty else { return }
-            colors = palette
-        }
+        .accessibilityHidden(true)
     }
 }
 
@@ -817,11 +729,13 @@ private struct MediaArtworkView: View {
             .fill(AppTheme.surfaceFill)
             .overlay {
                 ArtworkImage(url: url, style: style)
-                    .padding(1)
             }
-        .aspectRatio(style.aspectRatio, contentMode: .fit)
-        .clipShape(shape)
-        .shadow(color: AppTheme.artworkShadow, radius: 28, y: 18)
-        .accessibilityLabel(title)
+            .aspectRatio(style.aspectRatio, contentMode: .fit)
+            .clipShape(shape)
+            .overlay {
+                shape.strokeBorder(AppTheme.hairline, lineWidth: 1)
+            }
+            .shadow(color: AppTheme.artworkShadow, radius: 32, y: 20)
+            .accessibilityLabel(title)
     }
 }

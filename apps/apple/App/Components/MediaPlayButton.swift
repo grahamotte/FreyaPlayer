@@ -26,6 +26,11 @@ struct MediaPlayButton: View {
     }
 
     var body: some View {
+        playButton
+        optionsButton
+    }
+
+    private var playButton: some View {
         Button {
             guard !isHandlingLongPress else {
                 isHandlingLongPress = false
@@ -33,22 +38,19 @@ struct MediaPlayButton: View {
             }
             playWithRememberedSettings()
         } label: {
-            Label {
-                Text(item.playButtonTitle)
-            } icon: {
-                Image(systemName: "play.fill")
-                    .opacity(isLoadingOptions ? 0 : 1)
-                    .overlay {
-                        if isLoadingOptions {
-                            ProgressView()
-                                .controlSize(.small)
-                        }
+            Label(playLabel, systemImage: "play.fill")
+                .foregroundStyle(AppTheme.onAccent)
+                .opacity(session.isLoading ? 0 : 1)
+                .overlay {
+                    if session.isLoading {
+                        ProgressView()
+                            .tint(AppTheme.onAccent)
                     }
-            }
+                }
         }
-        .buttonStyle(.glassProminent)
+        .playActionStyle()
         .focused($isPlayFocused)
-        .disabled(model.isOffline || session.isLoading || isLoadingOptions)
+        .disabled(model.isOffline || session.isLoading)
         .simultaneousGesture(
             LongPressGesture(minimumDuration: 0.5)
                 .onEnded { _ in
@@ -95,6 +97,31 @@ struct MediaPlayButton: View {
                 dismissButton: .cancel(Text("OK"))
             )
         }
+    }
+
+    private var playLabel: String {
+        guard PlatformMetadata.isPhone else { return item.playButtonTitle }
+        return item.hasResume ? "Resume" : "Play"
+    }
+
+    private var optionsButton: some View {
+        Button {
+            Task { await showPlaybackDialog() }
+        } label: {
+            Label {
+                Text("Play Options")
+            } icon: {
+                Image(systemName: "slider.horizontal.3")
+                    .opacity(isLoadingOptions ? 0 : 1)
+                    .overlay {
+                        if isLoadingOptions {
+                            ProgressView()
+                        }
+                    }
+            }
+        }
+        .glassIconButton()
+        .disabled(model.isOffline || isLoadingOptions)
     }
 
     private var qualityOptions: [MediaPlaybackQuality] {
@@ -375,11 +402,12 @@ private struct PlaybackOptionsDialog: View {
                             ProgressView()
                         } else {
                             Label(playTitle, systemImage: "play.fill")
+                                .foregroundStyle(AppTheme.onAccent)
                         }
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.glassProminent)
+                .playActionStyle()
                 .focused($isPlayFocused)
                 .disabled(isOffline || isLoading)
 

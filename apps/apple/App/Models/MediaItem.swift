@@ -59,9 +59,22 @@ struct MediaItem: Hashable, Identifiable, Codable {
     }
 
     var runtimeText: String? {
-        guard let durationMilliseconds else { return nil }
+        durationMilliseconds.map(Self.durationText)
+    }
 
-        let minutes = durationMilliseconds / 60_000
+    var remainingText: String? {
+        guard hasResume, let durationMilliseconds, let resumeOffsetMilliseconds, durationMilliseconds > resumeOffsetMilliseconds else {
+            return nil
+        }
+        return "\(Self.durationText(durationMilliseconds - resumeOffsetMilliseconds)) left"
+    }
+
+    var factsLine: [String] {
+        [year.map(String.init), contentRating, kind.isPlayable ? runtimeText : nil].compactMap { $0 }
+    }
+
+    nonisolated private static func durationText(_ milliseconds: Int) -> String {
+        let minutes = milliseconds / 60_000
         guard minutes > 0 else { return "<1m" }
 
         let hours = minutes / 60
@@ -79,9 +92,8 @@ struct MediaItem: Hashable, Identifiable, Codable {
     }
 
     func libraryTileSubtitle(showsAddedAt: Bool) -> String? {
-        guard let runtimeText else { return nil }
-        guard showsAddedAt, let addedAtFormatted else { return runtimeText }
-        return "\(runtimeText) • \(addedAtFormatted)"
+        guard showsAddedAt, let addedAt else { return runtimeText }
+        return Self.shortDateFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(addedAt)))
     }
 
     var addedAtFormatted: String? {
@@ -119,6 +131,13 @@ struct MediaItem: Hashable, Identifiable, Codable {
         guard kind == .series else { return nil }
         return orderedDescendants.first { $0.kind == .episode && !$0.isWatched }
     }
+
+    private static let shortDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter
+    }()
 
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()

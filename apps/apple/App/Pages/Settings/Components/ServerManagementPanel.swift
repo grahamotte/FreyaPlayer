@@ -58,6 +58,7 @@ struct ServerManagementPanel: View {
             }
         }
         .readableFormWidth()
+        .formBackdrop()
         .navigationTitle("Manage")
         .alert("Deactivate Server?", isPresented: $isShowingDeactivateAlert) {
             Button("Cancel", role: .cancel) {}

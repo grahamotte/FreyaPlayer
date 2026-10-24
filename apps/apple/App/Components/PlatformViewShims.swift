@@ -48,3 +48,56 @@ extension Scene {
         PlatformMetadata.macCommandsModifier(self)
     }
 }
+
+extension View {
+    func glassIconButton() -> some View {
+        labelStyle(GlassIconLabelStyle())
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+    }
+}
+
+private struct PlayActionStyle: ViewModifier {
+    let isProminent: Bool
+
+    func body(content: Content) -> some View {
+        if isProminent {
+            content
+                .buttonStyle(.glassProminent)
+                .tint(AppTheme.accent)
+        } else {
+            content
+                .buttonStyle(.glass)
+        }
+    }
+}
+
+extension View {
+    func playActionStyle(isProminent: Bool = true) -> some View {
+        modifier(PlayActionStyle(isProminent: isProminent))
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func formBackdrop(_ palette: AmbientPalette = .neutral) -> some View {
+        #if os(tvOS)
+        background(ArtworkLitBackground(url: nil, fallback: palette))
+        #else
+        scrollContentBackground(.hidden)
+            .background(ArtworkLitBackground(url: nil, fallback: palette))
+        #endif
+    }
+}
+
+private struct GlassIconLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        IconOnlyLabelStyle().makeBody(configuration: configuration)
+            .font(PlatformMetadata.isTV ? .title3.weight(.semibold) : .body.weight(.semibold))
+            .frame(width: Self.iconSide, height: Self.iconSide)
+    }
+
+    private static var iconSide: CGFloat {
+        PlatformMetadata.isTV ? 40 : 24
+    }
+}

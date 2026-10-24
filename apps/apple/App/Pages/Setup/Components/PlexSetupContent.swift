@@ -63,6 +63,7 @@ struct PlexSetupContent: View {
             }
         }
         .readableFormWidth()
+        .formBackdrop(.brand)
         .navigationTitle("Connect to Plex")
         .task {
             showingPlexNotice = true

@@ -1,10 +1,12 @@
+import Combine
 import SwiftUI
 
 struct LibrariesPage: View {
     @ObservedObject var model: AppModel
     @ObservedObject private var cache: LibraryCache
+    @ObservedObject private var refreshTracker: RefreshTracker
+    @StateObject private var light = AmbientLight()
     @State private var isRefreshing = false
-    @State private var isHoveringRefresh = false
     @State private var preferenceRevision = 0
     let server: ConnectedServer
     @Binding var path: [AppRoute]
@@ -14,13 +16,11 @@ struct LibrariesPage: View {
     private var sectionSpacing: CGFloat { PlatformMetadata.pageSectionSpacing }
     private var shelfSpacing: CGFloat { PlatformMetadata.shelfSpacing }
     private var cardSpacing: CGFloat { PlatformMetadata.tileSpacing }
-    private var actionButtonStyle: GlassButtonStyle {
-        .glass
-    }
 
     init(model: AppModel, server: ConnectedServer, path: Binding<[AppRoute]>) {
         self.model = model
         self.cache = model.libraryCache
+        self.refreshTracker = model.refreshTracker
         _isRefreshing = State(initialValue: model.isLibraryRefreshInProgress)
         self.server = server
         _path = path
@@ -36,139 +36,175 @@ struct LibrariesPage: View {
     }
 
     private var iOSLayout: some View {
-        ScrollView {
+        let projection = projection
+
+        return ScrollView {
             VStack(alignment: .leading, spacing: sectionSpacing) {
-                HStack(spacing: PlatformMetadata.controlSpacing) {
-                    Text(projection.serverName)
-                        .pageTitleFont()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-
-                    Spacer(minLength: AppTheme.Spacing.medium)
-
-                    NavigationLink(value: projection.searchRoute) {
-                        Label("Search", systemImage: "magnifyingglass")
-                    }
-                    .buttonStyle(actionButtonStyle)
-                    .accessibilityLabel("Search Server")
-                }
-                .padding(.horizontal, pagePadding)
-                .padding(.top, PlatformMetadata.isPhone ? AppTheme.Spacing.xSmall : AppTheme.Spacing.medium)
+                header(projection)
 
                 ForEach(projection.shelves) { shelf in
-                    let artworkStyle = shelf.artworkStyle
-                    let cardWidth: CGFloat = artworkStyle == .poster ? (PlatformMetadata.isPhone ? 130 : 180) : (PlatformMetadata.isPhone ? 200 : 280)
-                    VStack(alignment: .leading, spacing: shelfSpacing) {
-                        Text(shelf.title)
-                            .font(PlatformMetadata.sectionTitleFont)
-                            .lineLimit(1)
-                            .padding(.horizontal, pagePadding)
-
-                        ScrollView(.horizontal) {
-                            HStack(alignment: .top, spacing: cardSpacing) {
-                                NavigationLink(value: shelf.libraryRoute) {
-                                    OpenLibraryCard(artworkStyle: artworkStyle)
-                                        .frame(width: cardWidth)
-                                }
-                                .buttonStyle(.plain)
-
-                                ForEach(shelf.previewItems) { item in
-                                    NavigationLink(value: item.route) {
-                                        LibraryItemCard(item: item, artworkStyle: artworkStyle)
-                                            .frame(width: cardWidth)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .mediaItemQuickActions(model: model, item: item)
-                                }
-                            }
-                            .padding(.horizontal, pagePadding)
-                            .padding(.vertical, AppTheme.Spacing.xxSmall)
-                        }
-                        .scrollIndicators(.hidden)
-
-                        if let emptyMessage = shelf.emptyMessage {
-                            Text(emptyMessage)
-                                .font(PlatformMetadata.labelFont)
-                                .foregroundStyle(AppTheme.secondaryText)
-                                .padding(.horizontal, pagePadding)
-                        }
-                    }
+                    shelfView(shelf)
                 }
-
-                HStack(spacing: PlatformMetadata.controlSpacing) {
-                    Button {
-                        if isRefreshing {
-                            model.cancelLibraryRefresh()
-                        } else {
-                            model.refreshAllLibraries(server)
-                        }
-                    } label: {
-                        if isHoveringRefresh, isRefreshing {
-                            Text("Cancel Refresh")
-                        } else if isRefreshing {
-                            HStack(spacing: AppTheme.Spacing.xSmall) {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("Refreshing...")
-                            }
-                        } else {
-                            Text("Refresh")
-                        }
-                    }
-                    .buttonStyle(actionButtonStyle)
-                    .disabled(model.isOffline)
-                    .platformHover { isHoveringRefresh = $0 }
-                    .help(isRefreshing ? "Cancel Refresh" : "Refresh")
-
-                    NavigationLink(value: projection.manageRoute) {
-                        Text("Manage")
-                    }
-                    .buttonStyle(actionButtonStyle)
-
-                    NavigationLink(value: AppRoute.about) {
-                        Text("About")
-                    }
-                    .buttonStyle(actionButtonStyle)
-                }
-                .padding(.horizontal, pagePadding)
-                .padding(.top, AppTheme.Spacing.xSmall)
-                .padding(.bottom, pagePadding)
             }
+            .padding(.bottom, pagePadding)
         }
         .scrollIndicators(.hidden)
-        .background(BrowsingBackground())
+        .refreshable {
+            await refresh()
+        }
+        .background(AmbientBackdrop(light: light))
+        .task(id: leadArtworkURL(projection)) {
+            light.light(leadArtworkURL(projection))
+        }
         .onReceive(model.refreshTracker.$isLibraryRefreshInProgress) { isRefreshing in
             self.isRefreshing = isRefreshing
-            if !isRefreshing {
-                isHoveringRefresh = false
-            }
         }
         .onReceive(defaultsDidChange) { _ in
             preferenceRevision &+= 1
         }
     }
-}
 
-private struct OpenLibraryCard: View {
-    let artworkStyle: MediaArtworkStyle
+    private func header(_ projection: LibrariesHomeProjection) -> some View {
+        HStack(spacing: PlatformMetadata.controlSpacing) {
+            Text(projection.serverName)
+                .pageTitleFont()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: PlatformMetadata.tileTitleSpacing) {
-            RoundedRectangle(cornerRadius: AppTheme.Radius.artwork, style: .continuous)
-                .fill(AppTheme.surfaceFill)
-                .overlay(alignment: .bottomLeading) {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                        Image(systemName: "arrow.right")
-                            .font(.title2.weight(.semibold))
+            if isRefreshing {
+                ProgressView()
+                    .accessibilityLabel("Refreshing")
+            }
 
-                        Text("Open Library")
-                            .font(PlatformMetadata.tileTitleFont)
+            Spacer(minLength: AppTheme.Spacing.medium)
+
+            NavigationLink(value: projection.searchRoute) {
+                Label("Search", systemImage: "magnifyingglass")
+            }
+            .glassIconButton()
+
+            Menu {
+                Button {
+                    if isRefreshing {
+                        model.cancelLibraryRefresh()
+                    } else {
+                        model.refreshAllLibraries(server)
                     }
-                    .foregroundStyle(AppTheme.secondaryText)
-                    .padding(AppTheme.Spacing.medium)
+                } label: {
+                    if isRefreshing {
+                        Label("Cancel Refresh", systemImage: "xmark")
+                    } else {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
                 }
-                .aspectRatio(artworkStyle.aspectRatio, contentMode: .fit)
+                .disabled(model.isOffline)
+
+                Button {
+                    path.append(projection.manageRoute)
+                } label: {
+                    Label("Manage", systemImage: "gearshape")
+                }
+
+                Button {
+                    path.append(.about)
+                } label: {
+                    Label("About", systemImage: "info.circle")
+                }
+            } label: {
+                Label("More", systemImage: "ellipsis")
+            }
+            .menuStyle(.button)
+            .glassIconButton()
         }
+        .controlSize(.large)
+        .padding(.horizontal, pagePadding)
+        .padding(.top, PlatformMetadata.isPhone ? AppTheme.Spacing.xSmall : AppTheme.Spacing.medium)
+    }
+
+    private func shelfView(_ shelf: LibrariesHomeProjection.Shelf) -> some View {
+        let style = shelf.artworkStyle
+        let cardWidth: CGFloat = style == .poster
+            ? (PlatformMetadata.isPhone ? 128 : 176)
+            : (PlatformMetadata.isPhone ? 240 : 300)
+
+        return VStack(alignment: .leading, spacing: shelfSpacing) {
+            NavigationLink(value: shelf.libraryRoute) {
+                HStack(spacing: AppTheme.Spacing.xSmall) {
+                    Text(shelf.title)
+                        .font(PlatformMetadata.sectionTitleFont)
+                        .lineLimit(1)
+
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(AppTheme.tertiaryText)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens the library")
+            .padding(.horizontal, pagePadding)
+
+            if shelf.previewItems.isEmpty, refreshTracker.isRefreshing(.library(shelf.id)) {
+                skeletonRow(style: style, cardWidth: cardWidth)
+            } else if let emptyMessage = shelf.emptyMessage {
+                Text(emptyMessage)
+                    .font(PlatformMetadata.labelFont)
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .padding(.horizontal, pagePadding)
+            } else {
+                ScrollView(.horizontal) {
+                    LazyHStack(alignment: .top, spacing: cardSpacing) {
+                        ForEach(shelf.previewItems) { item in
+                            NavigationLink(value: item.route) {
+                                PosterTile(item: item, style: style)
+                                    .frame(width: cardWidth)
+                            }
+                            .buttonStyle(.plain)
+                            .mediaItemQuickActions(model: model, item: item)
+                            .platformHover { isHovered in
+                                if isHovered {
+                                    light.light(item.artwork.url(for: style))
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, pagePadding)
+                    .padding(.vertical, AppTheme.Spacing.xSmall)
+                }
+                .scrollIndicators(.hidden)
+                .scrollClipDisabled()
+            }
+        }
+    }
+
+    private func skeletonRow(style: MediaArtworkStyle, cardWidth: CGFloat) -> some View {
+        HStack(spacing: cardSpacing) {
+            ForEach(0 ..< 6, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: AppTheme.Radius.artwork, style: .continuous)
+                    .fill(AppTheme.surfaceFill)
+                    .aspectRatio(style.aspectRatio, contentMode: .fit)
+                    .frame(width: cardWidth)
+            }
+        }
+        .padding(.horizontal, pagePadding)
+        .padding(.vertical, AppTheme.Spacing.xSmall)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .clipped()
+        .accessibilityLabel("Loading")
+    }
+
+    private func leadArtworkURL(_ projection: LibrariesHomeProjection) -> URL? {
+        guard let shelf = projection.shelves.first(where: { !$0.previewItems.isEmpty }),
+              let item = shelf.previewItems.first else { return nil }
+        return item.artwork.url(for: shelf.artworkStyle)
+    }
+
+    private func refresh() async {
+        guard !model.isOffline else { return }
+        model.refreshAllLibraries(server)
+        guard model.isLibraryRefreshInProgress else { return }
+        for await isRefreshing in model.refreshTracker.$isLibraryRefreshInProgress.values where !isRefreshing {
+            return
+        }
     }
 }

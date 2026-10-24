@@ -4,12 +4,9 @@ extension MediaItem {
     func mediaViewData() -> MediaViewData {
         MediaViewData(
             title: title,
-            metadata: [
-                runtimeText.map { .init(label: "Length", value: $0) },
-                releasedAtFormatted.map { .init(label: "Released", value: $0) },
-                addedAtFormatted.map { .init(label: "Added", value: $0) }
-            ]
-            .compactMap { $0 },
+            facts: factsLine,
+            remainingText: kind.isPlayable ? remainingText : nil,
+            progress: progress,
             detailSections: [
                 MediaItemDetailSection(
                     title: "General",

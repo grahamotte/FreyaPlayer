@@ -96,15 +96,15 @@ struct AppView: View {
         } else if case .checking = model.connectionState {
             ProgressView("Checking saved connections...")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(AppBackground())
+                .background(ArtworkLitBackground(url: nil, fallback: .brand))
         } else if case .savedConnectionFailed = model.connectionState {
             ProgressView("Checking saved connections...")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(AppBackground())
+                .background(ArtworkLitBackground(url: nil, fallback: .brand))
         } else if case .connecting(let message) = model.connectionState {
             ProgressView(message)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(AppBackground())
+                .background(ArtworkLitBackground(url: nil, fallback: .brand))
         } else {
             ProviderPickerView()
         }

@@ -2,7 +2,7 @@ import UIKit
 import SwiftUI
 
 final class ArtworkProgressIndicatorView: UIView {
-    private var hostingController: UIHostingController<WatchProgressCircle>?
+    private var hostingController: UIHostingController<WatchProgressBadge>?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -15,26 +15,35 @@ final class ArtworkProgressIndicatorView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override var intrinsicContentSize: CGSize {
-        CGSize(width: WatchProgressCircle.size, height: WatchProgressCircle.size)
-    }
-
     func setProgress(_ progress: Double?, isWatched: Bool) {
-        let rootView = WatchProgressCircle(progress: progress, isWatched: isWatched)
+        let rootView = WatchProgressBadge(progress: progress, isWatched: isWatched)
         if let hostingController {
             hostingController.rootView = rootView
-        } else {
-            let hc = UIHostingController(rootView: rootView)
-            hc.view.backgroundColor = .clear
-            hc.view.translatesAutoresizingMaskIntoConstraints = false
-            addSubview(hc.view)
-            NSLayoutConstraint.activate([
-                hc.view.leadingAnchor.constraint(equalTo: leadingAnchor),
-                hc.view.trailingAnchor.constraint(equalTo: trailingAnchor),
-                hc.view.topAnchor.constraint(equalTo: topAnchor),
-                hc.view.bottomAnchor.constraint(equalTo: bottomAnchor)
-            ])
-            hostingController = hc
+            return
         }
+
+        let controller = UIHostingController(rootView: rootView)
+        controller.view.backgroundColor = .clear
+        controller.view.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(controller.view)
+        NSLayoutConstraint.activate([
+            controller.view.leadingAnchor.constraint(equalTo: leadingAnchor),
+            controller.view.trailingAnchor.constraint(equalTo: trailingAnchor),
+            controller.view.topAnchor.constraint(equalTo: topAnchor),
+            controller.view.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+        hostingController = controller
+    }
+
+    func pin(inside container: UIView) {
+        translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(self)
+        let inset = WatchProgressBadge.inset
+        NSLayoutConstraint.activate([
+            leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: inset),
+            trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -inset),
+            bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -inset),
+            heightAnchor.constraint(equalToConstant: WatchProgressBadge.checkSize)
+        ])
     }
 }

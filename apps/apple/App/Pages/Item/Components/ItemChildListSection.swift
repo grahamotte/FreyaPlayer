@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct ItemChildListSection: View {
-    @Environment(\.mediaViewScrollTo) private var scrollTo
     @ObservedObject var model: AppModel
     @ObservedObject var cache: LibraryCache
     @ObservedObject var refreshTracker: RefreshTracker
@@ -13,7 +12,6 @@ struct ItemChildListSection: View {
     let autoFocusNextUnwatched: Bool
 
     @State private var didApplyAutoFocus = false
-    @State private var hoveredChildID: String?
     @FocusState private var focusedChildID: String?
 
     init(
@@ -53,34 +51,19 @@ struct ItemChildListSection: View {
                         .foregroundStyle(AppTheme.secondaryText)
                 }
             } else {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                     ForEach(Array(children.enumerated()), id: \.element.id) { position, child in
                         NavigationLink(value: destination(child)) {
-                            HStack(spacing: AppTheme.Spacing.medium) {
-                                MarqueeText(
-                                    text: title(for: child, position: position),
-                                    font: .headline,
-                                    isActive: PlatformMetadata.supportsItemTitleHoverMarquee
-                                        && (focusedChildID == child.id || hoveredChildID == child.id)
-                                )
-
-                                Spacer(minLength: 0)
-
-                                if showsProgress(for: child) {
-                                    WatchProgressCircle(progress: child.progress, isWatched: child.isWatched)
-                                }
-
-                                Image(systemName: "chevron.right")
-                                    .foregroundStyle(AppTheme.secondaryText)
-                            }
-                            .padding(.horizontal, AppTheme.Spacing.large)
-                            .padding(.vertical, AppTheme.Spacing.medium)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            MediaRow(
+                                item: child,
+                                position: rowStyle == .numbered ? position + 1 : nil,
+                                showsSynopsis: child.kind == .episode
+                            )
+                            .padding(AppTheme.Spacing.small)
                         }
-                        .buttonStyle(MediaSurfaceButtonStyle(restingFill: AppTheme.surfaceFill))
+                        .buttonStyle(MediaSurfaceButtonStyle(restingFill: AppTheme.subtleSurfaceFill))
                         .id(child.id)
                         .focused($focusedChildID, equals: child.id)
-                        .platformHover { hoveredChildID = $0 ? child.id : nil }
                     }
                 }
             }
@@ -104,23 +87,7 @@ struct ItemChildListSection: View {
         Task {
             await Task.yield()
             focusedChildID = nextID
-            if !PlatformMetadata.isTV {
-                scrollTo(nextID)
-            }
         }
-    }
-
-    private func title(for child: MediaItem, position: Int) -> String {
-        switch rowStyle {
-        case .standard:
-            return child.title
-        case .numbered:
-            return "\(position + 1). \(child.title)"
-        }
-    }
-
-    private func showsProgress(for child: MediaItem) -> Bool {
-        child.kind == .season || child.kind == .episode
     }
 
     private func nextUnwatchedChildID(in children: [MediaItem]) -> String? {

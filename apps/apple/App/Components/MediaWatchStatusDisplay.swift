@@ -1,16 +1,8 @@
 import SwiftUI
-import UIKit
 
 enum MediaWatchStatusDisplay {
-    static let uiColor = AppTheme.uiSeen
-    static let color = AppTheme.seen
-    static let iconName = "eye.fill"
     static let markSeenTitle = "Mark Seen"
     static let markUnseenTitle = "Mark Unseen"
-
-    static func buttonColor(progress: Double?, isWatched: Bool) -> Color {
-        Color(uiColor: blendedUIColor(progress: progress, isWatched: isWatched))
-    }
 
     static func title(progress: Double?, isWatched: Bool) -> String {
         if isWatched {
@@ -30,39 +22,11 @@ enum MediaWatchStatusDisplay {
         return min(max(Int((value * 100).rounded()), 1), 99)
     }
 
-    private static func blendedUIColor(progress: Double?, isWatched: Bool) -> UIColor {
-        let amount = CGFloat(clampedProgress(progress, isWatched: isWatched))
-        let start = AppTheme.uiPrimaryText.rgbaComponents
-        let end = uiColor.rgbaComponents
-
-        return UIColor(
-            red: start.red + ((end.red - start.red) * amount),
-            green: start.green + ((end.green - start.green) * amount),
-            blue: start.blue + ((end.blue - start.blue) * amount),
-            alpha: 1
-        )
-    }
-
     private static func clampedProgress(_ progress: Double?, isWatched: Bool) -> Double {
         if isWatched {
             return 1
         }
 
         return min(max(progress ?? 0, 0), 1)
-    }
-}
-
-private extension UIColor {
-    var rgbaComponents: (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-
-        guard getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
-            return (1, 1, 1, 1)
-        }
-
-        return (red, green, blue, alpha)
     }
 }

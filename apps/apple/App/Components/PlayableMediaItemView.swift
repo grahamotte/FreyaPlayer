@@ -17,17 +17,15 @@ struct PlayableMediaItemView: View {
 
     var body: some View {
         MediaView(model: model, data: item.mediaViewData()) {
-            MediaItemActionRow {
-                if let playbackID = item.playbackID {
-                    MediaPlayButton(
-                        model: model,
-                        item: item,
-                        id: playbackID
-                    )
-                }
-
-                MediaWatchStatusButton(model: model, item: item)
+            if let playbackID = item.playbackID {
+                MediaPlayButton(
+                    model: model,
+                    item: item,
+                    id: playbackID
+                )
             }
+
+            MediaWatchStatusButton(model: model, item: item)
         }
         .task(id: originalItem.id) {
             refreshItem()

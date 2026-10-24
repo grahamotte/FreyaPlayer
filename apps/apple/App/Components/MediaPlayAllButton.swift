@@ -3,13 +3,15 @@ import SwiftUI
 struct MediaPlayAllButton: View {
     @ObservedObject var model: AppModel
     let items: [MediaItem]
+    var isProminent = false
 
     @StateObject private var session: MediaPlaybackSession
     @FocusState private var isPlayFocused: Bool
 
-    init(model: AppModel, items: [MediaItem]) {
+    init(model: AppModel, items: [MediaItem], isProminent: Bool = false) {
         self.model = model
         self.items = items
+        self.isProminent = isProminent
         _session = StateObject(wrappedValue: MediaPlaybackSession(model: model))
     }
 
@@ -26,10 +28,11 @@ struct MediaPlayAllButton: View {
                 ProgressView()
             } else {
                 Label("Play All", systemImage: "play.fill")
+                    .foregroundStyle(isProminent ? AppTheme.onAccent : AppTheme.primaryText)
             }
         }
         .menuStyle(.button)
-        .buttonStyle(.glass)
+        .playActionStyle(isProminent: isProminent)
         .focused($isPlayFocused)
         .disabled(model.isOffline || session.isLoading || !items.contains { $0.playbackID != nil })
         .fixedSize(horizontal: true, vertical: false)

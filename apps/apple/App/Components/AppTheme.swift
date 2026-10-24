@@ -8,8 +8,13 @@ enum AppTheme {
     static let backgroundTop = Color(red: 0.08, green: 0.09, blue: 0.12)
     static let backgroundBottom = Color(red: 0.04, green: 0.05, blue: 0.07)
 
+    static let accent = Color(red: 0.89, green: 0.686, blue: 0.196)
+    static let onAccent = Color.black
+
     static let primaryText = Color.white
     static let secondaryText = Color.white.opacity(0.72)
+    static let tertiaryText = Color.white.opacity(0.5)
+    static let hairline = Color.white.opacity(0.1)
 
     static let surfaceFill = Color.white.opacity(0.08)
     static let surfaceBorder = Color.white.opacity(0.12)
@@ -25,12 +30,11 @@ enum AppTheme {
     static let focusAnimation = Animation.easeOut(duration: 0.16)
 
 #if canImport(UIKit)
-    static let uiSeen = UIColor.systemYellow
+    static let uiAccent = UIColor(red: 0.89, green: 0.686, blue: 0.196, alpha: 1)
     static let uiPrimaryText = UIColor.white
     static let uiSecondaryText = UIColor.white.withAlphaComponent(0.72)
     static let uiSurfaceFill = UIColor.white.withAlphaComponent(0.08)
-
-    static let seen = Color(uiColor: uiSeen)
+    static let uiHairline = UIColor.white.withAlphaComponent(0.1)
 #endif
     static let warning = Color.orange
     static let positive = Color.green

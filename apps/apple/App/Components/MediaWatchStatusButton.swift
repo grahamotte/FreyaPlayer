@@ -93,18 +93,22 @@ private struct MediaWatchStatusMenu: View {
 
     var body: some View {
         Menu {
-            Button(MediaWatchStatusDisplay.markSeenTitle, action: onMarkWatched)
-            Button(MediaWatchStatusDisplay.markUnseenTitle, action: onMarkUnwatched)
+            Button(action: onMarkWatched) {
+                Label(MediaWatchStatusDisplay.markSeenTitle, systemImage: "checkmark.circle")
+            }
+            Button(action: onMarkUnwatched) {
+                Label(MediaWatchStatusDisplay.markUnseenTitle, systemImage: "circle")
+            }
         } label: {
             Label {
                 Text(title)
             } icon: {
-                Image(systemName: MediaWatchStatusDisplay.iconName)
-                    .foregroundStyle(MediaWatchStatusDisplay.buttonColor(progress: progress, isWatched: isWatched))
+                Image(systemName: isWatched ? "checkmark" : "eye")
+                    .foregroundStyle(isWatched ? AppTheme.accent : AppTheme.primaryText)
             }
         }
         .menuStyle(.button)
-        .buttonStyle(.glass)
-        .fixedSize(horizontal: true, vertical: false)
+        .glassIconButton()
+        .accessibilityLabel("Watch Status, \(title)")
     }
 }

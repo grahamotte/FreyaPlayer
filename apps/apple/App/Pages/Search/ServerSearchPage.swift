@@ -15,8 +15,7 @@ struct ServerSearchPage: View {
         pageContent
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background {
-                BrowsingBackground()
-                    .ignoresSafeArea()
+                ArtworkLitBackground(url: search.results.first.map { $0.item.artwork.url(for: $0.item.kind.artworkStyle) } ?? nil)
             }
             .searchable(text: $search.query, placement: searchPlacement, prompt: "Search titles")
             .iOSSearchFocused($isSearchFieldFocused)
@@ -54,15 +53,16 @@ struct ServerSearchPage: View {
 
     private var searchResults: some View {
         ScrollView {
-            LazyVStack(spacing: PlatformMetadata.isTV ? AppTheme.Spacing.large : AppTheme.Spacing.medium) {
+            LazyVStack(spacing: PlatformMetadata.isTV ? AppTheme.Spacing.medium : AppTheme.Spacing.xSmall) {
                 ForEach(search.results) { result in
                     NavigationLink(value: result.item.route) {
-                        SearchResultRow(
+                        MediaRow(
                             item: result.item,
                             title: highlightedTitle(for: result)
                         )
+                        .padding(PlatformMetadata.isPhone ? AppTheme.Spacing.small : AppTheme.Spacing.medium)
                     }
-                    .buttonStyle(MediaSurfaceButtonStyle(restingFill: AppTheme.surfaceFill))
+                    .buttonStyle(MediaSurfaceButtonStyle(restingFill: AppTheme.subtleSurfaceFill))
                 }
             }
             .padding(.horizontal, contentHorizontalPadding)
@@ -115,94 +115,5 @@ private extension View {
         #else
         searchFocused(isFocused)
         #endif
-    }
-}
-
-private struct SearchResultRow: View {
-    let item: MediaItem
-    let title: Text
-
-    var body: some View {
-        HStack(spacing: PlatformMetadata.isTV ? AppTheme.Spacing.xLarge : AppTheme.Spacing.large) {
-            SearchResultArtwork(item: item)
-
-            VStack(alignment: .leading, spacing: PlatformMetadata.isTV ? AppTheme.Spacing.small : AppTheme.Spacing.xSmall) {
-                title
-                    .font(PlatformMetadata.isTV ? .title2 : .title3)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-
-                if let metadata {
-                    Text(metadata)
-                        .font(PlatformMetadata.labelFont.weight(.medium))
-                        .foregroundStyle(AppTheme.secondaryText)
-                        .lineLimit(1)
-                }
-
-                if let synopsis {
-                    Text(synopsis)
-                        .font(PlatformMetadata.isTV ? .body : .subheadline)
-                        .foregroundStyle(AppTheme.secondaryText)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                }
-            }
-
-            Spacer(minLength: AppTheme.Spacing.large)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(resultPadding)
-        .contentShape(Rectangle())
-    }
-
-    private var metadata: String? {
-        if let releasedAt = item.releasedAtFormatted {
-            return releasedAt
-        }
-        return item.year.map(String.init)
-    }
-
-    private var synopsis: String? {
-        let value = item.synopsis.trimmingCharacters(in: .whitespacesAndNewlines)
-        return value.isEmpty ? nil : value
-    }
-
-    private var resultPadding: CGFloat {
-        PlatformMetadata.isPhone ? AppTheme.Spacing.medium : AppTheme.Spacing.large
-    }
-}
-
-private struct SearchResultArtwork: View {
-    let item: MediaItem
-
-    private var style: MediaArtworkStyle {
-        item.kind.artworkStyle
-    }
-
-    var body: some View {
-        ArtworkImage(url: item.artwork.url(for: style), style: style)
-            .background(AppTheme.surfaceFill)
-            .frame(width: imageSize.width, height: imageSize.height)
-            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.inline, style: .continuous))
-            .frame(width: previewDimension, height: previewDimension)
-    }
-
-    private var previewDimension: CGFloat {
-        if PlatformMetadata.isTV { return 240 }
-        if PlatformMetadata.isPhone { return 140 }
-        return 200
-    }
-
-    private var imageSize: CGSize {
-        if style.aspectRatio >= 1 {
-            return CGSize(
-                width: previewDimension,
-                height: previewDimension / style.aspectRatio
-            )
-        }
-        return CGSize(
-            width: previewDimension * style.aspectRatio,
-            height: previewDimension
-        )
     }
 }
