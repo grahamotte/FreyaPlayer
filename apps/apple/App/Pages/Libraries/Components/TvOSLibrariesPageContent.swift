@@ -207,7 +207,9 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                 title: item.title,
                 isRefreshing: item.kind == .refresh && isRefreshing,
                 isEnabled: isEnabled(item)
-            )
+            ) { [weak self] in
+                self?.handlePrimaryAction(for: item)
+            }
             return cell
 
         case .openLibrary, .media:
@@ -267,7 +269,12 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
     }
 
     func collectionView(_ collectionView: UICollectionView, canFocusItemAt indexPath: IndexPath) -> Bool {
-        isEnabled(sections[indexPath.section].items[indexPath.item])
+        switch sections[indexPath.section].items[indexPath.item].kind {
+        case .openLibrary, .media:
+            return true
+        case .manageServer, .refresh:
+            return false
+        }
     }
 
     func indexPathForPreferredFocusedView(in collectionView: UICollectionView) -> IndexPath? {
@@ -406,7 +413,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                 )
                 let group = NSCollectionLayoutGroup.horizontal(
                     layoutSize: groupSize,
-                    subitem: item,
+                    repeatingSubitem: item,
                     count: buttonCount
                 )
                 group.interItemSpacing = .fixed(buttonSpacing)
@@ -711,7 +718,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                 continue
             }
 
-            cell.configure(title: "Refresh", isRefreshing: isRefreshing, isEnabled: !isOffline)
+            cell.update(isRefreshing: isRefreshing, isEnabled: !isOffline)
         }
     }
 
@@ -930,39 +937,38 @@ private final class LibraryTileCell: UICollectionViewCell {
     }
 }
 
-private final class LibrariesActionCell: UICollectionViewListCell {
+private final class LibrariesActionCell: UICollectionViewCell {
     static let reuseIdentifier = "LibrariesActionCell"
-    private let activityIndicator = UIActivityIndicatorView(style: .medium)
-    private let titleLabel = UILabel()
-    private let stackView = UIStackView()
-    private var isRefreshing = false
-    private var isEnabled = true
+    private let button = UIButton(configuration: .glass())
     private var title = ""
+    private var isRefreshing = false
+    private var onPrimaryAction: (() -> Void)?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         clipsToBounds = false
         contentView.clipsToBounds = false
 
-        activityIndicator.hidesWhenStopped = true
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addAction(UIAction { [weak self] _ in self?.onPrimaryAction?() }, for: .primaryActionTriggered)
+        button.configurationUpdateHandler = { [weak self] button in
+            guard let self, var configuration = button.configuration else { return }
+            if isRefreshing {
+                configuration.title = button.isFocused ? "Cancel Refresh" : "Refreshing..."
+                configuration.showsActivityIndicator = !button.isFocused
+            } else {
+                configuration.title = title
+                configuration.showsActivityIndicator = false
+            }
+            button.configuration = configuration
+        }
 
-        titleLabel.font = PlatformMetadata.uiControlFont
-        titleLabel.numberOfLines = 1
-        titleLabel.textAlignment = .center
-
-        stackView.axis = .horizontal
-        stackView.alignment = .center
-        stackView.spacing = AppTheme.Spacing.xSmall
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.addArrangedSubview(activityIndicator)
-        stackView.addArrangedSubview(titleLabel)
-
-        contentView.addSubview(stackView)
+        contentView.addSubview(button)
         NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: AppTheme.uiGlassContentInsets.leading),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -AppTheme.uiGlassContentInsets.trailing),
-            stackView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            stackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
+            button.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            button.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            button.topAnchor.constraint(equalTo: contentView.topAnchor),
+            button.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
     }
 
@@ -971,35 +977,16 @@ private final class LibrariesActionCell: UICollectionViewListCell {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func configure(title: String, isRefreshing: Bool, isEnabled: Bool) {
+    func configure(title: String, isRefreshing: Bool, isEnabled: Bool, onPrimaryAction: @escaping () -> Void) {
         self.title = title
-        self.isRefreshing = isRefreshing
-        self.isEnabled = isEnabled
-        setNeedsUpdateConfiguration()
+        self.onPrimaryAction = onPrimaryAction
+        update(isRefreshing: isRefreshing, isEnabled: isEnabled)
     }
 
-    override func updateConfiguration(using state: UICellConfigurationState) {
-        super.updateConfiguration(using: state)
-
-        let isFocused = state.isFocused
-        if isRefreshing {
-            titleLabel.text = isFocused ? "Cancel Refresh" : "Refreshing..."
-        } else {
-            titleLabel.text = title
-        }
-        if isRefreshing && !isFocused {
-            activityIndicator.startAnimating()
-        } else {
-            activityIndicator.stopAnimating()
-        }
-        let isVisuallyEnabled = isEnabled && (!isRefreshing || isFocused)
-        let foregroundColor = AppTheme.uiGlassForeground(isFocused: isFocused, isEnabled: isVisuallyEnabled)
-        titleLabel.textColor = foregroundColor
-        activityIndicator.color = foregroundColor
-
-        var background = UIBackgroundConfiguration.clear().updated(for: state)
-        AppTheme.applyGlassBackground(to: &background, isFocused: isFocused, isEnabled: isVisuallyEnabled)
-        backgroundConfiguration = background
+    func update(isRefreshing: Bool, isEnabled: Bool) {
+        self.isRefreshing = isRefreshing
+        button.isEnabled = isEnabled
+        button.setNeedsUpdateConfiguration()
     }
 }
 
@@ -1053,7 +1040,7 @@ private final class LibrariesServerHeaderView: UICollectionReusableView {
     static let reuseIdentifier = "LibrariesServerHeaderView"
     private let horizontalInset = PlatformMetadata.pageGutter
     private let label = UILabel()
-    private let searchButton = UIButton(type: .system)
+    private let searchButton = UIButton()
     private var onSearch: (() -> Void)?
 
     var searchFocusTarget: UIView {
@@ -1067,27 +1054,14 @@ private final class LibrariesServerHeaderView: UICollectionReusableView {
         label.textColor = AppTheme.uiPrimaryText
         label.translatesAutoresizingMaskIntoConstraints = false
 
-        var configuration = UIButton.Configuration.plain()
+        var configuration = UIButton.Configuration.glass()
         configuration.title = "Search"
         configuration.image = UIImage(systemName: "magnifyingglass")
         configuration.imagePadding = AppTheme.Spacing.small
-        configuration.contentInsets = AppTheme.uiGlassContentInsets
-        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(font: PlatformMetadata.uiControlFont)
-        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
-            var attributes = attributes
-            attributes.font = PlatformMetadata.uiControlFont
-            return attributes
-        }
         searchButton.configuration = configuration
         searchButton.accessibilityLabel = "Search Server"
         searchButton.translatesAutoresizingMaskIntoConstraints = false
         searchButton.addTarget(self, action: #selector(search), for: .primaryActionTriggered)
-        searchButton.configurationUpdateHandler = { button in
-            guard var configuration = button.configuration else { return }
-            configuration.baseForegroundColor = AppTheme.uiGlassForeground(isFocused: button.isFocused)
-            AppTheme.applyGlassBackground(to: &configuration.background, isFocused: button.isFocused)
-            button.configuration = configuration
-        }
 
         addSubview(label)
         addSubview(searchButton)

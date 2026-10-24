@@ -21,7 +21,7 @@ struct ProviderPickerView: View {
             NavigationLink(value: AppRoute.about) {
                 Label("About", systemImage: "info.circle")
             }
-            .buttonStyle(MediaGlassButtonStyle())
+            .buttonStyle(.glass)
         }
         .padding(PlatformMetadata.pageGutter)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -35,14 +35,16 @@ struct ProviderPickerView: View {
                     .font(PlatformMetadata.sectionTitleFont)
                     .frame(width: serviceButtonWidth, height: serviceButtonHeight)
             }
-            .buttonStyle(MediaGlassButtonStyle(size: .bare))
+            .buttonStyle(.glass)
+            .buttonBorderShape(.roundedRectangle(radius: AppTheme.Radius.large))
 
             NavigationLink(value: AppRoute.plexSetup) {
                 MediaProviderLabel(providerID: .plex, logoSize: serviceLogoSize)
                     .font(PlatformMetadata.sectionTitleFont)
                     .frame(width: serviceButtonWidth, height: serviceButtonHeight)
             }
-            .buttonStyle(MediaGlassButtonStyle(size: .bare))
+            .buttonStyle(.glass)
+            .buttonBorderShape(.roundedRectangle(radius: AppTheme.Radius.large))
         }
     }
 

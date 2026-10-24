@@ -14,8 +14,8 @@ struct LibrariesPage: View {
     private var sectionSpacing: CGFloat { PlatformMetadata.pageSectionSpacing }
     private var shelfSpacing: CGFloat { PlatformMetadata.shelfSpacing }
     private var cardSpacing: CGFloat { PlatformMetadata.tileSpacing }
-    private var actionButtonStyle: MediaGlassButtonStyle {
-        MediaGlassButtonStyle(size: .compact)
+    private var actionButtonStyle: GlassButtonStyle {
+        .glass
     }
 
     init(model: AppModel, server: ConnectedServer, path: Binding<[AppRoute]>) {

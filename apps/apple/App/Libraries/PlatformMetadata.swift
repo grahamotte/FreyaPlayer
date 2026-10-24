@@ -97,14 +97,6 @@ enum PlatformMetadata {
         uiFont(sectionTitleUITextStyle, weight: .semibold)
     }
 
-    static var controlFont: Font {
-        .body.weight(.semibold)
-    }
-
-    static var uiControlFont: UIFont {
-        uiFont(.body, weight: .semibold)
-    }
-
     static var tileTitleFont: Font {
         isTV ? .callout.weight(.semibold) : .headline
     }
@@ -154,6 +146,18 @@ extension PlatformMetadata {
     static func focusSectionModifier<Content: View>(_ content: Content) -> some View {
         #if os(tvOS)
         return content.focusSection()
+        #else
+        return content
+        #endif
+    }
+
+    static var readableFormWidth: CGFloat? {
+        isTV ? 1200 : nil
+    }
+
+    static func focusableRowModifier<Content: View>(_ content: Content) -> some View {
+        #if os(tvOS)
+        return content.focusable()
         #else
         return content
         #endif

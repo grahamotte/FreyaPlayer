@@ -520,7 +520,7 @@ private struct FullItemDetailsView: View {
         Button { dismiss() } label: {
             Label("Close", systemImage: "xmark")
         }
-        .buttonStyle(MediaGlassButtonStyle(size: .compact))
+        .buttonStyle(.glass)
     }
 }
 

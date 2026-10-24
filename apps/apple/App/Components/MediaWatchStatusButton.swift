@@ -96,10 +96,15 @@ private struct MediaWatchStatusMenu: View {
             Button(MediaWatchStatusDisplay.markSeenTitle, action: onMarkWatched)
             Button(MediaWatchStatusDisplay.markUnseenTitle, action: onMarkUnwatched)
         } label: {
-            Label(title, systemImage: MediaWatchStatusDisplay.iconName)
+            Label {
+                Text(title)
+            } icon: {
+                Image(systemName: MediaWatchStatusDisplay.iconName)
+                    .foregroundStyle(MediaWatchStatusDisplay.buttonColor(progress: progress, isWatched: isWatched))
+            }
         }
         .menuStyle(.button)
-        .buttonStyle(MediaGlassButtonStyle(role: .tinted(MediaWatchStatusDisplay.buttonColor(progress: progress, isWatched: isWatched))))
+        .buttonStyle(.glass)
         .fixedSize(horizontal: true, vertical: false)
     }
 }

@@ -17,7 +17,7 @@ struct WatchProgressCircle: View {
 
                 Image(systemName: "checkmark")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(AppTheme.inverseText)
+                    .foregroundStyle(Color.black)
             }
             .frame(width: Self.size, height: Self.size)
         } else if displayProgress > 0 {

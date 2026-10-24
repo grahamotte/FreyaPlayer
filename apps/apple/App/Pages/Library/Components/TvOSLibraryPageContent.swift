@@ -928,22 +928,13 @@ private final class GlassMenuButton: UIButton {
     override init(frame: CGRect) {
         super.init(frame: frame)
         clipsToBounds = false
+        configuration = .glass()
         configurationUpdateHandler = { [weak self] button in
-            guard let self else { return }
-
-            var configuration = UIButton.Configuration.plain()
-            configuration.attributedTitle = self.title.map {
-                AttributedString($0, attributes: AttributeContainer([
-                    .font: PlatformMetadata.uiControlFont
-                ]))
-            }
+            guard let self, var configuration = button.configuration else { return }
+            configuration.title = self.title
             configuration.image = self.icon
             configuration.imagePlacement = .leading
             configuration.imagePadding = AppTheme.Spacing.small
-            configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(font: PlatformMetadata.uiControlFont)
-            configuration.baseForegroundColor = AppTheme.uiGlassForeground(isFocused: button.isFocused)
-            configuration.contentInsets = AppTheme.uiGlassContentInsets
-            AppTheme.applyGlassBackground(to: &configuration.background, isFocused: button.isFocused)
             button.configuration = configuration
         }
     }

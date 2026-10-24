@@ -5,29 +5,27 @@ struct ServerManagementPlaybackCapabilitiesSection: View {
     @State private var capabilities = PlaybackCompatibility.deviceCapabilities
 
     var body: some View {
-        ServerManagementSection("Playback Capabilities") {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                Text("Formats AVFoundation reports this \(PlatformMetadata.deviceName) can play. Playback options show whether Freya uses that native path or asks the server to convert the item.")
-                    .foregroundStyle(AppTheme.secondaryText)
-
-                ForEach(PlaybackCapabilityCategory.allCases) { category in
-                    let categoryCapabilities = capabilities.filter { $0.category == category }
-                    if !categoryCapabilities.isEmpty {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                            Text(category.rawValue)
-                                .font(.headline)
-
-                            ForEach(categoryCapabilities) { capability in
-                                capabilityRow(capability)
-                            }
-                        }
-                    }
-                }
-
-            }
+        Section {
+            Text("Formats AVFoundation reports this \(PlatformMetadata.deviceName) can play. Playback options show whether Freya uses that native path or asks the server to convert the item.")
+                .foregroundStyle(AppTheme.secondaryText)
+                .tvOSFocusableRow()
+        } header: {
+            Text("Playback Capabilities")
         }
         .onReceive(NotificationCenter.default.publisher(for: AVPlayer.eligibleForHDRPlaybackDidChangeNotification)) { _ in
             capabilities = PlaybackCompatibility.deviceCapabilities
+        }
+
+        ForEach(PlaybackCapabilityCategory.allCases) { category in
+            let categoryCapabilities = capabilities.filter { $0.category == category }
+            if !categoryCapabilities.isEmpty {
+                Section(category.rawValue) {
+                    ForEach(categoryCapabilities) { capability in
+                        capabilityRow(capability)
+                            .tvOSFocusableRow()
+                    }
+                }
+            }
         }
     }
 

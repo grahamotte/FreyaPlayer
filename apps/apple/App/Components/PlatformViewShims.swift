@@ -12,6 +12,15 @@ extension View {
     func tvOSFocusSection() -> some View {
         PlatformMetadata.focusSectionModifier(self)
     }
+
+    func tvOSFocusableRow() -> some View {
+        PlatformMetadata.focusableRowModifier(self)
+    }
+
+    func readableFormWidth() -> some View {
+        frame(maxWidth: PlatformMetadata.readableFormWidth)
+            .frame(maxWidth: .infinity)
+    }
 }
 
 extension Scene {

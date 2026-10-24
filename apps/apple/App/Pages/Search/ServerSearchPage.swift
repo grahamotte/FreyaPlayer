@@ -3,7 +3,6 @@ import SwiftUI
 import UIKit
 
 struct ServerSearchPage: View {
-    @Environment(\.dismiss) private var dismiss
     @StateObject private var search: ServerTitleSearch
     @FocusState private var isSearchFieldFocused: Bool
 
@@ -14,29 +13,27 @@ struct ServerSearchPage: View {
     }
 
     var body: some View {
-        Group {
-            if PlatformMetadata.isTV {
-                pageContent
-                    .searchable(text: $search.query, prompt: "Search titles")
-            } else {
-                VStack(spacing: 0) {
-                    searchHeader
-                    pageContent
-                }
-                .toolbar(.hidden, for: .navigationBar)
+        pageContent
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background {
+                LibrariesAmbientBackground()
+                    .ignoresSafeArea()
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background {
-            LibrariesAmbientBackground()
-                .ignoresSafeArea()
-        }
-        .navigationTitle("")
-        .navigationBarBackButtonHidden(!PlatformMetadata.isTV)
-        .task {
-            guard !PlatformMetadata.isTV else { return }
-            isSearchFieldFocused = true
-        }
+            .searchable(text: $search.query, placement: searchPlacement, prompt: "Search titles")
+            .iOSSearchFocused($isSearchFieldFocused)
+            .navigationTitle("Search")
+            .task {
+                guard !PlatformMetadata.isTV else { return }
+                isSearchFieldFocused = true
+            }
+    }
+
+    private var searchPlacement: SearchFieldPlacement {
+        #if os(tvOS)
+        .automatic
+        #else
+        .navigationBarDrawer(displayMode: .always)
+        #endif
     }
 
     @ViewBuilder
@@ -76,49 +73,6 @@ struct ServerSearchPage: View {
         .scrollIndicators(.hidden)
     }
 
-    private var searchHeader: some View {
-        HStack(spacing: PlatformMetadata.controlSpacing) {
-            Button {
-                dismiss()
-            } label: {
-                Label("Back", systemImage: "chevron.left")
-            }
-            .buttonStyle(MediaGlassButtonStyle(size: .compact))
-
-            HStack(spacing: AppTheme.Spacing.medium) {
-                Image(systemName: "magnifyingglass")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(AppTheme.secondaryText)
-
-                TextField("Search titles", text: $search.query)
-                    .textFieldStyle(.plain)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .focused($isSearchFieldFocused)
-                    .submitLabel(.search)
-
-                if !search.query.isEmpty {
-                    Button {
-                        search.query = ""
-                        isSearchFieldFocused = true
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(AppTheme.secondaryText)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Clear Search")
-                }
-            }
-            .font(.title2)
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.vertical, AppTheme.Spacing.medium)
-            .glassField(isFocused: isSearchFieldFocused)
-        }
-        .padding(.horizontal, contentHorizontalPadding)
-        .padding(.top, AppTheme.Spacing.medium)
-        .padding(.bottom, AppTheme.Spacing.medium)
-    }
-
     private var contentHorizontalPadding: CGFloat {
         PlatformMetadata.pageGutter
     }
@@ -151,6 +105,17 @@ struct ServerSearchPage: View {
             text = Text("\(text)\(unmatched)")
         }
         return text
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func iOSSearchFocused(_ isFocused: FocusState<Bool>.Binding) -> some View {
+        #if os(tvOS)
+        self
+        #else
+        searchFocused(isFocused)
+        #endif
     }
 }
 

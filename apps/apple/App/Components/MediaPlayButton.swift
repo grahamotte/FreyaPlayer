@@ -379,7 +379,7 @@ private struct PlaybackOptionsDialog: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(MediaGlassButtonStyle(size: .compact))
+                .buttonStyle(.glassProminent)
                 .focused($isPlayFocused)
                 .disabled(isOffline || isLoading)
 
@@ -387,7 +387,7 @@ private struct PlaybackOptionsDialog: View {
                     Text("Cancel")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(MediaGlassButtonStyle(size: .compact))
+                .buttonStyle(.glass)
             }
         }
         .padding(AppTheme.Spacing.xLarge)
@@ -524,7 +524,7 @@ private struct PlaybackOptionsDialog: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .menuStyle(.button)
-        .buttonStyle(MediaGlassButtonStyle(size: .compact))
+        .buttonStyle(.glass)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

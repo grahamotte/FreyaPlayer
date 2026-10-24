@@ -14,59 +14,51 @@ struct ServerManagementPanel: View {
     }
 
     var body: some View {
-        ScrollView {
+        Form {
             if let server = model.connectedServer {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
-                    ServerManagementServerSection(
-                        server: server,
-                        onDeactivate: {
-                            isShowingDeactivateAlert = true
-                        }
-                    )
+                ServerManagementServerSection(
+                    server: server,
+                    onDeactivate: {
+                        isShowingDeactivateAlert = true
+                    }
+                )
 
-                    ServerManagementSection("Cache") {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                            ServerManagementControlRow("Application Cache Version") {
-                                Text(String(cache.applicationCacheVersion))
-                                    .monospacedDigit()
-                            }
-
-                            ServerManagementControlRow("Cache File Version") {
-                                Text(cache.fileCacheVersion.map { String($0) } ?? "Missing")
-                                    .monospacedDigit()
-                            }
-
-                            ServerManagementControlRow("Cache Size") {
-                                Text(cache.formattedStorageSize)
-                                    .monospacedDigit()
-                            }
-
-                            Button("Clear Cache") {
-                                model.clearCache()
-                            }
-                            .buttonStyle(MediaGlassButtonStyle())
-                        }
+                Section("Cache") {
+                    LabeledContent("Application Cache Version") {
+                        Text(String(cache.applicationCacheVersion))
+                            .monospacedDigit()
                     }
 
-                    ServerManagementLibrariesSection(
-                        libraries: server.libraries,
-                        onToggleVisibility: { index, isHidden in
-                            model.setLibraryHidden(isHidden, at: index)
-                        },
-                        onMoveLibrary: { index, offset in
-                            model.moveLibrary(at: index, by: offset)
-                        }
-                    )
+                    LabeledContent("Cache File Version") {
+                        Text(cache.fileCacheVersion.map { String($0) } ?? "Missing")
+                            .monospacedDigit()
+                    }
 
-                    ServerManagementPlaybackCapabilitiesSection()
+                    LabeledContent("Cache Size") {
+                        Text(cache.formattedStorageSize)
+                            .monospacedDigit()
+                    }
+
+                    Button("Clear Cache") {
+                        model.clearCache()
+                    }
                 }
-                .frame(maxWidth: 860, alignment: .leading)
-                .padding(PlatformMetadata.pageGutter)
-                .frame(maxWidth: .infinity, alignment: .center)
+
+                ServerManagementLibrariesSection(
+                    libraries: server.libraries,
+                    onToggleVisibility: { index, isHidden in
+                        model.setLibraryHidden(isHidden, at: index)
+                    },
+                    onMoveLibrary: { index, offset in
+                        model.moveLibrary(at: index, by: offset)
+                    }
+                )
+
+                ServerManagementPlaybackCapabilitiesSection()
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppBackground())
+        .readableFormWidth()
+        .navigationTitle("Manage")
         .alert("Deactivate Server?", isPresented: $isShowingDeactivateAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Deactivate", role: .destructive) {
