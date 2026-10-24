@@ -44,7 +44,7 @@ enum LibraryPageSort: Int, CaseIterable {
         case .title:
             return "Title"
         case .addedAt:
-            return "Added At"
+            return "Date Added"
         case .duration:
             return "Duration"
         }

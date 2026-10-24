@@ -46,6 +46,7 @@ struct MediaView<Content: View>: View {
     let content: Content
     @State private var isShowingDetails = false
     @State private var detailScrollOffset: CGFloat = 0
+    @FocusState private var focusedDetail: DetailFocus?
 
     init(
         model: AppModel,
@@ -173,7 +174,9 @@ struct MediaView<Content: View>: View {
     ) -> some View {
         ScrollViewReader { scrollProxy in
             ScrollView {
-                detailsContent(synopsisWidth: synopsisWidth, metrics: metrics)
+                detailsContent(synopsisWidth: synopsisWidth, metrics: metrics) {
+                    scrollProxy.scrollTo(Self.topID, anchor: .top)
+                }
             }
             .environment(\.mediaViewScrollTo) { targetID in
                 scrollProxy.scrollTo(targetID, anchor: .center)
@@ -196,46 +199,36 @@ struct MediaView<Content: View>: View {
     }
 
     @ViewBuilder
-    private func detailsContent(synopsisWidth: CGFloat, metrics: MediaViewMetrics) -> some View {
+    private func detailsContent(
+        synopsisWidth: CGFloat,
+        metrics: MediaViewMetrics,
+        scrollToTop: @escaping () -> Void
+    ) -> some View {
         VStack(alignment: .leading, spacing: metrics.contentSpacing) {
-            Button {} label: {
-                Text(data.title)
-                    .font(PlatformMetadata.itemTitleFont)
-                    .lineLimit(3)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(MediaDetailTextButtonStyle())
+            Text(data.title)
+                .font(PlatformMetadata.itemTitleFont)
+                .lineLimit(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .id(Self.topID)
 
             if !data.metadata.isEmpty || !data.detailSections.isEmpty {
                 ScrollView(.horizontal) {
                     HStack(alignment: .top, spacing: metrics.horizontalItemSpacing) {
                         ForEach(data.metadata) { entry in
-                            Button {} label: {
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-                                    Text(entry.label)
-                                        .font(metrics.metadataLabelFont)
-                                        .foregroundStyle(AppTheme.secondaryText)
-
-                                    Text(entry.value)
-                                        .font(metrics.metadataValueFont)
-                                }
-                                .frame(minWidth: metrics.metadataTileWidth, alignment: .leading)
-                            }
-                            .buttonStyle(MediaDetailTileStyle())
+                            metadataTile(label: entry.label, value: entry.value, metrics: metrics)
+                                .padding(.vertical, AppTheme.Spacing.small)
+                                .padding(.horizontal, AppTheme.Spacing.medium)
+                                .background(
+                                    AppTheme.subtleSurfaceFill,
+                                    in: RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+                                )
                         }
 
                         Button { isShowingDetails = true } label: {
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-                                Text("More")
-                                    .font(metrics.metadataLabelFont)
-                                    .foregroundStyle(AppTheme.secondaryText)
-
-                                Text("Details")
-                                    .font(metrics.metadataValueFont)
-                            }
-                            .frame(minWidth: metrics.metadataTileWidth, alignment: .leading)
+                            metadataTile(label: "More", value: "Details", metrics: metrics)
                         }
                         .buttonStyle(MediaDetailTileStyle())
+                        .focused($focusedDetail, equals: .moreDetails)
                     }
                 }
                 .scrollIndicators(.hidden)
@@ -244,21 +237,49 @@ struct MediaView<Content: View>: View {
             }
 
             Button {
-                if PlatformMetadata.isTV {
-                    isShowingDetails = true
-                }
+                isShowingDetails = true
             } label: {
                 Text(data.synopsis)
                     .font(.body)
                     .foregroundStyle(AppTheme.secondaryText)
                     .lineLimit(5)
+                    .multilineTextAlignment(.leading)
                     .frame(maxWidth: synopsisWidth, alignment: .topLeading)
             }
             .buttonStyle(MediaDetailTextButtonStyle())
+            .focused($focusedDetail, equals: .synopsis)
+            .accessibilityHint("Shows all details")
 
             content
         }
         .frame(maxWidth: synopsisWidth, alignment: .leading)
+        .onChange(of: focusedDetail) { _, focusedDetail in
+            guard PlatformMetadata.isTV, focusedDetail != nil else { return }
+            withAnimation(AppTheme.focusAnimation) {
+                scrollToTop()
+            }
+        }
+    }
+
+    private func metadataTile(label: String, value: String, metrics: MediaViewMetrics) -> some View {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+            Text(label)
+                .font(metrics.metadataLabelFont)
+                .foregroundStyle(AppTheme.secondaryText)
+
+            Text(value)
+                .font(metrics.metadataValueFont)
+        }
+        .frame(minWidth: metrics.metadataTileWidth, alignment: .leading)
+    }
+
+    private static var topID: String {
+        "media-view-top"
+    }
+
+    private enum DetailFocus: Hashable {
+        case moreDetails
+        case synopsis
     }
 }
 
@@ -366,15 +387,9 @@ private struct FullItemDetailsView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-            Text(title)
-                .font(PlatformMetadata.itemTitleFont)
-                .frame(maxWidth: 1100, alignment: .leading)
-
-            Text("\(rowCount) fields across \(nonemptySections.count) sections")
-                .font(.callout)
-                .foregroundStyle(AppTheme.secondaryText)
-        }
+        Text(title)
+            .font(PlatformMetadata.itemTitleFont)
+            .frame(maxWidth: 1100, alignment: .leading)
     }
 
     private var descriptionSection: some View {
@@ -497,14 +512,6 @@ private struct FullItemDetailsView: View {
 
     private var gridSpacing: CGFloat {
         PlatformMetadata.isTV ? AppTheme.Spacing.medium : AppTheme.Spacing.small
-    }
-
-    private var nonemptySections: [MediaItemDetailSection] {
-        sections.filter { !$0.rows.isEmpty }
-    }
-
-    private var rowCount: Int {
-        sections.reduce(0) { $0 + $1.rows.count }
     }
 
     private var initialFocusID: String? {

@@ -15,7 +15,7 @@ struct ServerSearchPage: View {
         pageContent
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background {
-                LibrariesAmbientBackground()
+                BrowsingBackground()
                     .ignoresSafeArea()
             }
             .searchable(text: $search.query, placement: searchPlacement, prompt: "Search titles")

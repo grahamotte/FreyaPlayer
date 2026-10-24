@@ -33,7 +33,7 @@ struct IOSLibraryPageContent: View {
                 }
             }
         }
-        .background(AppBackground())
+        .background(BrowsingBackground())
         .task(id: library.id) {
             state.update(library: library)
         }

@@ -1,13 +1,13 @@
 import SwiftUI
 
-struct LibrariesAmbientBackground: View {
-    @State private var colors = AmbientMeshBackground.randomColors()
+struct BrowsingBackground: View {
+    private static let colors = AmbientMeshBackground.randomColors()
 
     var body: some View {
         ZStack {
             AppBackground()
 
-            AmbientMeshBackground(colors: colors)
+            AmbientMeshBackground(colors: Self.colors)
 
             LinearGradient(
                 colors: [

@@ -29,7 +29,7 @@ struct TvOSLibraryPageContent: View {
                 .ignoresSafeArea(edges: .bottom)
             }
         }
-        .background(AppBackground())
+        .background(BrowsingBackground())
         .task(id: library.id) {
             state.update(library: library)
         }

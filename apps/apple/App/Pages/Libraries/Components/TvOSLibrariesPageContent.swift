@@ -14,7 +14,7 @@ struct TvOSLibrariesPageContent: View {
             onSelectRoute: { path.append($0) }
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(LibrariesAmbientBackground())
+        .background(BrowsingBackground())
     }
 }
 

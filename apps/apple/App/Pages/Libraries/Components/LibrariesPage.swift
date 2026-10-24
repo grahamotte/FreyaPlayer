@@ -85,6 +85,13 @@ struct LibrariesPage: View {
                             .padding(.vertical, AppTheme.Spacing.xxSmall)
                         }
                         .scrollIndicators(.hidden)
+
+                        if let emptyMessage = shelf.emptyMessage {
+                            Text(emptyMessage)
+                                .font(PlatformMetadata.labelFont)
+                                .foregroundStyle(AppTheme.secondaryText)
+                                .padding(.horizontal, pagePadding)
+                        }
                     }
                 }
 
@@ -129,7 +136,7 @@ struct LibrariesPage: View {
             }
         }
         .scrollIndicators(.hidden)
-        .background(LibrariesAmbientBackground())
+        .background(BrowsingBackground())
         .onReceive(model.refreshTracker.$isLibraryRefreshInProgress) { isRefreshing in
             self.isRefreshing = isRefreshing
             if !isRefreshing {
