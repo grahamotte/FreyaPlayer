@@ -583,7 +583,6 @@ private final class LibraryPageHeaderView: UICollectionReusableView {
 
         sortButton.translatesAutoresizingMaskIntoConstraints = false
         sortButton.showsMenuAsPrimaryAction = true
-        sortButton.icon = UIImage(systemName: "arrow.up.arrow.down")
 
         shuffleButtonHostView.translatesAutoresizingMaskIntoConstraints = false
         shuffleButtonHostView.backgroundColor = .clear
@@ -673,7 +672,8 @@ private final class LibraryPageHeaderView: UICollectionReusableView {
         order: LibraryPageSortOrder,
         onSortOrderChange: @escaping (LibraryPageSortOrder) -> Void
     ) {
-        sortButton.title = "\(sort.title) \(order.shortTitle)"
+        sortButton.title = sort.title
+        sortButton.icon = UIImage(systemName: order.iconName)
         sortButton.menu = UIMenu(children: [
             UIMenu(title: "Field", options: .displayInline, children: LibraryPageSort.allCases.map { candidate in
                 UIAction(title: candidate.title, state: candidate == sort ? .on : .off) { [weak self] _ in

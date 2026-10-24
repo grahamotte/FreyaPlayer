@@ -1,74 +1,40 @@
 import SwiftUI
 
-struct LibraryPageFilterControl: View {
+struct LibraryPageOptionsMenu: View {
     let filter: LibraryPageFilter
-    let onChange: (LibraryPageFilter) -> Void
-
-    var body: some View {
-        Menu {
-            ForEach(LibraryPageFilter.allCases, id: \.rawValue) { candidate in
-                Button {
-                    onChange(candidate)
-                } label: {
-                    LibraryPageMenuItemTitle(title: candidate.title, isSelected: candidate == filter)
-                }
-            }
-        } label: {
-            Label(filter.title, systemImage: "line.3.horizontal.decrease")
-                .glassPillLabel()
-        }
-        .menuStyle(.button)
-        .buttonStyle(.glass)
-        .fixedSize(horizontal: true, vertical: false)
-    }
-}
-
-struct LibraryPageSortControl: View {
     let sort: LibraryPageSort
     let order: LibraryPageSortOrder
+    let onFilterChange: (LibraryPageFilter) -> Void
     let onSortChange: (LibraryPageSort) -> Void
     let onSortOrderChange: (LibraryPageSortOrder) -> Void
 
     var body: some View {
         Menu {
-            Section("Field") {
-                ForEach(LibraryPageSort.allCases, id: \.rawValue) { candidate in
-                    Button {
-                        onSortChange(candidate)
-                    } label: {
-                        LibraryPageMenuItemTitle(title: candidate.title, isSelected: candidate == sort)
-                    }
+            Picker("Show", selection: Binding(get: { filter }, set: onFilterChange)) {
+                ForEach(LibraryPageFilter.allCases, id: \.self) { candidate in
+                    Text(candidate.title)
                 }
             }
+            .pickerStyle(.inline)
 
-            Section("Order") {
-                ForEach(LibraryPageSortOrder.allCases, id: \.rawValue) { candidate in
-                    Button {
-                        onSortOrderChange(candidate)
-                    } label: {
-                        LibraryPageMenuItemTitle(title: candidate.title, isSelected: candidate == order)
-                    }
+            Picker("Sort By", selection: Binding(get: { sort }, set: onSortChange)) {
+                ForEach(LibraryPageSort.allCases, id: \.self) { candidate in
+                    Text(candidate.title)
                 }
             }
+            .pickerStyle(.inline)
+
+            Picker("Order", selection: Binding(get: { order }, set: onSortOrderChange)) {
+                ForEach(LibraryPageSortOrder.allCases, id: \.self) { candidate in
+                    Text(candidate.title)
+                }
+            }
+            .pickerStyle(.inline)
         } label: {
-            Label("\(sort.title) \(order.shortTitle)", systemImage: "arrow.up.arrow.down")
-                .glassPillLabel()
-        }
-        .menuStyle(.button)
-        .buttonStyle(.glass)
-        .fixedSize(horizontal: true, vertical: false)
-    }
-}
-
-private struct LibraryPageMenuItemTitle: View {
-    let title: String
-    let isSelected: Bool
-
-    var body: some View {
-        if isSelected {
-            Label(title, systemImage: "checkmark")
-        } else {
-            Text(title)
+            Label(
+                "Filter and Sort",
+                systemImage: filter == .all ? "line.3.horizontal.decrease" : "line.3.horizontal.decrease.circle.fill"
+            )
         }
     }
 }

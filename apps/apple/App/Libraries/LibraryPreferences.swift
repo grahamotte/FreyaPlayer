@@ -98,12 +98,12 @@ enum LibraryPageSortOrder: Int, CaseIterable {
         }
     }
 
-    var shortTitle: String {
+    var iconName: String {
         switch self {
         case .ascending:
-            return "Asc"
+            return "arrow.up"
         case .descending:
-            return "Desc"
+            return "arrow.down"
         }
     }
 

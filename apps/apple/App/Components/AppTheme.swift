@@ -22,7 +22,6 @@ enum AppTheme {
     static let focusedSurfaceFill = Color.white.opacity(0.16)
 
     static let scrim = Color.black.opacity(0.4)
-    static let modalScrim = Color.black.opacity(0.5)
     static let artworkShadow = Color.black.opacity(0.35)
 
     static let pressedScale = 0.98

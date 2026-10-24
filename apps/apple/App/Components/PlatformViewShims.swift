@@ -17,10 +17,6 @@ extension View {
         PlatformMetadata.focusableRowModifier(self)
     }
 
-    func pageTitleFont() -> some View {
-        modifier(ScaledTitleFont(size: PlatformMetadata.pageTitleSize, relativeTo: .largeTitle))
-    }
-
     func itemTitleFont() -> some View {
         modifier(ScaledTitleFont(size: PlatformMetadata.itemTitleSize, relativeTo: .title))
     }
@@ -108,5 +104,17 @@ struct GlassPillLabelStyle: LabelStyle {
 extension View {
     func glassPillLabel() -> some View {
         labelStyle(GlassPillLabelStyle())
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func largeNavigationTitle(subtitle: String? = nil) -> some View {
+        #if os(tvOS)
+        self
+        #else
+        navigationBarTitleDisplayMode(.large)
+            .navigationSubtitle(subtitle ?? "")
+        #endif
     }
 }

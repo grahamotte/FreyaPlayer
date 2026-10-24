@@ -33,6 +33,8 @@ final class LibraryPreferencesTests: XCTestCase {
     func testLibraryFilterUsesSeenTerminology() {
         XCTAssertEqual(LibraryPageFilter.unwatched.title, "Unseen")
         XCTAssertEqual(LibraryPageSort.addedAt.title, "Date Added")
+        XCTAssertEqual(LibraryPageSortOrder.ascending.iconName, "arrow.up")
+        XCTAssertEqual(LibraryPageSortOrder.descending.iconName, "arrow.down")
         XCTAssertEqual(LibraryPageFilter.unwatched.emptyStateText(for: "Movie"), "No unseen Movies.")
     }
 }

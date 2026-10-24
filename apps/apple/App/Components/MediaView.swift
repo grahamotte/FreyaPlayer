@@ -166,22 +166,19 @@ struct MediaView<Actions: View, Below: View>: View {
                 ScrollView {
                     below
                         .padding(.horizontal, AppTheme.Spacing.small)
-                        .padding(.top, AppTheme.Spacing.small)
+                        .padding(.top, AppTheme.Spacing.large)
                         .padding(.bottom, AppTheme.Spacing.large)
                         .frame(maxWidth: synopsisWidth, alignment: .leading)
                 }
                 .padding(.horizontal, -AppTheme.Spacing.small)
                 .scrollIndicators(.hidden)
                 .mask {
-                    LinearGradient(
-                        stops: [
-                            .init(color: .clear, location: 0),
-                            .init(color: .black, location: 0.06),
-                            .init(color: .black, location: 1)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+                    VStack(spacing: 0) {
+                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                            .frame(height: AppTheme.Spacing.xLarge)
+
+                        Color.black
+                    }
                     .padding(.horizontal, -AppTheme.Spacing.xLarge)
                 }
             }

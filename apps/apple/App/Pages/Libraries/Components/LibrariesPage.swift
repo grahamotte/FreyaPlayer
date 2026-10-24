@@ -40,15 +40,21 @@ struct LibrariesPage: View {
 
         return ScrollView {
             VStack(alignment: .leading, spacing: sectionSpacing) {
-                header(projection)
-
                 ForEach(projection.shelves) { shelf in
                     shelfView(shelf)
                 }
             }
+            .padding(.top, AppTheme.Spacing.xSmall)
             .padding(.bottom, pagePadding)
         }
         .scrollIndicators(.hidden)
+        .navigationTitle(projection.serverName)
+        .largeNavigationTitle()
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                toolbarItems(projection)
+            }
+        }
         .refreshable {
             await refresh()
         }
@@ -64,61 +70,47 @@ struct LibrariesPage: View {
         }
     }
 
-    private func header(_ projection: LibrariesHomeProjection) -> some View {
-        HStack(spacing: PlatformMetadata.controlSpacing) {
-            Text(projection.serverName)
-                .pageTitleFont()
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+    @ViewBuilder
+    private func toolbarItems(_ projection: LibrariesHomeProjection) -> some View {
+        if isRefreshing {
+            ProgressView()
+                .accessibilityLabel("Refreshing")
+        }
 
-            if isRefreshing {
-                ProgressView()
-                    .accessibilityLabel("Refreshing")
-            }
+        NavigationLink(value: projection.searchRoute) {
+            Label("Search", systemImage: "magnifyingglass")
+        }
 
-            Spacer(minLength: AppTheme.Spacing.medium)
-
-            NavigationLink(value: projection.searchRoute) {
-                Label("Search", systemImage: "magnifyingglass")
-            }
-            .glassIconButton()
-
-            Menu {
-                Button {
-                    if isRefreshing {
-                        model.cancelLibraryRefresh()
-                    } else {
-                        model.refreshAllLibraries(server)
-                    }
-                } label: {
-                    if isRefreshing {
-                        Label("Cancel Refresh", systemImage: "xmark")
-                    } else {
-                        Label("Refresh", systemImage: "arrow.clockwise")
-                    }
-                }
-                .disabled(model.isOffline)
-
-                Button {
-                    path.append(projection.manageRoute)
-                } label: {
-                    Label("Manage", systemImage: "gearshape")
-                }
-
-                Button {
-                    path.append(.about)
-                } label: {
-                    Label("About", systemImage: "info.circle")
+        Menu {
+            Button {
+                if isRefreshing {
+                    model.cancelLibraryRefresh()
+                } else {
+                    model.refreshAllLibraries(server)
                 }
             } label: {
-                Label("More", systemImage: "ellipsis")
+                if isRefreshing {
+                    Label("Cancel Refresh", systemImage: "xmark")
+                } else {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
             }
-            .menuStyle(.button)
-            .glassIconButton()
+            .disabled(model.isOffline)
+
+            Button {
+                path.append(projection.manageRoute)
+            } label: {
+                Label("Manage", systemImage: "gearshape")
+            }
+
+            Button {
+                path.append(.about)
+            } label: {
+                Label("About", systemImage: "info.circle")
+            }
+        } label: {
+            Label("More", systemImage: "ellipsis")
         }
-        .controlSize(.large)
-        .padding(.horizontal, pagePadding)
-        .padding(.top, PlatformMetadata.isPhone ? AppTheme.Spacing.xSmall : AppTheme.Spacing.medium)
     }
 
     private func shelfView(_ shelf: LibrariesHomeProjection.Shelf) -> some View {

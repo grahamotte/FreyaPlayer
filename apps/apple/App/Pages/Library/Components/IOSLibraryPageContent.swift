@@ -39,6 +39,20 @@ struct IOSLibraryPageContent: View {
             .padding(contentPadding)
         }
         .scrollIndicators(.hidden)
+        .navigationTitle(state.library.title)
+        .largeNavigationTitle(subtitle: state.countText)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                LibraryPageOptionsMenu(
+                    filter: state.filter,
+                    sort: state.sort,
+                    order: state.sortOrder,
+                    onFilterChange: state.setFilter,
+                    onSortChange: state.setSort,
+                    onSortOrderChange: state.setSortOrder
+                )
+            }
+        }
         .background(AmbientBackdrop(light: light))
         .task(id: leadArtworkURL) {
             light.light(leadArtworkURL)
@@ -105,62 +119,19 @@ struct IOSLibraryPageContent: View {
         }
     }
 
+    @ViewBuilder
     private var header: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.xxSmall) {
-                Text(state.library.title)
-                    .pageTitleFont()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                Text(state.countText)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(AppTheme.secondaryText)
-            }
-
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: PlatformMetadata.controlSpacing) {
-                    filterAndSortControls
-                    Spacer(minLength: 0)
-                    collectionControls
-                }
-
-                VStack(alignment: .leading, spacing: PlatformMetadata.controlSpacing) {
-                    HStack(spacing: PlatformMetadata.controlSpacing) {
-                        filterAndSortControls
-                    }
-
-                    HStack(spacing: PlatformMetadata.controlSpacing) {
-                        collectionControls
-                    }
-                }
-            }
-            .controlSize(PlatformMetadata.isPhone ? .regular : .large)
-        }
-    }
-
-    @ViewBuilder
-    private var filterAndSortControls: some View {
-        LibraryPageFilterControl(filter: state.filter, onChange: state.setFilter)
-
-        LibraryPageSortControl(
-            sort: state.sort,
-            order: state.sortOrder,
-            onSortChange: state.setSort,
-            onSortOrderChange: state.setSortOrder
-        )
-    }
-
-    @ViewBuilder
-    private var collectionControls: some View {
         if let item = state.libraryWatchStatusItem {
-            MediaPlayAllButton(model: model, items: state.displayedPlayableItems)
+            HStack(spacing: PlatformMetadata.controlSpacing) {
+                MediaPlayAllButton(model: model, items: state.displayedPlayableItems)
 
-            MediaCollectionWatchStatusButton(
-                model: model,
-                libraryItem: item,
-                libraryID: state.library.id
-            )
+                MediaCollectionWatchStatusButton(
+                    model: model,
+                    libraryItem: item,
+                    libraryID: state.library.id
+                )
+            }
+            .controlSize(.large)
         }
     }
 }

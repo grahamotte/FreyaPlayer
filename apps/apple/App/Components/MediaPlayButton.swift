@@ -266,21 +266,19 @@ private struct PlaybackDialogModifier: ViewModifier {
     let onClose: () -> Void
     let onPlay: () -> Void
 
+    @State private var sheetHeight: CGFloat = 520
+
     @ViewBuilder
     func body(content: Content) -> some View {
         if PlatformMetadata.isPhone {
             content
-                .fullScreenCover(isPresented: $isPresented) {
-                    ZStack {
-                        AppTheme.modalScrim
-                            .ignoresSafeArea()
-
-                        playbackDialog
-                            .background(AppTheme.backgroundTop)
-                            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.large, style: .continuous))
-                            .shadow(color: AppTheme.artworkShadow, radius: 28, y: 12)
-                    }
-                    .presentationBackground(.clear)
+                .sheet(isPresented: $isPresented) {
+                    playbackDialog
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, AppTheme.Spacing.small)
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { sheetHeight = $0 }
+                        .presentationDetents([.height(sheetHeight)])
+                        .presentationDragIndicator(.visible)
                 }
         } else {
             content
@@ -468,15 +466,11 @@ private struct PlaybackOptionsDialog: View {
         quality == .automatic ? defaultResolutionTitle : quality.title
     }
 
-    private var dialogWidth: CGFloat {
+    private var dialogWidth: CGFloat? {
 #if os(tvOS)
         720
 #else
-        guard PlatformMetadata.isPhone else { return 640 }
-        let screenWidth = UIApplication.shared.connectedScenes
-            .compactMap { ($0 as? UIWindowScene)?.screen.bounds.width }
-            .first ?? 390
-        return min(screenWidth - (PlatformMetadata.pageGutter * 2), 640)
+        PlatformMetadata.isPhone ? nil : 640
 #endif
     }
 
