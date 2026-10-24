@@ -115,6 +115,11 @@ Freya Player never burns in subtitles.
 - Keep a helper with its feature until it has a real second use. Keep folders shallow and Swift filenames PascalCase.
 - Centralize platform differences in `PlatformMetadata`, `PlatformLibraryPageContent`, and `PlatformLibrariesPageContent` where practical. Preserve normal tvOS focus movement when adding actions to UIKit collection views.
 
+### Apple App Design
+
+- Before UI work, read `PRODUCT.md` (product truth), `DESIGN.md` (visual system and confirmed direction), and `docs/apple-app-ui.md` (screens, routes, shared components, platform split, known quirks).
+- Impeccable design skills are installed at the user level, not in this repository. They read `PRODUCT.md` and `DESIGN.md` from the repository root. Keep both current when the product or visual system changes.
+
 ### Apple Workflow
 
 - Use the root `mise` tasks for Apple work.
