@@ -1,4 +1,3 @@
-import AVKit
 import SwiftUI
 import UIKit
 
@@ -6,84 +5,68 @@ struct MediaPlayButton: View {
     @ObservedObject var model: AppModel
     let item: MediaItem
     let id: MediaPlaybackID
-    var onPlaybackDismissed: () -> Void = {}
 
+    @StateObject private var session: MediaPlaybackSession
     @FocusState private var isPlayFocused: Bool
 
-    @State private var isLoading = false
     @State private var isLoadingOptions = false
     @State private var playbackOptions: MediaPlaybackOptions?
     @State private var playbackFailure: PlaybackFailure?
-    @State private var playbackDialogError: String?
     @State private var isShowingPlaybackDialog = false
     @State private var isHandlingLongPress = false
     @State private var draftQuality: MediaPlaybackQuality = .automatic
     @State private var draftAudioID: String?
     @State private var draftSubtitleID: String?
-    @State private var activeSelection: MediaPlaybackSelection?
-    @State private var playbackSessionID = UUID().uuidString
-    @State private var didCompletePlayback = false
-    @State private var didRetryPlayback = false
-    @State private var currentResumeOffset: Int?
-    @State private var playbackController: PlaybackSessionController?
-    @State private var presentedPlayerController: StockPlayerViewController?
-    @State private var activeRemoteSessionID: String?
-    @State private var seekTask: Task<Void, Never>?
-    @State private var recoveryTask: Task<Void, Never>?
+
+    init(model: AppModel, item: MediaItem, id: MediaPlaybackID) {
+        self.model = model
+        self.item = item
+        self.id = id
+        _session = StateObject(wrappedValue: MediaPlaybackSession(model: model))
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-            Button {
-                guard !isHandlingLongPress else {
-                    isHandlingLongPress = false
-                    return
-                }
-
-                let settings = model.playbackSettings(for: id)
-                Task {
-                    await startPlayback(settings: settings)
-                }
-            } label: {
-                Label {
-                    Text(item.hasResume ? "Resume" : "Play")
-                } icon: {
-                    Image(systemName: "play.fill")
-                        .opacity(isLoadingOptions ? 0 : 1)
-                        .overlay {
-                            if isLoadingOptions {
-                                ProgressView()
-                                    .controlSize(.small)
-                            }
-                        }
-                }
+        Button {
+            guard !isHandlingLongPress else {
+                isHandlingLongPress = false
+                return
             }
-            .buttonStyle(MediaGlassButtonStyle())
-            .focused($isPlayFocused)
-            .disabled(model.isOffline || isLoading || isLoadingOptions)
-            .simultaneousGesture(
-                LongPressGesture(minimumDuration: 0.5)
-                    .onEnded { _ in
-                        isHandlingLongPress = true
-                        Task {
-                            await showPlaybackDialog()
-                            try? await Task.sleep(for: .milliseconds(700))
-                            isHandlingLongPress = false
+            playWithRememberedSettings()
+        } label: {
+            Label {
+                Text(item.playButtonTitle)
+            } icon: {
+                Image(systemName: "play.fill")
+                    .opacity(isLoadingOptions ? 0 : 1)
+                    .overlay {
+                        if isLoadingOptions {
+                            ProgressView()
+                                .controlSize(.small)
                         }
                     }
-            )
-
+            }
         }
+        .buttonStyle(.glassProminent)
+        .focused($isPlayFocused)
+        .disabled(model.isOffline || session.isLoading || isLoadingOptions)
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 0.5)
+                .onEnded { _ in
+                    isHandlingLongPress = true
+                    Task {
+                        await showPlaybackDialog()
+                        try? await Task.sleep(for: .milliseconds(700))
+                        isHandlingLongPress = false
+                    }
+                }
+        )
         .task(id: id) {
             isPlayFocused = true
         }
-        .onChange(of: draftQuality) { playbackDialogError = nil }
-        .onChange(of: draftAudioID) { playbackDialogError = nil }
-        .onChange(of: draftSubtitleID) { playbackDialogError = nil }
         .modifier(PlaybackDialogModifier(
             isPresented: $isShowingPlaybackDialog,
-            isLoading: isLoading,
+            isLoading: session.isLoading,
             isOffline: model.isOffline,
-            error: playbackDialogError,
             qualityOptions: qualityOptions,
             defaultResolutionTitle: defaultResolutionTitle,
             playbackOptions: playbackOptions,
@@ -101,11 +84,8 @@ struct MediaPlayButton: View {
             onPlay: {
                 let selection = draftPlaybackSelection
                 model.setPlaybackSettings(MediaPlaybackSettings(selection: selection), for: id)
-                isLoading = true
                 isShowingPlaybackDialog = false
-                Task {
-                    await startPlayback(selection: selection)
-                }
+                session.play([item]) { selection }
             }
         ))
         .alert(item: $playbackFailure) { failure in
@@ -126,66 +106,15 @@ struct MediaPlayButton: View {
         playbackOptions?.defaultResolutionTitle ?? "Automatic (Default)"
     }
 
-    @discardableResult
-    private func startPlayback(selection: MediaPlaybackSelection?) async -> Bool {
-        await startPlayback(selection: selection, settings: nil)
-    }
+    private func playWithRememberedSettings() {
+        guard let settings = model.playbackSettings(for: id) else {
+            session.play([item])
+            return
+        }
 
-    @discardableResult
-    private func startPlayback(settings: MediaPlaybackSettings?) async -> Bool {
-        await startPlayback(selection: nil, settings: settings)
-    }
-
-    private func startPlayback(
-        selection initialSelection: MediaPlaybackSelection?,
-        settings: MediaPlaybackSettings?
-    ) async -> Bool {
-        isLoading = true
-
-        let sessionID = UUID().uuidString
-        playbackFailure = nil
-        activeSelection = nil
-        playbackSessionID = sessionID
-        didCompletePlayback = false
-        didRetryPlayback = false
-        currentResumeOffset = nil
-        let controller = playbackController ?? PlaybackSessionController()
-        playbackController = controller
-        let playerViewController = presentPlayerViewController(controller)
-
-        do {
-            let selection: MediaPlaybackSelection?
-            if let settings {
-                let options = try await rememberedPlaybackOptions()
-                selection = playbackSelection(for: settings, options: options)
-            } else {
-                selection = initialSelection
-            }
-            activeSelection = selection
-            let resource = try await model.playbackURL(
-                for: id,
-                selection: selection,
-                sessionID: sessionID,
-                offsetMilliseconds: item.resumeOffsetMilliseconds
-            )
-            guard playbackController === controller else {
-                model.stopPlaybackSession(for: id, sessionID: resource.remoteSessionID)
-                isLoading = false
-                return false
-            }
-            load(controller, resource: resource)
-            if playerViewController == nil || presentedPlayerController !== playerViewController {
-                presentPlayerViewController(controller)
-            }
-            isLoading = false
-            return true
-        } catch {
-            guard playbackController === controller else {
-                isLoading = false
-                return false
-            }
-            failPlaybackStart(controller, failure: PlaybackFailure(error))
-            return false
+        session.play([item]) {
+            let options = try await rememberedPlaybackOptions()
+            return playbackSelection(for: settings, options: options)
         }
     }
 
@@ -229,98 +158,10 @@ struct MediaPlayButton: View {
         )
     }
 
-    private func load(
-        _ controller: PlaybackSessionController,
-        resource: MediaPlaybackResource,
-        autoplay: Bool = true
-    ) {
-        let previousSessionID = activeRemoteSessionID
-        activeRemoteSessionID = resource.remoteSessionID
-        if previousSessionID != activeRemoteSessionID {
-            model.stopPlaybackSession(for: id, sessionID: previousSessionID)
-        }
-
-        let navigationHandler: ((Int) -> Void)? = resource.reloadsForSeek
-            ? { restartPlayback(at: $0) }
-            : nil
-        controller.load(
-            item: MediaPlayerItemFactory.item(resource: resource, mediaItem: item),
-            startOffsetMilliseconds: resource.localStartOffsetMilliseconds,
-            timelineOffsetMilliseconds: resource.timelineStartOffsetMilliseconds,
-            enableSubtitles: activeSelection?.subtitleID != nil,
-            autoplay: autoplay,
-            onTimelineEvent: reportTimeline(state:time:duration:),
-            onPlaybackEnded: playbackEnded(time:duration:),
-            onRecoveryNeeded: handleRecovery(resumeOffset:error:),
-            onNavigationNeeded: navigationHandler
-        )
-    }
-
-    @discardableResult
-    private func presentPlayerViewController(
-        _ playbackController: PlaybackSessionController
-    ) -> StockPlayerViewController? {
-        if let controller = presentedPlayerController, controller.view.window != nil {
-            controller.configure(
-                to: playbackController,
-                onPictureInPictureChanged: pictureInPictureChanged
-            )
-            return controller
-        }
-
-        presentedPlayerController?.clearDismissHandler()
-        guard let presenter = rootPresenter() else { return nil }
-
-        let controller = StockPlayerViewController(
-            playbackController: playbackController,
-            onPictureInPictureChanged: pictureInPictureChanged,
-            onDismiss: stopPlayback
-        )
-        presentedPlayerController = controller
-        presenter.present(controller, animated: true)
-        return controller
-    }
-
-    private func failPlaybackStart(
-        _ playbackController: PlaybackSessionController,
-        failure: PlaybackFailure
-    ) {
-        let playerViewController = presentedPlayerController
-        playerViewController?.clearDismissHandler()
-        presentedPlayerController = nil
-        playbackController.stop()
-        self.playbackController = nil
-        isLoading = false
-
-        guard let playerViewController else {
-            playbackFailure = failure
-            return
-        }
-
-        playerViewController.dismiss(animated: true) {
-            playbackFailure = failure
-            onPlaybackDismissed()
-        }
-    }
-
-    private func rootPresenter() -> UIViewController? {
-        let window = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .filter { $0.activationState == .foregroundActive }
-            .flatMap(\.windows)
-            .first(where: \.isKeyWindow)
-        var presenter = window?.rootViewController
-        while let presented = presenter?.presentedViewController {
-            presenter = presented
-        }
-        return presenter
-    }
-
     private func showPlaybackDialog() async {
         do {
             try await fetchPlaybackOptions()
             playbackFailure = nil
-            playbackDialogError = nil
             resetDraftSelection()
             isShowingPlaybackDialog = true
         } catch {
@@ -377,149 +218,12 @@ struct MediaPlayButton: View {
             defaultSubtitleID: playbackOptions?.selectedSubtitleID
         )
     }
-
-    private func stopPlayback() {
-        seekTask?.cancel()
-        recoveryTask?.cancel()
-        seekTask = nil
-        recoveryTask = nil
-        let controller = playbackController
-        presentedPlayerController = nil
-
-        let time = max(controller?.currentTimeMilliseconds ?? 0, currentResumeOffset ?? 0)
-        let duration = controller?.durationMilliseconds
-
-        if !didCompletePlayback {
-            reportTimeline(state: .stopped, time: time, duration: duration)
-        }
-
-        controller?.stop()
-        playbackController = nil
-        model.stopPlaybackSession(for: id, sessionID: activeRemoteSessionID)
-        activeRemoteSessionID = nil
-        onPlaybackDismissed()
-    }
-
-    private func handleRecovery(resumeOffset savedTime: Int, error: Error?) {
-        guard !didRetryPlayback else {
-            playbackFailure = error.map {
-                PlaybackFailure($0, summary: "Playback failed after Freya restarted the stream.")
-            } ?? PlaybackFailure(
-                summary: "Playback stopped responding.",
-                details: "The player failed again after Freya restarted the stream."
-            )
-            presentedPlayerController?.dismiss(animated: true)
-            return
-        }
-        didRetryPlayback = true
-
-        let resumeOffset = savedTime > 0
-            ? savedTime
-            : currentResumeOffset ?? item.resumeOffsetMilliseconds ?? 0
-        guard let previousController = playbackController else { return }
-        let previousSessionID = activeRemoteSessionID
-        currentResumeOffset = resumeOffset
-        activeRemoteSessionID = nil
-        let autoplay = previousController.prepareForRecovery()
-        model.stopPlaybackSession(for: id, sessionID: previousSessionID)
-        recoveryTask?.cancel()
-        recoveryTask = Task {
-            isLoading = true
-            defer { isLoading = false }
-
-            guard !Task.isCancelled, playbackController === previousController else { return }
-
-            do {
-                let newSessionID = UUID().uuidString
-                let resource = try await model.playbackURL(
-                    for: id,
-                    selection: activeSelection,
-                    sessionID: newSessionID,
-                    offsetMilliseconds: resumeOffset
-                )
-                guard !Task.isCancelled, playbackController === previousController else {
-                    model.stopPlaybackSession(for: id, sessionID: resource.remoteSessionID)
-                    return
-                }
-                playbackSessionID = newSessionID
-                currentResumeOffset = resumeOffset
-                load(previousController, resource: resource, autoplay: autoplay)
-                presentPlayerViewController(previousController)
-            } catch {
-                guard !Task.isCancelled else { return }
-                playbackFailure = PlaybackFailure(error, summary: "Freya couldn't restart playback.")
-                presentedPlayerController?.dismiss(animated: true)
-            }
-        }
-    }
-
-    private func restartPlayback(at offset: Int) {
-        currentResumeOffset = offset
-        seekTask?.cancel()
-        seekTask = Task {
-            do {
-                let newSessionID = UUID().uuidString
-                let resource = try await model.playbackURL(
-                    for: id,
-                    selection: activeSelection,
-                    sessionID: newSessionID,
-                    offsetMilliseconds: offset
-                )
-                guard !Task.isCancelled,
-                      currentResumeOffset == offset,
-                      let controller = playbackController else {
-                    model.stopPlaybackSession(for: id, sessionID: resource.remoteSessionID)
-                    return
-                }
-                playbackSessionID = newSessionID
-                load(controller, resource: resource)
-            } catch {
-                guard !Task.isCancelled else { return }
-                playbackFailure = PlaybackFailure(error, summary: "Freya couldn't seek to that position.")
-                presentedPlayerController?.dismiss(animated: true)
-            }
-        }
-    }
-
-    private func reportTimeline(state: MediaPlaybackTimelineState, time: Int, duration: Int?) {
-        if state == .playing {
-            currentResumeOffset = nil
-            didRetryPlayback = false
-        }
-        model.reportPlaybackTimeline(
-            for: id,
-            state: state,
-            time: time,
-            duration: duration,
-            sessionID: playbackSessionID
-        )
-    }
-
-    private func playbackEnded(time: Int, duration: Int?) {
-        didCompletePlayback = true
-        reportTimeline(state: .stopped, time: time, duration: duration)
-        model.markPlaybackCompleted(for: id, sessionID: playbackSessionID)
-        presentedPlayerController?.dismiss(animated: true)
-        presentedPlayerController = nil
-        playbackController?.stop()
-        playbackController = nil
-        model.stopPlaybackSession(for: id, sessionID: activeRemoteSessionID)
-        activeRemoteSessionID = nil
-    }
-
-    private func pictureInPictureChanged(_ isActive: Bool) {
-        if !isActive && presentedPlayerController == nil {
-            stopPlayback()
-        }
-    }
-
 }
 
 private struct PlaybackDialogModifier: ViewModifier {
     @Binding var isPresented: Bool
     let isLoading: Bool
     let isOffline: Bool
-    let error: String?
     let qualityOptions: [MediaPlaybackQuality]
     let defaultResolutionTitle: String
     let playbackOptions: MediaPlaybackOptions?
@@ -562,7 +266,6 @@ private struct PlaybackDialogModifier: ViewModifier {
         PlaybackOptionsDialog(
             isLoading: isLoading,
             isOffline: isOffline,
-            error: error,
             qualityOptions: qualityOptions,
             defaultResolutionTitle: defaultResolutionTitle,
             playbackOptions: playbackOptions,
@@ -583,7 +286,6 @@ private struct PlaybackDialogModifier: ViewModifier {
 private struct PlaybackOptionsDialog: View {
     let isLoading: Bool
     let isOffline: Bool
-    let error: String?
     let qualityOptions: [MediaPlaybackQuality]
     let defaultResolutionTitle: String
     let playbackOptions: MediaPlaybackOptions?
@@ -666,12 +368,6 @@ private struct PlaybackOptionsDialog: View {
 
             playbackPlanBlock
 
-            if let error {
-                Text(error)
-                    .font(.callout)
-                    .foregroundStyle(AppTheme.warning)
-            }
-
             VStack(spacing: AppTheme.Spacing.small) {
                 Button(action: play) {
                     Group {
@@ -716,16 +412,7 @@ private struct PlaybackOptionsDialog: View {
     }
 
     private func dismissPresentation(completion: @escaping () -> Void) {
-        let window = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .filter { $0.activationState == .foregroundActive }
-            .flatMap(\.windows)
-            .first(where: \.isKeyWindow)
-        var controller = window?.rootViewController
-        while let presented = controller?.presentedViewController {
-            controller = presented
-        }
-        guard let controller, controller.presentingViewController != nil else {
+        guard let controller = UIViewController.topPresented, controller.presentingViewController != nil else {
             completion()
             return
         }
@@ -855,167 +542,3 @@ private struct PlaybackOptionsMenuItem: View {
     }
 }
 
-struct StockPlayerView: UIViewControllerRepresentable {
-    let playbackController: PlaybackSessionController
-    let onPictureInPictureChanged: (Bool) -> Void
-
-    func makeUIViewController(context: Context) -> StockPlayerViewController {
-        StockPlayerViewController(
-            playbackController: playbackController,
-            onPictureInPictureChanged: onPictureInPictureChanged,
-        )
-    }
-
-    func updateUIViewController(_ controller: StockPlayerViewController, context: Context) {
-        controller.configure(
-            to: playbackController,
-            onPictureInPictureChanged: onPictureInPictureChanged
-        )
-    }
-
-    static func dismantleUIViewController(_ controller: StockPlayerViewController, coordinator: ()) {}
-}
-
-final class StockPlayerViewController: AVPlayerViewController, AVPlayerViewControllerDelegate {
-    var playbackController: PlaybackSessionController
-    private var onPictureInPictureChanged: (Bool) -> Void
-    private var onDismiss: (() -> Void)?
-
-    private var didDismiss = false
-    private var isPictureInPictureActive = false
-    private weak var pictureInPicturePresenter: UIViewController?
-
-    init(
-        playbackController: PlaybackSessionController,
-        onPictureInPictureChanged: @escaping (Bool) -> Void,
-        onDismiss: (() -> Void)? = nil
-    ) {
-        self.playbackController = playbackController
-        self.onPictureInPictureChanged = onPictureInPictureChanged
-        self.onDismiss = onDismiss
-        super.init(nibName: nil, bundle: nil)
-        modalPresentationStyle = .fullScreen
-        bindPlayerChanges()
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        delegate = self
-        player = playbackController.player
-#if os(iOS)
-        allowsPictureInPicturePlayback = true
-#endif
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        pictureInPicturePresenter = presentingViewController ?? pictureInPicturePresenter
-        playbackController.play()
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        guard !isPictureInPictureActive else { return }
-        playbackController.pause()
-    }
-
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        guard !isPictureInPictureActive else { return }
-        finishDismissalIfNeeded()
-    }
-
-    func configure(
-        to playbackController: PlaybackSessionController,
-        onPictureInPictureChanged: @escaping (Bool) -> Void
-    ) {
-        self.onPictureInPictureChanged = onPictureInPictureChanged
-
-        guard self.playbackController !== playbackController else {
-            bindPlayerChanges()
-            playbackController.play()
-            return
-        }
-
-        self.playbackController.setPlayerChangeHandler(nil)
-        self.playbackController = playbackController
-        bindPlayerChanges()
-        player = playbackController.player
-        playbackController.play()
-    }
-
-    private func bindPlayerChanges() {
-        playbackController.setPlayerChangeHandler { [weak self, weak playbackController] player in
-            guard let self, let playbackController,
-                  self.playbackController === playbackController else { return }
-            self.player = player
-        }
-    }
-
-    func clearDismissHandler() {
-        onDismiss = nil
-    }
-
-#if os(tvOS)
-    func playerViewController(
-        _ playerViewController: AVPlayerViewController,
-        timeToSeekAfterUserNavigatedFrom oldTime: CMTime,
-        to targetTime: CMTime
-    ) -> CMTime {
-        playbackController.userNavigated(to: targetTime)
-        return targetTime
-    }
-
-    func playerViewController(
-        _ playerViewController: AVPlayerViewController,
-        willResumePlaybackAfterUserNavigatedFrom oldTime: CMTime,
-        to targetTime: CMTime
-    ) {
-        playbackController.userWillResumeAfterNavigation()
-    }
-#endif
-
-    private func finishDismissalIfNeeded() {
-        guard !didDismiss else { return }
-        didDismiss = true
-        onDismiss?()
-    }
-
-    func playerViewControllerWillStartPictureInPicture(_ playerViewController: AVPlayerViewController) {
-        isPictureInPictureActive = true
-        onPictureInPictureChanged(true)
-    }
-
-    func playerViewControllerDidStopPictureInPicture(_ playerViewController: AVPlayerViewController) {
-        isPictureInPictureActive = false
-        onPictureInPictureChanged(false)
-        if view.window == nil {
-            finishDismissalIfNeeded()
-        }
-    }
-
-    func playerViewController(
-        _ playerViewController: AVPlayerViewController,
-        restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void
-    ) {
-        guard view.window == nil else {
-            completionHandler(true)
-            return
-        }
-
-        guard let pictureInPicturePresenter, pictureInPicturePresenter.view.window != nil else {
-            completionHandler(false)
-            return
-        }
-
-        pictureInPicturePresenter.present(playerViewController, animated: true) {
-            completionHandler(true)
-        }
-    }
-}

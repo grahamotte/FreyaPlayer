@@ -1,4 +1,3 @@
-import AVKit
 import SwiftUI
 import UIKit
 
@@ -10,7 +9,6 @@ final class MediaItemQuickActionHandler {
 
     private var pressTask: Task<Void, Never>?
     private var didHandleLongPress = false
-    private var presentedPlayerController: StockPlayerViewController?
 
     init(
         presenter: UIViewController,
@@ -64,14 +62,13 @@ final class MediaItemQuickActionHandler {
         didHandleLongPress = true
 
         let alert = UIAlertController(title: item.title, message: nil, preferredStyle: .alert)
-        let quickPlayTitle = model.cachedQuickPlayItem(for: item)?.quickPlayButtonTitle
-            ?? item.quickPlayButtonTitle
-
-        let playAction = UIAlertAction(title: quickPlayTitle, style: .default) { [weak self] _ in
-            Task { await self?.playNow(item) }
+        if item.playbackID != nil || item.kind == .series {
+            let playAction = UIAlertAction(title: MediaItemQuickActions.playTitle(model: model, item: item), style: .default) { [model] _ in
+                MediaItemQuickActions.play(item, model: model)
+            }
+            playAction.isEnabled = !model.isOffline
+            alert.addAction(playAction)
         }
-        playAction.isEnabled = !model.isOffline
-        alert.addAction(playAction)
         let markSeenAction = UIAlertAction(title: MediaWatchStatusDisplay.markSeenTitle, style: .default) { [weak self] _ in
             self?.model.setWatchStatus(for: item, isWatched: true)
         }
@@ -85,182 +82,19 @@ final class MediaItemQuickActionHandler {
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         presenter.present(alert, animated: true)
     }
+}
 
-    private func playNow(_ selectedItem: MediaItem) async {
-        guard let item = await model.quickPlayItem(for: selectedItem),
-              let playbackID = item.playbackID,
-              let presenter,
-              presenter.presentedViewController == nil else { return }
-
-        do {
-            let sessionID = UUID().uuidString
-            let resource = try await model.playbackURL(
-                for: playbackID,
-                sessionID: sessionID,
-                offsetMilliseconds: item.resumeOffsetMilliseconds
-            )
-            var activeSessionID = sessionID
-            var activeRemoteSessionID = resource.remoteSessionID
-            var seekTask: Task<Void, Never>?
-            var recoveryTask: Task<Void, Never>?
-            var didCompletePlayback = false
-            var recoveryPending = false
-            var lastPlaybackTime = item.resumeOffsetMilliseconds ?? 0
-            var lastPlaybackDuration: Int?
-            let playbackController = PlaybackSessionController()
-            let controller = StockPlayerViewController(
-                playbackController: playbackController,
-                onPictureInPictureChanged: { _ in },
-                onDismiss: { [weak self, weak playbackController] in
-                    guard let self else { return }
-                    seekTask?.cancel()
-                    recoveryTask?.cancel()
-                    self.presentedPlayerController = nil
-                    let time = max(playbackController?.currentTimeMilliseconds ?? 0, lastPlaybackTime)
-                    let duration = playbackController?.durationMilliseconds ?? lastPlaybackDuration
-
-                    if !didCompletePlayback {
-                        self.model.reportPlaybackTimeline(
-                            for: playbackID,
-                            state: .stopped,
-                            time: time,
-                            duration: duration,
-                            sessionID: activeSessionID
-                        )
-                    }
-                    playbackController?.stop()
-                    self.model.stopPlaybackSession(for: playbackID, sessionID: activeRemoteSessionID)
-                }
-            )
-            func load(_ resource: MediaPlaybackResource, autoplay: Bool = true) {
-                let previousSessionID = activeRemoteSessionID
-                activeRemoteSessionID = resource.remoteSessionID
-                if previousSessionID != activeRemoteSessionID {
-                    model.stopPlaybackSession(for: playbackID, sessionID: previousSessionID)
-                }
-                playbackController.load(
-                    item: MediaPlayerItemFactory.item(resource: resource, mediaItem: item),
-                    startOffsetMilliseconds: resource.localStartOffsetMilliseconds,
-                    timelineOffsetMilliseconds: resource.timelineStartOffsetMilliseconds,
-                    autoplay: autoplay,
-                    onTimelineEvent: { [weak self] state, time, duration in
-                        if state == .playing {
-                            recoveryPending = false
-                        }
-                        lastPlaybackTime = time
-                        lastPlaybackDuration = duration
-                        self?.model.reportPlaybackTimeline(
-                            for: playbackID,
-                            state: state,
-                            time: time,
-                            duration: duration,
-                            sessionID: activeSessionID
-                        )
-                    },
-                    onPlaybackEnded: { [weak self] time, duration in
-                        didCompletePlayback = true
-                        self?.model.reportPlaybackTimeline(
-                            for: playbackID,
-                            state: .stopped,
-                            time: time,
-                            duration: duration,
-                            sessionID: activeSessionID
-                        )
-                        self?.model.markPlaybackCompleted(for: playbackID, sessionID: activeSessionID)
-                        controller.dismiss(animated: true)
-                    },
-                    onRecoveryNeeded: { [weak self] savedTime, playbackError in
-                        guard let self, !recoveryPending else {
-                            controller.dismiss(animated: true) {
-                                if let playbackError {
-                                    self?.presentPlaybackFailure(PlaybackFailure(
-                                        playbackError,
-                                        summary: "Playback failed after Freya restarted the stream."
-                                    ))
-                                }
-                            }
-                            return
-                        }
-                        recoveryPending = true
-                        lastPlaybackTime = max(savedTime, item.resumeOffsetMilliseconds ?? 0)
-                        let previousSessionID = activeRemoteSessionID
-                        activeRemoteSessionID = nil
-                        let autoplay = playbackController.prepareForRecovery()
-                        self.model.stopPlaybackSession(
-                            for: playbackID,
-                            sessionID: previousSessionID
-                        )
-                        recoveryTask?.cancel()
-                        recoveryTask = Task {
-                            let offset = max(savedTime, item.resumeOffsetMilliseconds ?? 0)
-                            guard !Task.isCancelled else { return }
-
-                            do {
-                                let newSessionID = UUID().uuidString
-                                let newResource = try await self.model.playbackURL(
-                                    for: playbackID,
-                                    sessionID: newSessionID,
-                                    offsetMilliseconds: offset
-                                )
-                                guard !Task.isCancelled else {
-                                    self.model.stopPlaybackSession(for: playbackID, sessionID: newResource.remoteSessionID)
-                                    return
-                                }
-                                activeSessionID = newSessionID
-                                load(newResource, autoplay: autoplay)
-                            } catch {
-                                controller.dismiss(animated: true) {
-                                    self.presentPlaybackFailure(PlaybackFailure(
-                                        error,
-                                        summary: "Freya couldn't restart playback."
-                                    ))
-                                }
-                            }
-                        }
-                    },
-                    onNavigationNeeded: resource.reloadsForSeek ? { [weak self] offset in
-                        guard let self else { return }
-                        seekTask?.cancel()
-                        seekTask = Task {
-                            do {
-                                let newSessionID = UUID().uuidString
-                                let newResource = try await self.model.playbackURL(
-                                    for: playbackID,
-                                    sessionID: newSessionID,
-                                    offsetMilliseconds: offset
-                                )
-                                guard !Task.isCancelled else {
-                                    self.model.stopPlaybackSession(for: playbackID, sessionID: newResource.remoteSessionID)
-                                    return
-                                }
-                                activeSessionID = newSessionID
-                                load(newResource)
-                            } catch {
-                                controller.dismiss(animated: true) {
-                                    self.presentPlaybackFailure(PlaybackFailure(
-                                        error,
-                                        summary: "Freya couldn't seek to that position."
-                                    ))
-                                }
-                            }
-                        }
-                    } : nil
-                )
-            }
-            load(resource)
-            presentedPlayerController = controller
-            presenter.present(controller, animated: true)
-        } catch {
-            presentPlaybackFailure(PlaybackFailure(error))
-        }
+@MainActor
+enum MediaItemQuickActions {
+    static func playTitle(model: AppModel, item: MediaItem) -> String {
+        (model.cachedQuickPlayItem(for: item) ?? item).playButtonTitle
     }
 
-    private func presentPlaybackFailure(_ failure: PlaybackFailure) {
-        guard let presenter, presenter.presentedViewController == nil else { return }
-
-        let alert = UIAlertController(title: failure.title, message: failure.message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        presenter.present(alert, animated: true)
+    static func play(_ item: MediaItem, model: AppModel) {
+        Task {
+            guard let playable = await model.quickPlayItem(for: item) else { return }
+            MediaPlaybackSession(model: model).play([playable])
+        }
     }
 }
 
@@ -274,17 +108,14 @@ private struct MediaItemQuickActionsModifier: ViewModifier {
     @ObservedObject var model: AppModel
     let item: MediaItem
 
-    @State private var pendingPlayback: QuickPlayRequest?
-    @State private var playbackFailure: PlaybackFailure?
-
     func body(content: Content) -> some View {
         content
             .contextMenu {
                 if item.playbackID != nil || item.kind == .series {
                     Button {
-                        Task { await startPlayback() }
+                        MediaItemQuickActions.play(item, model: model)
                     } label: {
-                        Label(quickPlayTitle, systemImage: "play.fill")
+                        Label(MediaItemQuickActions.playTitle(model: model, item: item), systemImage: "play.fill")
                     }
                     .disabled(model.isOffline)
                 }
@@ -303,202 +134,5 @@ private struct MediaItemQuickActionsModifier: ViewModifier {
                 }
                 .disabled(model.isOffline)
             }
-            .fullScreenCover(item: $pendingPlayback) { request in
-                QuickPlaybackPresenter(
-                    request: request,
-                    model: model,
-                    onPlayerDismissed: { pendingPlayback = nil },
-                    onPlaybackFailed: { playbackFailure = PlaybackFailure($0) }
-                )
-                .ignoresSafeArea()
-            }
-            .alert(item: $playbackFailure) { failure in
-                Alert(
-                    title: Text(failure.title),
-                    message: Text(failure.message),
-                    dismissButton: .cancel(Text("OK"))
-                )
-            }
     }
-
-    private var quickPlayTitle: String {
-        model.cachedQuickPlayItem(for: item)?.quickPlayButtonTitle
-            ?? item.quickPlayButtonTitle
-    }
-
-    private func startPlayback() async {
-        guard let item = await model.quickPlayItem(for: item),
-              let playbackID = item.playbackID else { return }
-
-        do {
-            let sessionID = UUID().uuidString
-            let resource = try await model.playbackURL(
-                for: playbackID,
-                sessionID: sessionID,
-                offsetMilliseconds: item.resumeOffsetMilliseconds
-            )
-            pendingPlayback = QuickPlayRequest(
-                resource: resource,
-                sessionID: sessionID,
-                playbackID: playbackID,
-                item: item
-            )
-        } catch {
-            playbackFailure = PlaybackFailure(error)
-        }
-    }
-}
-
-private struct QuickPlayRequest: Identifiable {
-    let id = UUID()
-    let resource: MediaPlaybackResource
-    let sessionID: String
-    let playbackID: MediaPlaybackID
-    let item: MediaItem
-}
-
-private struct QuickPlaybackPresenter: UIViewControllerRepresentable {
-    let request: QuickPlayRequest
-    let model: AppModel
-    let onPlayerDismissed: () -> Void
-    let onPlaybackFailed: (Error) -> Void
-
-    func makeUIViewController(context: Context) -> StockPlayerViewController {
-        var activeSessionID = request.sessionID
-        var activeRemoteSessionID = request.resource.remoteSessionID
-        var seekTask: Task<Void, Never>?
-        var recoveryTask: Task<Void, Never>?
-        var didCompletePlayback = false
-        var recoveryPending = false
-        var lastPlaybackTime = request.item.resumeOffsetMilliseconds ?? 0
-        var lastPlaybackDuration: Int?
-        let playbackController = PlaybackSessionController()
-        let controller = StockPlayerViewController(
-            playbackController: playbackController,
-            onPictureInPictureChanged: { _ in },
-            onDismiss: {
-                seekTask?.cancel()
-                recoveryTask?.cancel()
-                let time = max(playbackController.currentTimeMilliseconds, lastPlaybackTime)
-                let duration = playbackController.durationMilliseconds ?? lastPlaybackDuration
-                if !didCompletePlayback {
-                    model.reportPlaybackTimeline(
-                        for: request.playbackID,
-                        state: .stopped,
-                        time: time,
-                        duration: duration,
-                        sessionID: activeSessionID
-                    )
-                }
-                playbackController.stop()
-                model.stopPlaybackSession(for: request.playbackID, sessionID: activeRemoteSessionID)
-                onPlayerDismissed()
-            }
-        )
-
-        func load(_ resource: MediaPlaybackResource, autoplay: Bool = true) {
-            let previousSessionID = activeRemoteSessionID
-            activeRemoteSessionID = resource.remoteSessionID
-            if previousSessionID != activeRemoteSessionID {
-                model.stopPlaybackSession(for: request.playbackID, sessionID: previousSessionID)
-            }
-            playbackController.load(
-                item: MediaPlayerItemFactory.item(resource: resource, mediaItem: request.item),
-                startOffsetMilliseconds: resource.localStartOffsetMilliseconds,
-                timelineOffsetMilliseconds: resource.timelineStartOffsetMilliseconds,
-                autoplay: autoplay,
-                onTimelineEvent: { state, time, duration in
-                    if state == .playing {
-                        recoveryPending = false
-                    }
-                    lastPlaybackTime = time
-                    lastPlaybackDuration = duration
-                    model.reportPlaybackTimeline(
-                        for: request.playbackID,
-                        state: state,
-                        time: time,
-                        duration: duration,
-                        sessionID: activeSessionID
-                    )
-                },
-                onPlaybackEnded: { time, duration in
-                    didCompletePlayback = true
-                    model.reportPlaybackTimeline(
-                        for: request.playbackID,
-                        state: .stopped,
-                        time: time,
-                        duration: duration,
-                        sessionID: activeSessionID
-                    )
-                    model.markPlaybackCompleted(for: request.playbackID, sessionID: activeSessionID)
-                    controller.dismiss(animated: true)
-                },
-                onRecoveryNeeded: { savedTime, playbackError in
-                    guard !recoveryPending else {
-                        controller.dismiss(animated: true) {
-                            if let playbackError { onPlaybackFailed(playbackError) }
-                        }
-                        return
-                    }
-                    recoveryPending = true
-                    lastPlaybackTime = max(savedTime, request.item.resumeOffsetMilliseconds ?? 0)
-                    let previousSessionID = activeRemoteSessionID
-                    activeRemoteSessionID = nil
-                    let autoplay = playbackController.prepareForRecovery()
-                    model.stopPlaybackSession(
-                        for: request.playbackID,
-                        sessionID: previousSessionID
-                    )
-                    recoveryTask?.cancel()
-                    recoveryTask = Task {
-                        let resumeOffset = max(savedTime, request.item.resumeOffsetMilliseconds ?? 0)
-                        guard !Task.isCancelled else { return }
-
-                        do {
-                            let newSessionID = UUID().uuidString
-                            let newResource = try await model.playbackURL(
-                                for: request.playbackID,
-                                sessionID: newSessionID,
-                                offsetMilliseconds: resumeOffset
-                            )
-                            guard !Task.isCancelled else {
-                                model.stopPlaybackSession(for: request.playbackID, sessionID: newResource.remoteSessionID)
-                                return
-                            }
-                            activeSessionID = newSessionID
-                            load(newResource, autoplay: autoplay)
-                        } catch {
-                            controller.dismiss(animated: true) { onPlaybackFailed(error) }
-                        }
-                    }
-                },
-                onNavigationNeeded: resource.reloadsForSeek ? { offset in
-                    seekTask?.cancel()
-                    seekTask = Task {
-                        do {
-                            let newSessionID = UUID().uuidString
-                            let newResource = try await model.playbackURL(
-                                for: request.playbackID,
-                                sessionID: newSessionID,
-                                offsetMilliseconds: offset
-                            )
-                            guard !Task.isCancelled else {
-                                model.stopPlaybackSession(for: request.playbackID, sessionID: newResource.remoteSessionID)
-                                return
-                            }
-                            activeSessionID = newSessionID
-                            load(newResource)
-                        } catch {
-                            controller.dismiss(animated: true) { onPlaybackFailed(error) }
-                        }
-                    }
-                } : nil
-            )
-        }
-
-        load(request.resource)
-        return controller
-    }
-
-    func updateUIViewController(_ controller: StockPlayerViewController, context: Context) {}
 }

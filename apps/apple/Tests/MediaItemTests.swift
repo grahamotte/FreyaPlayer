@@ -9,7 +9,6 @@ final class MediaItemTests: XCTestCase {
         XCTAssertEqual(item.runtimeText, "1h 30m")
         XCTAssertTrue(item.hasResume)
         XCTAssertEqual(item.playButtonTitle, "Resume at 0:12")
-        XCTAssertEqual(item.quickPlayButtonTitle, "Resume Now")
         XCTAssertEqual(item.playbackID?.itemID, item.id)
         XCTAssertEqual(item.artworkURL, item.artwork.posterURL)
         XCTAssertEqual(MediaItemKind.episode.artworkStyle, .landscape)
@@ -18,7 +17,7 @@ final class MediaItemTests: XCTestCase {
             makeMediaItem(resumeOffsetMilliseconds: 3_723_000).playButtonTitle,
             "Resume at 1:02:03"
         )
-        XCTAssertEqual(makeMediaItem().quickPlayButtonTitle, "Play Now")
+        XCTAssertEqual(makeMediaItem().playButtonTitle, "Play")
     }
 
     func testWatchStatusAndDerivedProgress() {
@@ -136,7 +135,7 @@ final class MediaItemTests: XCTestCase {
         ]
 
         XCTAssertEqual(series.quickPlayItem(from: episodes)?.id, "partial")
-        XCTAssertEqual(series.quickPlayItem(from: episodes)?.quickPlayButtonTitle, "Resume Now")
+        XCTAssertEqual(series.quickPlayItem(from: episodes)?.playButtonTitle, "Resume at 0:30")
     }
 
     func testQuickPlaySupportsPlayableItemsAndRejectsOtherContainers() {

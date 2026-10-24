@@ -111,10 +111,6 @@ struct MediaItem: Hashable, Identifiable, Codable {
         return "Resume at \(timestamp)"
     }
 
-    var quickPlayButtonTitle: String {
-        hasResume ? "Resume Now" : "Play Now"
-    }
-
     func quickPlayItem(from orderedDescendants: [MediaItem]) -> MediaItem? {
         if kind.isPlayable {
             return self
