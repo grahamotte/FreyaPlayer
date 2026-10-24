@@ -301,12 +301,6 @@ struct MediaItemDetailSection: Hashable, Codable, Identifiable {
 
 extension Optional where Wrapped == String {
     var appSynopsis: String {
-        self?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "No description available."
-    }
-}
-
-private extension String {
-    var nilIfEmpty: String? {
-        isEmpty ? nil : self
+        self?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 }

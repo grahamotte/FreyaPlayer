@@ -36,14 +36,8 @@ struct ServerManagementPlaybackCapabilitiesSection: View {
                 .frame(width: AppTheme.Spacing.large)
 
             VStack(alignment: .leading, spacing: AppTheme.Spacing.xxSmall) {
-                HStack(alignment: .firstTextBaseline, spacing: AppTheme.Spacing.xSmall) {
-                    Text(capability.name)
-                        .font(.body.weight(.medium))
-
-                    Text(capability.support.title)
-                        .font(PlatformMetadata.labelFont.weight(.semibold))
-                        .foregroundStyle(color(for: capability.support))
-                }
+                Text(capability.name)
+                    .font(.body.weight(.medium))
 
                 Text(capability.detail)
                     .font(PlatformMetadata.labelFont)
@@ -51,6 +45,8 @@ struct ServerManagementPlaybackCapabilitiesSection: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(capability.support.title)
     }
 
     private func systemImage(for support: PlaybackCapabilitySupport) -> String {

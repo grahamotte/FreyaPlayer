@@ -519,7 +519,7 @@ private final class LibraryPageCollectionViewController: UIViewController, UICol
 
             let section = NSCollectionLayoutSection(group: group)
             section.interGroupSpacing = lineSpacing
-            section.contentInsets = .init(top: AppTheme.Spacing.large, leading: horizontalInset, bottom: 0, trailing: horizontalInset)
+            section.contentInsets = .init(top: AppTheme.Spacing.xxLarge, leading: horizontalInset, bottom: AppTheme.Spacing.xxLarge, trailing: horizontalInset)
             return section
         }, configuration: configuration)
     }

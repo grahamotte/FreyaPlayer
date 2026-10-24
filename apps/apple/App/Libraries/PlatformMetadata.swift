@@ -34,7 +34,7 @@ enum PlatformMetadata {
 
     static var pageGutter: CGFloat {
         if isTV { return AppTheme.Spacing.xxLarge }
-        return isPhone ? AppTheme.Spacing.medium : AppTheme.Spacing.xLarge
+        return isPhone ? AppTheme.Spacing.medium : 20
     }
 
     static var controlSpacing: CGFloat {

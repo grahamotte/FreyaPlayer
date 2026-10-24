@@ -31,8 +31,8 @@
 	<string>Freya Player connects to media servers on your local network.</string>
 	<key>UILaunchScreen</key>
 	<dict>
-		<key>UILaunchScreen</key>
-		<dict/>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
 	</dict>
 	<key>UIUserInterfaceStyle</key>
 	<string>Automatic</string>

@@ -145,10 +145,11 @@ struct MediaView<Actions: View, Below: View>: View {
                     .frame(width: artworkSize.width, height: artworkSize.height)
             }
             .frame(width: artworkWidth)
+            .padding(.bottom, PlatformMetadata.isTV ? metrics.bottomPadding : 0)
         }
         .padding(.horizontal, metrics.horizontalPadding)
         .padding(.top, metrics.topPadding)
-        .padding(.bottom, metrics.bottomPadding)
+        .padding(.bottom, PlatformMetadata.isTV ? 0 : metrics.bottomPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -167,7 +168,7 @@ struct MediaView<Actions: View, Below: View>: View {
                     below
                         .padding(.horizontal, AppTheme.Spacing.small)
                         .padding(.top, AppTheme.Spacing.large)
-                        .padding(.bottom, AppTheme.Spacing.large)
+                        .padding(.bottom, AppTheme.Spacing.xxLarge * 2)
                         .frame(maxWidth: synopsisWidth, alignment: .leading)
                 }
                 .padding(.horizontal, -AppTheme.Spacing.small)
@@ -178,6 +179,9 @@ struct MediaView<Actions: View, Below: View>: View {
                             .frame(height: AppTheme.Spacing.xLarge)
 
                         Color.black
+
+                        LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+                            .frame(height: AppTheme.Spacing.xxLarge * 2)
                     }
                     .padding(.horizontal, -AppTheme.Spacing.xLarge)
                 }
@@ -185,7 +189,7 @@ struct MediaView<Actions: View, Below: View>: View {
             .frame(maxWidth: synopsisWidth, alignment: .leading)
             .padding(.leading, metrics.panelLeadingPadding)
             .padding(.trailing, metrics.panelTrailingPadding)
-            .padding(.vertical, metrics.panelVerticalPadding)
+            .padding(.top, metrics.panelVerticalPadding)
             .frame(width: width, alignment: .leading)
             .frame(maxHeight: .infinity, alignment: .topLeading)
         } else {
@@ -227,18 +231,20 @@ struct MediaView<Actions: View, Below: View>: View {
                     .lineLimit(1)
             }
 
-            Button {
-                isShowingDetails = true
-            } label: {
-                Text(data.synopsis)
-                    .font(.body)
-                    .foregroundStyle(AppTheme.secondaryText)
-                    .lineLimit(PlatformMetadata.isTV ? 2 : 5)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: synopsisWidth, alignment: .topLeading)
+            if !data.synopsis.isEmpty {
+                Button {
+                    isShowingDetails = true
+                } label: {
+                    Text(data.synopsis)
+                        .font(.body)
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .lineLimit(PlatformMetadata.isTV ? 2 : 5)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: synopsisWidth, alignment: .topLeading)
+                }
+                .buttonStyle(MediaDetailTextButtonStyle())
+                .accessibilityHint("Shows all details")
             }
-            .buttonStyle(MediaDetailTextButtonStyle())
-            .accessibilityHint("Shows all details")
 
             VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
                 MediaItemActionRow {
@@ -343,7 +349,9 @@ private struct FullItemDetailsView: View {
                     VStack(alignment: .leading, spacing: contentSpacing) {
                         closeButton
                         header
-                        descriptionSection
+                        if !synopsis.isEmpty {
+                            descriptionSection
+                        }
 
                         if !artwork.isEmpty {
                             artworkGallery(availableWidth: contentWidth)
@@ -500,7 +508,7 @@ private struct FullItemDetailsView: View {
     }
 
     private var initialFocusID: String? {
-        guard PlatformMetadata.isTV else { return nil }
+        guard PlatformMetadata.isTV, !synopsis.isEmpty else { return nil }
         return "description"
     }
 

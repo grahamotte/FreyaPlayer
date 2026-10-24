@@ -32,6 +32,12 @@ final class MediaItemTests: XCTestCase {
         XCTAssertNil(makeMediaItem(addedAt: nil, durationMilliseconds: nil).libraryTileSubtitle(showsAddedAt: true))
     }
 
+    func testAppSynopsisTrimsAndLeavesMissingTextEmpty() {
+        XCTAssertEqual(Optional("  A story.  ").appSynopsis, "A story.")
+        XCTAssertEqual(Optional("   ").appSynopsis, "")
+        XCTAssertEqual(String?.none.appSynopsis, "")
+    }
+
     func testRemainingTimeAndFactsLine() {
         let resumed = makeMediaItem(durationMilliseconds: 5_400_000, resumeOffsetMilliseconds: 1_800_000)
         let short = makeMediaItem(durationMilliseconds: 120_000, resumeOffsetMilliseconds: 90_000)
