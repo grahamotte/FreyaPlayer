@@ -206,7 +206,7 @@ struct MediaView<Content: View>: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: metrics.contentSpacing) {
             Text(data.title)
-                .font(PlatformMetadata.itemTitleFont)
+                .itemTitleFont()
                 .lineLimit(3)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .id(Self.topID)
@@ -388,7 +388,7 @@ private struct FullItemDetailsView: View {
 
     private var header: some View {
         Text(title)
-            .font(PlatformMetadata.itemTitleFont)
+            .itemTitleFont()
             .frame(maxWidth: 1100, alignment: .leading)
     }
 

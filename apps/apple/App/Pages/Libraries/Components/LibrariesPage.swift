@@ -40,7 +40,7 @@ struct LibrariesPage: View {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 HStack(spacing: PlatformMetadata.controlSpacing) {
                     Text(projection.serverName)
-                        .font(PlatformMetadata.pageTitleFont)
+                        .pageTitleFont()
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
 

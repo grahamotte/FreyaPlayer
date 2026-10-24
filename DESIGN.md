@@ -8,10 +8,8 @@ colors:
   dimmed-white: "rgba(255, 255, 255, 0.72)"
   surface: "rgba(255, 255, 255, 0.08)"
   surface-subtle: "rgba(255, 255, 255, 0.05)"
-  surface-emphasized: "rgba(255, 255, 255, 0.16)"
+  surface-focused: "rgba(255, 255, 255, 0.16)"
   surface-border: "rgba(255, 255, 255, 0.12)"
-  glass-fill: "rgba(255, 255, 255, 0.12)"
-  glass-stroke: "rgba(255, 255, 255, 0.28)"
   seen-yellow: "#FFD60A"
   warning-orange: "#FF9F0A"
   positive-green: "#30D158"
@@ -21,19 +19,15 @@ colors:
 typography:
   page-title:
     fontFamily: "SF Pro (system)"
-    fontSize: "38pt iPhone / 52pt iPad & Mac / 64pt tvOS"
+    fontSize: "38pt iPhone / 52pt iPad & Mac / 64pt tvOS, scaled with Large Title"
     fontWeight: 700
   item-title:
     fontFamily: "SF Pro (system)"
-    fontSize: "28pt iPhone / 38pt iPad & Mac / 58pt tvOS"
+    fontSize: "28pt iPhone / 38pt iPad & Mac / 58pt tvOS, scaled with Title"
     fontWeight: 700
   section-title:
     fontFamily: "SF Pro (system)"
     fontSize: "Title 2 (Title 3 on tvOS)"
-    fontWeight: 600
-  control:
-    fontFamily: "SF Pro (system)"
-    fontSize: "Body"
     fontWeight: 600
   tile-title:
     fontFamily: "SF Pro (system)"
@@ -56,8 +50,6 @@ rounded:
   artwork: "18pt (24pt tvOS)"
   card: "20pt"
   large: "28pt"
-  panel: "34pt"
-  control: "36pt"
 spacing:
   xxs: "4pt"
   xs: "8pt"
@@ -67,25 +59,6 @@ spacing:
   xl: "32pt"
   xxl: "48pt"
 components:
-  button-glass:
-    backgroundColor: "{colors.glass-fill}"
-    textColor: "{colors.projection-white}"
-    typography: "{typography.control}"
-    rounded: "{rounded.control}"
-    padding: "16pt 28pt"
-  button-glass-focused:
-    backgroundColor: "{colors.projection-white}"
-    textColor: "{colors.screening-room-floor}"
-    rounded: "{rounded.control}"
-  button-glass-compact:
-    backgroundColor: "{colors.glass-fill}"
-    textColor: "{colors.projection-white}"
-    rounded: "{rounded.control}"
-    padding: "16pt 16pt (iPhone) / 16pt 24pt"
-  panel:
-    backgroundColor: "{colors.surface}"
-    rounded: "{rounded.panel}"
-    padding: "16pt (iPhone) / 24pt"
   media-tile:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.artwork}"
@@ -97,15 +70,11 @@ components:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.card}"
     padding: "16pt 24pt"
-  text-field:
-    backgroundColor: "{colors.glass-fill}"
-    textColor: "{colors.projection-white}"
-    height: "48pt"
 ---
 
 # Design System: Freya Player
 
-<!-- Captured from code on 2026-10-24, before the facelift. Tokens describe the incumbent system. Lines marked "Direction" are confirmed decisions the facelift will apply. -->
+<!-- Captured from code on 2026-10-24 and updated after FP-40 (system Liquid Glass, Forms, Dynamic Type titles). -->
 
 ## Overview
 
@@ -115,13 +84,13 @@ Freya is a dark, quiet room that belongs to you. The lights are down, the chrome
 
 The structure is stock Apple. There is one navigation stack, system menus, alerts, context menus, and AVPlayerViewController for playback. Freya's light signature is ambient color drawn from the artwork, glowing behind the content like the spill from a projector. Everything else is near-black space, white type, and translucent surfaces. Density is low: large artwork, generous gutters, and few controls per screen.
 
-The system was assembled by several hands, so it holds three background treatments, two hand-rolled "glass" button paths (SwiftUI and UIKit), and fixed point sizes alongside Dynamic Type. The facelift should reduce it to one coherent version of the room.
+Controls use the system's Liquid Glass, settings-shaped screens are grouped Forms, and browsing screens share one ambient background per launch. Item pages swap in the artwork's own palette.
 
 **Key Characteristics:**
 - Always dark, with white type at two strengths (full and 72%).
 - Artwork is the hero and the only source of saturated color, apart from the yellow "seen" mark.
 - Translucent white surfaces at 5%, 8%, 12%, and 16% for layering. There are no colored panels.
-- On tvOS, focus inverts a control to solid white, and a focused tile lifts with the system parallax.
+- Controls are system Liquid Glass and take the system focus and press treatment. On tvOS a focused tile lifts with the system parallax.
 - Continuous (squircle) corners everywhere.
 
 ## Colors
@@ -129,20 +98,20 @@ The system was assembled by several hands, so it holds three background treatmen
 The palette is near-black and white. Saturated color comes from content, plus one functional accent.
 
 ### Primary
-- **Seen Yellow** (system yellow): the only interface accent. It marks watched and in-progress state on the pie or check badge, and it tints the Seen/Unseen button in proportion to progress. It is never decoration.
+- **Seen Yellow** (system yellow): the only interface accent. It marks watched and in-progress state on the pie or check badge, and it colors the Seen/Unseen button's eye icon in proportion to progress. It is never decoration.
 
 ### Neutral
 - **Screening Room Top / Floor**: the vertical base gradient behind every screen that has no artwork.
 - **Projection White**: primary text and the fill of a focused control.
 - **Dimmed White** (72%): secondary text, labels, placeholder icons, and captions.
-- **Surface / Subtle / Emphasized**: translucent white layers for tiles and panels at rest (8%), quiet detail tiles (5%), and focused surfaces (16%).
-- **Surface Border / Glass Fill / Glass Stroke**: hairline outlines and the fill and stroke of the custom glass buttons.
+- **Surface / Subtle / Focused**: translucent white layers for tiles and list rows at rest (8%), quiet detail tiles (5%), and focused surfaces (16%).
+- **Surface Border**: hairline dividers in full details.
 - **Scrims**: black at 40% behind full-screen details and 50% behind the iPhone Play Options card.
 
 ### Functional
 - **Warning Orange**: conversions in the Play Options plan, "conditional" capability, dialog errors.
 - **Positive Green**: "supported" capability.
-- **Destructive Red**: the tint for the Deactivate button.
+- **Destructive Red**: reserved for destructive state. Deactivate uses the system destructive button role.
 
 ### Named Rules
 **The Projector Rule.** Saturated color on screen comes from the artwork (the ambient mesh, posters, backdrops) or from the seen mark. The interface never adds its own hue for decoration.
@@ -156,16 +125,16 @@ The palette is near-black and white. Saturated color comes from content, plus on
 **Character:** Apple-native and bold at the top. Titles are heavy and large, and everything below them steps down quickly to system text styles.
 
 ### Hierarchy
-- **Page Title** (bold, 38/52/64pt by idiom): server name on home, library name on grids. A fixed size today.
-- **Item Title** (bold, 28/38/58pt): the title on an item page, up to 3 lines. A fixed size today.
+- **Page Title** (bold, 38/52/64pt by idiom, scaled like Large Title): server name on home, library name on grids.
+- **Item Title** (bold, 28/38/58pt, scaled like Title): the title on an item page, up to 3 lines.
 - **Section Title** (semibold, Title 2; Title 3 on tvOS): shelf names, settings sections, dialog titles.
-- **Control** (semibold Body): all button and menu labels.
+- **Control**: system glass button labels at the system's default control font.
 - **Tile Title** (Headline; semibold Callout on tvOS): titles under tiles, scrolling as a marquee on focus or hover.
 - **Body** (Body, Dimmed White): synopses, explanations.
 - **Label** (Footnote; Caption on tvOS): tile subtitles, metadata labels, captions.
 
 ### Named Rules
-**The Dynamic Type Rule.** Direction: titles move from fixed point sizes to system text styles, such as Large Title and Title, scaled per idiom, so they follow the user's reading size. New text never uses a hard-coded size.
+**The Dynamic Type Rule.** Titles go through `pageTitleFont()` and `itemTitleFont()`, which scale with the user's reading size. All other text uses system text styles. New text never uses a hard-coded size.
 
 ## Layout
 
@@ -174,7 +143,7 @@ There is one full-bleed column per screen, with side gutters that grow per idiom
 - **Home:** stacked horizontal shelves. Posters are 130pt (iPhone) or 180pt (iPad and Mac) wide, and wide tiles 200pt or 280pt. On tvOS, shelves use fixed columns: 6 posters or 4 wide.
 - **Library grid:** 2 columns on iPhone, 4 posters or 3 wide on iPad and tvOS, adaptive 180–220pt posters or 260–300pt wide on Mac.
 - **Item detail:** landscape splits into 62% details and 38% artwork. Portrait stacks artwork (38% of the height) above scrolling details.
-- **Forms, settings, About:** a centered panel capped at 720pt (1000–1200pt on tvOS; settings 860pt).
+- **Forms, settings, About:** system grouped `Form`s, capped at 1200pt wide on tvOS through `readableFormWidth()`.
 
 ## Elevation & Depth
 
@@ -183,26 +152,24 @@ Depth comes from tonal layering on a dark ground, not from shadows. Surfaces sta
 ### Named Rules
 **The Lights-Down Rule.** Panels and controls stay flat and translucent. Only content (artwork) earns a shadow.
 
-**The System Glass Rule.** Direction (confirmed 2026-10-24): controls adopt system Liquid Glass (`.buttonStyle(.glass)` and `.glassProminent`, plus `glassEffect` for custom chrome) and drop the hand-rolled 12% white fill. The SwiftUI and UIKit paths should both resolve to the system material.
+**The System Glass Rule.** Controls use system Liquid Glass: `.buttonStyle(.glass)`, `.glassProminent` for the one primary action, and `UIButton.Configuration.glass()` in tvOS UIKit. Never hand-roll a white-alpha fill for a control.
 
 ## Shapes
 
-Every rounded rectangle uses continuous corners. Radii grow with the size of the object: inline fields and detail rows 16pt, tiles 18pt (24pt tvOS), cards and list rows 20pt, large artwork 28pt, panels 34pt, and controls 36pt, which makes buttons pill-like at their height. Setup text fields on iOS are full capsules. The progress badge is a 24pt circle.
+Every rounded rectangle uses continuous corners. Radii grow with the size of the object: inline surfaces and search artwork 16pt, tiles 18pt (24pt tvOS), cards and list rows 20pt, large artwork and provider buttons 28pt. Control shapes come from system glass (capsules, or circles for icon-only buttons). The progress badge is a 24pt circle.
 
 ## Components
 
-### Buttons (`MediaGlassButtonStyle`, `GlassMenuButton`, `applyGlassBackground`)
-- **Character:** translucent pills that go solid white when focused on tvOS.
-- **Sizes:** regular (16×28pt padding), compact (16×16pt on iPhone, 16×24pt otherwise), square (14pt, icon only), bare (no padding, used by the provider picker).
-- **Roles:** standard; tinted (fill at 18% of the tint, stroke at 40%, used by the Seen button); destructive (red tint).
-- **States:** pressed scales to 98%; disabled drops to 45% opacity; focused fills solid white with black text and no stroke.
-- **Menus** (Filter, Sort, Play All, Seen, Play Options pickers) use the same style with `.menuStyle(.button)`.
-- **Direction:** replace with system Liquid Glass. Primary actions such as Play, Resume, and Connect take `.glassProminent`; everything else takes `.glass`.
+### Buttons
+- **Character:** system Liquid Glass. `.glassProminent` marks the one primary action on a screen (Play). Everything else, including menus (Filter, Sort, Play All, Seen, Play Options pickers), uses `.glass`.
+- **Icon-only:** `.glass` with `.buttonBorderShape(.circle)` (library reordering in Manage).
+- **tvOS UIKit:** `UIButton.Configuration.glass()` for Search, the home action row, and the library header menus.
+- **Rows in Forms:** plain system row buttons (Connect, Clear Cache, Deactivate with the destructive role).
 
 ### Media Tiles (`LibraryItemCard`, `LibraryTileCell`, `LibraryGridCell`)
 - **Shape:** artwork in a rounded rectangle (`artwork` radius) at 2:3 for posters or 16:9 for wide tiles, on a Surface placeholder with a dimmed SF Symbol until the image loads.
 - **Badge:** Seen Yellow progress pie or check in the bottom-trailing corner.
-- **Text:** a marquee title and dimmed subtitle (runtime, plus the added date when sorted by Added At) under the artwork. On the tvOS home screen there is no per-tile text; the shelf footer shows the focused title.
+- **Text:** a marquee title and dimmed subtitle (runtime, plus the added date when sorted by Date Added) under the artwork. On the tvOS home screen there is no per-tile text; the shelf footer shows the focused title.
 - **Open Library tile:** a Surface tile with an arrow and "Open Library" that leads each home shelf.
 
 ### Item Detail (`MediaView`)
@@ -210,14 +177,11 @@ Every rounded rectangle uses continuous corners. Radii grow with the size of the
 - **Metadata tiles:** label and value pairs on Surface Subtle cards (`card` radius) in a horizontal row that fades at the trailing edge.
 - **Child lists:** full-width Surface rows with a title, a progress badge, and a chevron.
 
-### Panels (`PanelBackground`, `ServerManagementSection`)
-- A Surface fill with a hairline Surface Border at the `panel` radius. Panels hold setup forms, settings sections, and About.
-
-### Inputs (`JellyfinSetupContent`, `ServerSearchPage`)
-- On iOS, setup fields are 48pt capsules with a Glass Fill and Glass Stroke, and a white stroke when focused. The iOS search field is a `glassField` (Surface fill, 16pt radius, 2pt white stroke when focused). tvOS uses system fields and `.searchable`.
+### Forms (`ServerManagementPanel`, `JellyfinSetupContent`, `PlexSetupContent`, `AboutPage`)
+- System grouped `Form`s with section headers. Text-only rows call `tvOSFocusableRow()` so tvOS can scroll to them. Search uses the system `.searchable` field on every platform.
 
 ### Navigation
-- System `NavigationStack` push and pop throughout. Full-screen covers are used for playback and full details, and sheets for Play Options (a custom centered card on iPhone). The iOS Search page replaces the navigation bar with its own Back button.
+- System `NavigationStack` push and pop throughout, with system back buttons on every page. The player is presented full screen, full details use a full-screen cover, and Play Options uses a sheet (a custom centered card on iPhone).
 
 ## Do's and Don'ts
 

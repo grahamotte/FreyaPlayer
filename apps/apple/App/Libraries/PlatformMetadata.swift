@@ -77,16 +77,12 @@ enum PlatformMetadata {
         return isPhone ? 28 : 38
     }
 
-    static var pageTitleFont: Font {
-        .system(size: pageTitleSize, weight: .bold)
-    }
-
-    static var itemTitleFont: Font {
-        .system(size: itemTitleSize, weight: .bold)
-    }
-
     static var uiPageTitleFont: UIFont {
-        .systemFont(ofSize: pageTitleSize, weight: .bold)
+        UIFontMetrics(forTextStyle: .title1).scaledFont(for: .systemFont(ofSize: pageTitleSize, weight: .bold))
+    }
+
+    static var tvActionButtonSize: CGSize {
+        CGSize(width: 360, height: 72)
     }
 
     static var sectionTitleFont: Font {

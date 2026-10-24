@@ -357,7 +357,7 @@ extension UIViewController {
             .flatMap(\.windows)
             .first(where: \.isKeyWindow)
         var controller = window?.rootViewController
-        while let presented = controller?.presentedViewController {
+        while let presented = controller?.presentedViewController, !presented.isBeingDismissed {
             controller = presented
         }
         return controller

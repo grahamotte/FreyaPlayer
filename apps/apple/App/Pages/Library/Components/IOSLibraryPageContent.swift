@@ -92,7 +92,7 @@ struct IOSLibraryPageContent: View {
     private var phoneHeader: some View {
         VStack(alignment: .leading, spacing: contentSpacing) {
             Text(state.library.title)
-                .font(PlatformMetadata.pageTitleFont)
+                .pageTitleFont()
                 .lineLimit(1)
 
             HStack(alignment: .top, spacing: PlatformMetadata.controlSpacing) {
@@ -115,7 +115,7 @@ struct IOSLibraryPageContent: View {
         VStack(alignment: .leading, spacing: contentSpacing) {
             HStack(alignment: .firstTextBaseline) {
                 Text(state.library.title)
-                    .font(PlatformMetadata.pageTitleFont)
+                    .pageTitleFont()
                     .lineLimit(1)
 
                 Spacer(minLength: 0)

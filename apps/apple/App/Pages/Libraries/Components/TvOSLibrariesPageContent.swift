@@ -398,18 +398,19 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                 return layoutSection
 
             case .manage:
-                let buttonWidth: CGFloat = 360
+                let buttonSize = PlatformMetadata.tvActionButtonSize
+                let buttonWidth = buttonSize.width
                 let buttonSpacing = PlatformMetadata.controlSpacing
                 let buttonCount = section.items.count
                 let itemSize = NSCollectionLayoutSize(
                     widthDimension: .absolute(buttonWidth),
-                    heightDimension: .absolute(72)
+                    heightDimension: .absolute(buttonSize.height)
                 )
                 let item = NSCollectionLayoutItem(layoutSize: itemSize)
                 let groupWidth = (buttonWidth * CGFloat(buttonCount)) + (buttonSpacing * CGFloat(max(buttonCount - 1, 0)))
                 let groupSize = NSCollectionLayoutSize(
                     widthDimension: .absolute(groupWidth),
-                    heightDimension: .absolute(72)
+                    heightDimension: .absolute(buttonSize.height)
                 )
                 let group = NSCollectionLayoutGroup.horizontal(
                     layoutSize: groupSize,
@@ -1031,8 +1032,8 @@ private final class LibrariesServerHeaderView: UICollectionReusableView {
 
             searchButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -horizontalInset),
             searchButton.centerYAnchor.constraint(equalTo: label.centerYAnchor),
-            searchButton.widthAnchor.constraint(equalToConstant: 360),
-            searchButton.heightAnchor.constraint(equalToConstant: 72)
+            searchButton.widthAnchor.constraint(equalToConstant: PlatformMetadata.tvActionButtonSize.width),
+            searchButton.heightAnchor.constraint(equalToConstant: PlatformMetadata.tvActionButtonSize.height)
         ])
     }
 
