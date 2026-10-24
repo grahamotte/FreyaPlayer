@@ -10,7 +10,7 @@ struct ServerManagementServerSection: View {
             LabeledContent("Address", value: server.serverURL)
             LabeledContent("Provider", value: server.providerID.title)
 
-            Button("Deactivate", role: .destructive, action: onDeactivate)
+            Button("Deactivate Server…", action: onDeactivate)
         }
     }
 }

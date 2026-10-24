@@ -92,7 +92,9 @@ struct MediaItem: Hashable, Identifiable, Codable {
     }
 
     func libraryTileSubtitle(showsAddedAt: Bool) -> String? {
-        guard showsAddedAt, let addedAt else { return runtimeText }
+        guard showsAddedAt, let addedAt else {
+            return kind.isPlayable ? runtimeText : year.map(String.init)
+        }
         return Self.shortDateFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(addedAt)))
     }
 

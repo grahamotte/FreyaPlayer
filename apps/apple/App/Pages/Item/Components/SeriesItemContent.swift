@@ -29,7 +29,7 @@ struct SeriesItemContent: View {
                 rowStyle: .standard,
                 autoFocusNextUnwatched: true
             )
-            .padding(.top, AppTheme.Spacing.medium)
+            .padding(.top, PlatformMetadata.isTV ? 0 : AppTheme.Spacing.medium)
         }
         .task(id: originalItem.id) { model.refreshItem(originalItem) }
     }

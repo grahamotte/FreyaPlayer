@@ -15,6 +15,7 @@ struct LibraryPageFilterControl: View {
             }
         } label: {
             Label(filter.title, systemImage: "line.3.horizontal.decrease")
+                .glassPillLabel()
         }
         .menuStyle(.button)
         .buttonStyle(.glass)
@@ -51,6 +52,7 @@ struct LibraryPageSortControl: View {
             }
         } label: {
             Label("\(sort.title) \(order.shortTitle)", systemImage: "arrow.up.arrow.down")
+                .glassPillLabel()
         }
         .menuStyle(.button)
         .buttonStyle(.glass)

@@ -27,8 +27,14 @@ struct MediaPlayAllButton: View {
             if session.isLoading {
                 ProgressView()
             } else {
-                Label("Play All", systemImage: "play.fill")
-                    .foregroundStyle(isProminent ? AppTheme.onAccent : AppTheme.primaryText)
+                if isProminent {
+                    Label("Play All", systemImage: "play.fill")
+                        .glassPillLabel()
+                        .foregroundStyle(AppTheme.onAccent)
+                } else {
+                    Label("Play All", systemImage: "play.fill")
+                        .glassPillLabel()
+                }
             }
         }
         .menuStyle(.button)
@@ -37,6 +43,7 @@ struct MediaPlayAllButton: View {
         .disabled(model.isOffline || session.isLoading || !items.contains { $0.playbackID != nil })
         .fixedSize(horizontal: true, vertical: false)
         .task {
+            guard isProminent else { return }
             isPlayFocused = true
         }
     }

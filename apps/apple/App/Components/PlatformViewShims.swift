@@ -94,10 +94,19 @@ private struct GlassIconLabelStyle: LabelStyle {
     func makeBody(configuration: Configuration) -> some View {
         IconOnlyLabelStyle().makeBody(configuration: configuration)
             .font(PlatformMetadata.isTV ? .title3.weight(.semibold) : .body.weight(.semibold))
-            .frame(width: Self.iconSide, height: Self.iconSide)
+            .frame(width: PlatformMetadata.controlContentSide, height: PlatformMetadata.controlContentSide)
     }
+}
 
-    private static var iconSide: CGFloat {
-        PlatformMetadata.isTV ? 40 : 24
+struct GlassPillLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        TitleAndIconLabelStyle().makeBody(configuration: configuration)
+            .frame(minHeight: PlatformMetadata.controlContentSide)
+    }
+}
+
+extension View {
+    func glassPillLabel() -> some View {
+        labelStyle(GlassPillLabelStyle())
     }
 }

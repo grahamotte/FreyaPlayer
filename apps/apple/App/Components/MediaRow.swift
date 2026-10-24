@@ -55,8 +55,9 @@ struct MediaRow: View {
     }
 
     private var facts: String {
+        let runtime = item.kind.isPlayable ? item.runtimeText : nil
         let remaining = item.kind.isPlayable ? item.remainingText : nil
-        return ([item.releasedAtFormatted ?? item.year.map(String.init), item.runtimeText, remaining].compactMap { $0 })
+        return ([item.releasedAtFormatted ?? item.year.map(String.init), runtime, remaining].compactMap { $0 })
             .joined(separator: " · ")
     }
 
@@ -68,10 +69,10 @@ struct MediaRow: View {
     private var thumbnailWidth: CGFloat {
         switch style {
         case .poster:
-            if PlatformMetadata.isTV { return 150 }
+            if PlatformMetadata.isTV { return 104 }
             return PlatformMetadata.isPhone ? 72 : 96
         case .landscape:
-            if PlatformMetadata.isTV { return 320 }
+            if PlatformMetadata.isTV { return 260 }
             return PlatformMetadata.isPhone ? 136 : 200
         }
     }

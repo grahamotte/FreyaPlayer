@@ -31,7 +31,6 @@ struct MediaView<Actions: View, Below: View>: View {
     let below: Below
     @State private var isShowingDetails = false
     @State private var detailScrollOffset: CGFloat = 0
-    @FocusState private var focusedDetail: DetailFocus?
 
     init(
         model: AppModel,
@@ -153,17 +152,52 @@ struct MediaView<Actions: View, Below: View>: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    @ViewBuilder
     private func detailsPanel(
         width: CGFloat,
         synopsisWidth: CGFloat,
         metrics: MediaViewMetrics,
         tracksOffset: Bool
     ) -> some View {
-        ScrollViewReader { scrollProxy in
-            ScrollView {
-                detailsContent(synopsisWidth: synopsisWidth, metrics: metrics) {
-                    scrollProxy.scrollTo(Self.topID, anchor: .top)
+        if PlatformMetadata.isTV {
+            VStack(alignment: .leading, spacing: metrics.contentSpacing) {
+                detailsHeader(synopsisWidth: synopsisWidth, metrics: metrics)
+
+                ScrollView {
+                    below
+                        .padding(.horizontal, AppTheme.Spacing.small)
+                        .padding(.top, AppTheme.Spacing.small)
+                        .padding(.bottom, AppTheme.Spacing.large)
+                        .frame(maxWidth: synopsisWidth, alignment: .leading)
                 }
+                .padding(.horizontal, -AppTheme.Spacing.small)
+                .scrollIndicators(.hidden)
+                .mask {
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear, location: 0),
+                            .init(color: .black, location: 0.06),
+                            .init(color: .black, location: 1)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .padding(.horizontal, -AppTheme.Spacing.xLarge)
+                }
+            }
+            .frame(maxWidth: synopsisWidth, alignment: .leading)
+            .padding(.leading, metrics.panelLeadingPadding)
+            .padding(.trailing, metrics.panelTrailingPadding)
+            .padding(.vertical, metrics.panelVerticalPadding)
+            .frame(width: width, alignment: .leading)
+            .frame(maxHeight: .infinity, alignment: .topLeading)
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: metrics.contentSpacing) {
+                    detailsHeader(synopsisWidth: synopsisWidth, metrics: metrics)
+                    below
+                }
+                .frame(maxWidth: synopsisWidth, alignment: .leading)
             }
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 guard tracksOffset else { return 0 }
@@ -182,18 +216,12 @@ struct MediaView<Actions: View, Below: View>: View {
         }
     }
 
-    @ViewBuilder
-    private func detailsContent(
-        synopsisWidth: CGFloat,
-        metrics: MediaViewMetrics,
-        scrollToTop: @escaping () -> Void
-    ) -> some View {
+    private func detailsHeader(synopsisWidth: CGFloat, metrics: MediaViewMetrics) -> some View {
         VStack(alignment: .leading, spacing: metrics.contentSpacing) {
             Text(data.title)
                 .itemTitleFont()
                 .lineLimit(3)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .id(Self.topID)
 
             if !data.facts.isEmpty {
                 Text(data.facts.joined(separator: "  ·  "))
@@ -208,12 +236,11 @@ struct MediaView<Actions: View, Below: View>: View {
                 Text(data.synopsis)
                     .font(.body)
                     .foregroundStyle(AppTheme.secondaryText)
-                    .lineLimit(PlatformMetadata.isTV ? 4 : 5)
+                    .lineLimit(PlatformMetadata.isTV ? 2 : 5)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: synopsisWidth, alignment: .topLeading)
             }
             .buttonStyle(MediaDetailTextButtonStyle())
-            .focused($focusedDetail, equals: .synopsis)
             .accessibilityHint("Shows all details")
 
             VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
@@ -226,7 +253,6 @@ struct MediaView<Actions: View, Below: View>: View {
                         Label("Details", systemImage: "info")
                     }
                     .glassIconButton()
-                    .focused($focusedDetail, equals: .details)
                 }
 
                 if let remainingText = data.remainingText {
@@ -243,27 +269,11 @@ struct MediaView<Actions: View, Below: View>: View {
                 }
             }
             .controlSize(.large)
-
-            below
         }
         .frame(maxWidth: synopsisWidth, alignment: .leading)
-        .onChange(of: focusedDetail) { _, focusedDetail in
-            guard PlatformMetadata.isTV, focusedDetail != nil else { return }
-            withAnimation(AppTheme.focusAnimation) {
-                scrollToTop()
-            }
-        }
-    }
-
-    private static var topID: String {
-        "media-view-top"
-    }
-
-    private enum DetailFocus: Hashable {
-        case details
-        case synopsis
     }
 }
+
 
 struct MediaItemActionRow<Content: View>: View {
     let content: Content
@@ -273,13 +283,9 @@ struct MediaItemActionRow<Content: View>: View {
     }
 
     var body: some View {
-        ScrollView(.horizontal) {
-            HStack(alignment: .top, spacing: PlatformMetadata.controlSpacing) {
-                content
-            }
+        HStack(alignment: .center, spacing: PlatformMetadata.controlSpacing) {
+            content
         }
-        .scrollIndicators(.hidden)
-        .horizontalFade()
     }
 }
 
@@ -604,7 +610,7 @@ private struct MediaViewMetrics {
                 panelLeadingPadding: 36,
                 panelTrailingPadding: 36,
                 panelVerticalPadding: 24,
-                contentSpacing: 32,
+                contentSpacing: 24,
                 headerOffset: 0
             )
         }
@@ -643,22 +649,6 @@ private struct MediaViewMetrics {
             headerOffset: 0
         )
     }()
-}
-
-private extension View {
-    func horizontalFade() -> some View {
-        mask(
-            LinearGradient(
-                stops: [
-                    .init(color: .black, location: 0),
-                    .init(color: .black, location: 0.9),
-                    .init(color: .clear, location: 1)
-                ],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        )
-    }
 }
 
 private struct MediaDetailTextButtonStyle: ButtonStyle {

@@ -587,13 +587,13 @@ private final class LibraryPageHeaderView: UICollectionReusableView {
 
         shuffleButtonHostView.translatesAutoresizingMaskIntoConstraints = false
         shuffleButtonHostView.backgroundColor = .clear
-        shuffleButtonHostView.clipsToBounds = true
+        shuffleButtonHostView.clipsToBounds = false
         shuffleButtonHostView.setContentHuggingPriority(.required, for: .horizontal)
         shuffleButtonHostView.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         watchButtonHostView.translatesAutoresizingMaskIntoConstraints = false
         watchButtonHostView.backgroundColor = .clear
-        watchButtonHostView.clipsToBounds = true
+        watchButtonHostView.clipsToBounds = false
         watchButtonHostView.setContentHuggingPriority(.required, for: .horizontal)
         watchButtonHostView.setContentCompressionResistancePriority(.required, for: .horizontal)
 

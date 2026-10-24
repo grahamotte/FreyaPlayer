@@ -24,6 +24,7 @@ final class MediaItemTests: XCTestCase {
         let item = makeMediaItem(addedAt: 1_700_000_000, durationMilliseconds: 5_400_000)
 
         XCTAssertEqual(item.libraryTileSubtitle(showsAddedAt: false), "1h 30m")
+        XCTAssertEqual(makeMediaItem(kind: .series).libraryTileSubtitle(showsAddedAt: false), "2026")
         XCTAssertEqual(
             item.libraryTileSubtitle(showsAddedAt: true),
             DateFormatter.localizedString(from: Date(timeIntervalSince1970: 1_700_000_000), dateStyle: .medium, timeStyle: .none)

@@ -65,7 +65,6 @@ private struct AppChromeModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .preferredColorScheme(.dark)
-            .foregroundStyle(AppTheme.primaryText)
     }
 }
 

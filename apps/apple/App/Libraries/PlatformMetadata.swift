@@ -81,6 +81,10 @@ enum PlatformMetadata {
         UIFontMetrics(forTextStyle: .title1).scaledFont(for: .systemFont(ofSize: pageTitleSize, weight: .bold))
     }
 
+    static var controlContentSide: CGFloat {
+        isTV ? 40 : 24
+    }
+
     static var tvActionButtonSize: CGSize {
         CGSize(width: 360, height: 72)
     }

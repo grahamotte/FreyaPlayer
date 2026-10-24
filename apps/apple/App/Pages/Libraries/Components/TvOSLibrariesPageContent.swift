@@ -342,7 +342,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
         let horizontalInset = PlatformMetadata.pageGutter
         let configuration = UICollectionViewCompositionalLayoutConfiguration()
         configuration.contentInsetsReference = .none
-        configuration.interSectionSpacing = AppTheme.Spacing.medium
+        configuration.interSectionSpacing = AppTheme.Spacing.xxLarge
         configuration.boundarySupplementaryItems = [
             NSCollectionLayoutBoundarySupplementaryItem(
                 layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .absolute(184)),
@@ -369,7 +369,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                 let layoutSection = NSCollectionLayoutSection(group: group)
                 layoutSection.interGroupSpacing = PlatformMetadata.tileSpacing
                 layoutSection.orthogonalScrollingBehavior = .continuousGroupLeadingBoundary
-                layoutSection.contentInsets = .init(top: AppTheme.Spacing.xSmall, leading: horizontalInset, bottom: AppTheme.Spacing.xSmall, trailing: horizontalInset)
+                layoutSection.contentInsets = .init(top: AppTheme.Spacing.xLarge, leading: horizontalInset, bottom: 0, trailing: horizontalInset)
 
                 let headerSize = NSCollectionLayoutSize(
                     widthDimension: .fractionalWidth(1),

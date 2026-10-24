@@ -39,6 +39,7 @@ struct MediaPlayButton: View {
             playWithRememberedSettings()
         } label: {
             Label(playLabel, systemImage: "play.fill")
+                .glassPillLabel()
                 .foregroundStyle(AppTheme.onAccent)
                 .opacity(session.isLoading ? 0 : 1)
                 .overlay {
