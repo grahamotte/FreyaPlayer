@@ -46,6 +46,14 @@
     "demoAccountPassword": "jellyfin",
     "demoAccountRequired": true,
     "description": "Freya Player is a native client for your personal Jellyfin or Plex server. Play your media using a fully native tvOS experience.\n\nA Jellyfin or Plex server is required to use this client player. Freya Player does not provide a server or any content itself.",
+    "homebrew": {
+      "desc": "Video player for personal Plex and Jellyfin libraries",
+      "macos": "tahoe",
+      "zap": [
+        "~/Library/Application Scripts/com.grahamotte.freyaplayer",
+        "~/Library/Containers/com.grahamotte.freyaplayer"
+      ]
+    },
     "keywords": "movies, video, tv, show, tv show, media, plex, jellyfin, native, library, video player",
     "marketingUrl": "https://github.com/grahamotte/FreyaPlayer",
     "name": "Freya Player",
