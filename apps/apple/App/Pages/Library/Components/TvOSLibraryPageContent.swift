@@ -290,7 +290,20 @@ private final class LibraryPageCollectionViewController: UIViewController, UICol
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let topOffset = -scrollView.adjustedContentInset.top
+        if scrollView.contentOffset.y > topOffset, focusedRow() == 0 {
+            scrollView.contentOffset.y = topOffset
+        }
         updateHeaderFocusGuide()
+    }
+
+    private func focusedRow() -> Int? {
+        guard let cell = collectionView.visibleCells.first(where: \.isFocused),
+              let indexPath = collectionView.indexPath(for: cell)
+        else {
+            return nil
+        }
+        return indexPath.item / tileStyle.gridColumns
     }
 
     private var tileStyle: MediaArtworkStyle {
