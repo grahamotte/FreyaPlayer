@@ -6,63 +6,88 @@ struct AboutPage: View {
     var body: some View {
         Form {
             Section {
-                Text("A small, native player for Jellyfin and Plex, built to feel like it came with the device.")
-                    .tvOSFocusableRow()
-            }
+                VStack(spacing: AppTheme.Spacing.small) {
+                    Image("FreyaLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: PlatformMetadata.isTV ? 160 : 96, height: PlatformMetadata.isTV ? 160 : 96)
+                        .accessibilityHidden(true)
 
-            section(
-                title: "Free Forever",
-                body: "Freya Player is free. No subscriptions, no upsell, no plus premium max whatever. Oh also, no ads."
-            )
+                    Text("Freya Player")
+                        .font(.title2.weight(.bold))
 
-            section(
-                title: "Private by Default",
-                body: "Your data lives only on this device, so the app can talk to your server. There's no analytics or telemetry, not even a crash reporter."
-            )
+                    Text("A small, native player for Jellyfin and Plex, built to feel like it came with the device.")
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .multilineTextAlignment(.center)
 
-            section(
-                title: "Open Source",
-                body: "Read it, fork it, send a pull request."
-            )
-
-            Section("Bugs?") {
-                Text("Open an issue!")
-                    .foregroundStyle(AppTheme.secondaryText)
-                repositoryLink
+                    Text("Version \(appVersion)")
+                        .font(PlatformMetadata.labelFont)
+                        .foregroundStyle(AppTheme.tertiaryText)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppTheme.Spacing.small)
+                .listRowBackground(Color.clear)
+                .tvOSFocusableRow()
             }
 
             Section {
-                LabeledContent("Version", value: appVersion)
-                    .tvOSFocusableRow()
+                point("Free Forever", "No subscriptions, no upsell, no plus premium max whatever. Oh also, no ads.")
+                point("Private by Default", "Your data lives only on this device, so the app can talk to your server. There's no analytics or telemetry, not even a crash reporter.")
+                point("Open Source", "Read it, fork it, send a pull request.")
+            }
+
+            Section {
+                repositoryLink
+            } header: {
+                Text("Bugs?")
+            } footer: {
+                Text("Open an issue on GitHub.")
             }
         }
         .readableFormWidth()
         .formBackdrop(.brand)
         .tint(AppTheme.primaryText)
-        .navigationTitle("About Freya Player")
+        .navigationTitle("About")
+        .aboutTitleDisplayMode()
     }
 
     @ViewBuilder
     private var repositoryLink: some View {
         #if os(tvOS)
-        Text(repositoryURL.absoluteString)
-            .font(.body.monospaced())
+        LabeledContent("GitHub", value: "grahamotte/FreyaPlayer")
             .tvOSFocusableRow()
         #else
-        Link(repositoryURL.absoluteString, destination: repositoryURL)
-            .font(.body.monospaced())
+        Link(destination: repositoryURL) {
+            LabeledContent("GitHub", value: "grahamotte/FreyaPlayer")
+        }
         #endif
     }
 
-    private func section(title: String, body: String) -> some View {
-        Section(title) {
+    private func point(_ title: String, _ body: String) -> some View {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.xxSmall) {
+            Text(title)
+                .font(.body.weight(.semibold))
             Text(body)
+                .font(.subheadline)
                 .foregroundStyle(AppTheme.secondaryText)
-                .tvOSFocusableRow()
         }
+        .padding(.vertical, AppTheme.Spacing.xxSmall)
+        .tvOSFocusableRow()
     }
 
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func aboutTitleDisplayMode() -> some View {
+        #if os(tvOS)
+        self
+        #else
+        navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 }

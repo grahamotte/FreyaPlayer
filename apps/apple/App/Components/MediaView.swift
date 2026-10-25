@@ -412,9 +412,9 @@ private struct FullItemDetailsView: View {
                 .foregroundStyle(AppTheme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
                 .userSelectableText()
-                .padding(PlatformMetadata.isTV ? AppTheme.Spacing.large : AppTheme.Spacing.medium)
+                .padding(PlatformMetadata.isTV ? AppTheme.Spacing.large : 0)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .focusSurface(isFocused: isFocused, restingFill: AppTheme.subtleSurfaceFill, cornerRadius: AppTheme.Radius.inline)
+                .focusSurface(isFocused: isFocused, restingFill: PlatformMetadata.isTV ? AppTheme.subtleSurfaceFill : Color.clear, cornerRadius: AppTheme.Radius.inline)
                 .focusable(PlatformMetadata.isTV)
                 .focused($focusedItemID, equals: focusID)
         }
@@ -440,9 +440,10 @@ private struct FullItemDetailsView: View {
                     }
                 }
                 .padding(.vertical, AppTheme.Spacing.xSmall)
-                .padding(.horizontal, AppTheme.Spacing.xxSmall)
+                .padding(.horizontal, PlatformMetadata.isTV ? AppTheme.Spacing.xxSmall : 0)
             }
             .scrollIndicators(.hidden)
+            .scrollClipDisabled()
         }
         .tvOSFocusSection()
     }
@@ -519,7 +520,7 @@ private struct FullItemDetailsView: View {
     }
 
     private var gridSpacing: CGFloat {
-        PlatformMetadata.isTV ? AppTheme.Spacing.medium : AppTheme.Spacing.small
+        PlatformMetadata.isTV ? AppTheme.Spacing.medium : AppTheme.Spacing.large
     }
 
     private var initialFocusID: String? {
@@ -535,7 +536,8 @@ private struct FullItemDetailsView: View {
         Button { dismiss() } label: {
             Label("Close", systemImage: "xmark")
         }
-        .buttonStyle(.glass)
+        .glassIconButton()
+        .controlSize(.large)
     }
 }
 
@@ -559,7 +561,7 @@ private struct FullItemDetailArtwork: View {
                 .font(PlatformMetadata.labelFont.weight(.semibold))
                 .foregroundStyle(AppTheme.secondaryText)
         }
-        .padding(AppTheme.Spacing.xSmall)
+        .padding(PlatformMetadata.isTV ? AppTheme.Spacing.xSmall : 0)
         .focusSurface(isFocused: isFocused, restingFill: Color.clear, cornerRadius: AppTheme.Radius.large)
     }
 }
@@ -580,9 +582,9 @@ private struct FullItemDetailRow: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .userSelectableText()
         }
-        .frame(maxWidth: .infinity, minHeight: PlatformMetadata.isTV ? 86 : 72, alignment: .topLeading)
-        .padding(PlatformMetadata.isTV ? AppTheme.Spacing.large : AppTheme.Spacing.medium)
-        .focusSurface(isFocused: isFocused, restingFill: AppTheme.subtleSurfaceFill, cornerRadius: AppTheme.Radius.inline)
+        .frame(maxWidth: .infinity, minHeight: PlatformMetadata.isTV ? 86 : nil, alignment: .topLeading)
+        .padding(PlatformMetadata.isTV ? AppTheme.Spacing.large : 0)
+        .focusSurface(isFocused: isFocused, restingFill: PlatformMetadata.isTV ? AppTheme.subtleSurfaceFill : Color.clear, cornerRadius: AppTheme.Radius.inline)
     }
 }
 
