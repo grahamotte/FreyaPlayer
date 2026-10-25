@@ -130,6 +130,14 @@ struct IOSLibraryPageContent: View {
                     libraryItem: item,
                     libraryID: state.library.id
                 )
+
+                if PlatformMetadata.isMac {
+                    Spacer(minLength: 0)
+
+                    Text(state.countText)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
             }
             .controlSize(.large)
         }

@@ -152,7 +152,8 @@ extension PlatformMetadata {
     }
 
     static var readableFormWidth: CGFloat? {
-        isTV ? 1200 : nil
+        if isTV { return 1200 }
+        return isPhone ? nil : 760
     }
 
     static func focusableRowModifier<Content: View>(_ content: Content) -> some View {
