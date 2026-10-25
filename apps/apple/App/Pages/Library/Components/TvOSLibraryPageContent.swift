@@ -488,7 +488,7 @@ private final class LibraryPageCollectionViewController: UIViewController, UICol
             verticalFittingPriority: .fittingSizeLevel
         ).height)
 
-        let headerHeight = titleTop + titleHeight + gapBetweenTitleAndButtons + buttonHeight
+        let headerHeight = titleTop + titleHeight + gapBetweenTitleAndButtons + buttonHeight + AppTheme.Spacing.xLarge
 
         let configuration = UICollectionViewCompositionalLayoutConfiguration()
         configuration.contentInsetsReference = .none
@@ -519,7 +519,7 @@ private final class LibraryPageCollectionViewController: UIViewController, UICol
 
             let section = NSCollectionLayoutSection(group: group)
             section.interGroupSpacing = lineSpacing
-            section.contentInsets = .init(top: AppTheme.Spacing.xxLarge, leading: horizontalInset, bottom: AppTheme.Spacing.xxLarge, trailing: horizontalInset)
+            section.contentInsets = .init(top: AppTheme.Spacing.medium, leading: horizontalInset, bottom: AppTheme.Spacing.xxLarge, trailing: horizontalInset)
             return section
         }, configuration: configuration)
     }
@@ -627,7 +627,7 @@ private final class LibraryPageHeaderView: UICollectionReusableView {
             watchButtonHostView.centerYAnchor.constraint(equalTo: filterButton.centerYAnchor),
             watchButtonHostView.heightAnchor.constraint(equalTo: filterButton.heightAnchor),
 
-            filterButton.bottomAnchor.constraint(equalTo: bottomAnchor),
+            filterButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -AppTheme.Spacing.xLarge),
         ])
     }
 

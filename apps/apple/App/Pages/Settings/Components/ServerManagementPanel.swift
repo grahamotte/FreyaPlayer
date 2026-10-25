@@ -83,6 +83,7 @@ private extension View {
         toolbar {
             ToolbarItem(placement: .primaryAction) {
                 EditButton()
+                    .tint(AppTheme.primaryText)
             }
         }
         #endif
