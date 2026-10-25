@@ -33,7 +33,7 @@ A small, native client that feels like it came with the device. The app is free,
 - Watch state is called "Seen/Unseen" in the UI. Changes apply optimistically and roll back on failure.
 - Playback uses the stock AVPlayerViewController. There are Play Options (quality, audio, subtitles) and an honest per-item conversion plan.
 - Apple platform conventions come first: SwiftUI, AVKit, Foundation networking, and UIKit only where tvOS focus or collection views require it.
-- Open decision: the app forces dark appearance today. Whether light appearance is supported has not been decided.
+- Freya Player is dark-only by decision (confirmed 2026-10-24): the screening-room look applies everywhere, and there is no light appearance.
 
 ## Brand Commitments
 

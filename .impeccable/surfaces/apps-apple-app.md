@@ -29,4 +29,4 @@ When focus or hover moves between posters, the room blends to the new artwork's 
 
 ## Unresolved
 
-Light appearance is not supported; whether to add it is the user's decision.
+None. Dark-only is a confirmed product decision.

@@ -169,7 +169,7 @@ Tiles exist twice: `PosterTile` in SwiftUI and `PosterCell` in tvOS UIKit. Both 
 Fixed in FP-40: hand-rolled glass, fixed-size titles, custom settings, setup, and About cards, the custom iOS search header, the four playback copies, the duplicate style enums and image loaders, the duplicated library header, dead `FeatureStubView`, play-label and "Added At" wording, inert focus targets on item pages, iOS empty shelves, and mismatched browsing backgrounds.
 
 Still open:
-- Dark mode is forced everywhere through `.preferredColorScheme(.dark)`. Whether to support light appearance is undecided.
+- Dark mode is applied everywhere through `.preferredColorScheme(.dark)`; dark-only is a confirmed product decision.
 - The screenshots in `apps/screenshots/` predate the current UI.
 - Several tvOS layout sizes remain literal values (shelf columns, the 184pt server header, grid text heights) because they are tied to the 1920pt canvas.
 
