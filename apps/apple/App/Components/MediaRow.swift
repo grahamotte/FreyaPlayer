@@ -55,10 +55,10 @@ struct MediaRow: View {
             style: thumbnailStyle,
             progress: item.kind.isPlayable ? item.progress : nil,
             isWatched: item.isWatched,
-            cornerRadius: PlatformMetadata.isTV ? 14 : 8
+            cornerRadius: AppTheme.Radius.thumbnail
         )
         .frame(width: Self.thumbnailWidth(for: thumbnailStyle))
-        .zoomSource(id: item.id, cornerRadius: PlatformMetadata.isTV ? 14 : 8)
+        .zoomSource(id: item.id, cornerRadius: AppTheme.Radius.thumbnail)
     }
 
     private var displayTitle: String {

@@ -33,11 +33,9 @@ enum AppTheme {
     static let uiPrimaryText = UIColor.white
     static let uiSecondaryText = UIColor.white.withAlphaComponent(0.72)
     static let uiSurfaceFill = UIColor.white.withAlphaComponent(0.08)
-    static let uiHairline = UIColor.white.withAlphaComponent(0.1)
 #endif
     static let warning = Color.orange
     static let positive = Color.green
-    static let destructive = Color.red
 
     enum Radius {
         static let inline: CGFloat = 16
@@ -46,6 +44,10 @@ enum AppTheme {
 
         static var artwork: CGFloat {
             PlatformMetadata.isTV ? 24 : 18
+        }
+
+        static var thumbnail: CGFloat {
+            PlatformMetadata.isTV ? 14 : 8
         }
     }
 

@@ -1,0 +1,499 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-25T01:47:00+00:00",
+  "title": "Design System: Freya Player",
+  "extensions": {
+    "colorMeta": {
+      "freya-gold": {
+        "role": "primary",
+        "displayName": "Freya Gold",
+        "canonical": "#E3AF32",
+        "tonalRamp": [
+          "#140900",
+          "#322200",
+          "#543E05",
+          "#7A5C0E",
+          "#A47B05",
+          "#CF9C0E",
+          "#F5C048",
+          "#FEEDCA"
+        ]
+      },
+      "on-gold": {
+        "role": "primary",
+        "displayName": "On Gold",
+        "canonical": "#000000",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "screening-room-top": {
+        "role": "neutral",
+        "displayName": "Screening Room Top",
+        "canonical": "#14171F",
+        "tonalRamp": [
+          "#080B12",
+          "#22252D",
+          "#3E424B",
+          "#5D616B",
+          "#7E828D",
+          "#A1A5B0",
+          "#C4C9D4",
+          "#EAEEFA"
+        ]
+      },
+      "screening-room-floor": {
+        "role": "neutral",
+        "displayName": "Screening Room Floor",
+        "canonical": "#0A0D12",
+        "tonalRamp": [
+          "#080B10",
+          "#22252B",
+          "#3E4248",
+          "#5D6168",
+          "#7E838A",
+          "#A1A5AD",
+          "#C5C9D1",
+          "#EAEFF7"
+        ]
+      },
+      "projection-white": {
+        "role": "neutral",
+        "displayName": "Projection White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "dimmed-white": {
+        "role": "neutral",
+        "displayName": "Dimmed White",
+        "canonical": "alpha over the room; see frontmatter"
+      },
+      "faint-white": {
+        "role": "neutral",
+        "displayName": "Faint White",
+        "canonical": "alpha over the room; see frontmatter"
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "alpha over the room; see frontmatter"
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "alpha over the room; see frontmatter"
+      },
+      "surface-subtle": {
+        "role": "neutral",
+        "displayName": "Surface Subtle",
+        "canonical": "alpha over the room; see frontmatter"
+      },
+      "surface-focused": {
+        "role": "neutral",
+        "displayName": "Surface Focused",
+        "canonical": "alpha over the room; see frontmatter"
+      },
+      "surface-border": {
+        "role": "neutral",
+        "displayName": "Surface Border",
+        "canonical": "alpha over the room; see frontmatter"
+      },
+      "progress-track": {
+        "role": "neutral",
+        "displayName": "Progress Track",
+        "canonical": "alpha over the room; see frontmatter"
+      },
+      "scrim": {
+        "role": "neutral",
+        "displayName": "Scrim",
+        "canonical": "alpha over the room; see frontmatter"
+      },
+      "artwork-shadow": {
+        "role": "neutral",
+        "displayName": "Artwork Shadow",
+        "canonical": "alpha over the room; see frontmatter"
+      },
+      "house-lights-1": {
+        "role": "ambient",
+        "displayName": "House Lights 1",
+        "canonical": "#29334D",
+        "tonalRamp": [
+          "#04091F",
+          "#1B243D",
+          "#37415C",
+          "#55617D",
+          "#7682A0",
+          "#98A5C4",
+          "#BBC9EA",
+          "#E8EEFF"
+        ]
+      },
+      "house-lights-2": {
+        "role": "ambient",
+        "displayName": "House Lights 2",
+        "canonical": "#1A2138",
+        "tonalRamp": [
+          "#05091E",
+          "#1D243B",
+          "#39415A",
+          "#57607B",
+          "#78829E",
+          "#9AA4C2",
+          "#BEC8E7",
+          "#E8EEFF"
+        ]
+      },
+      "house-lights-3": {
+        "role": "ambient",
+        "displayName": "House Lights 3",
+        "canonical": "#38334D",
+        "tonalRamp": [
+          "#0C071C",
+          "#262139",
+          "#433E58",
+          "#625D79",
+          "#837E9C",
+          "#A5A0C0",
+          "#C9C4E5",
+          "#EEECFF"
+        ]
+      },
+      "house-lights-4": {
+        "role": "ambient",
+        "displayName": "House Lights 4",
+        "canonical": "#1F2933",
+        "tonalRamp": [
+          "#040C15",
+          "#1C2630",
+          "#39434E",
+          "#57636E",
+          "#788490",
+          "#9AA7B3",
+          "#BECBD8",
+          "#E3F0FE"
+        ]
+      },
+      "ember-1": {
+        "role": "ambient",
+        "displayName": "Ember 1",
+        "canonical": "#8C6114",
+        "tonalRamp": [
+          "#150800",
+          "#352000",
+          "#5A3B00",
+          "#825802",
+          "#A57932",
+          "#CA9C57",
+          "#F0C07B",
+          "#FFEBD1"
+        ]
+      },
+      "ember-2": {
+        "role": "ambient",
+        "displayName": "Ember 2",
+        "canonical": "#332414",
+        "tonalRamp": [
+          "#150800",
+          "#312212",
+          "#4F3F2E",
+          "#6F5E4C",
+          "#917F6C",
+          "#B4A18E",
+          "#D9C5B1",
+          "#FEEBD8"
+        ]
+      },
+      "ember-3": {
+        "role": "ambient",
+        "displayName": "Ember 3",
+        "canonical": "#5C3D0F",
+        "tonalRamp": [
+          "#170700",
+          "#362000",
+          "#5A3B0C",
+          "#7B5A2F",
+          "#9E7B50",
+          "#C29E72",
+          "#E7C295",
+          "#FFEBD4"
+        ]
+      },
+      "ember-4": {
+        "role": "ambient",
+        "displayName": "Ember 4",
+        "canonical": "#1F1A1F",
+        "tonalRamp": [
+          "#0E090E",
+          "#282328",
+          "#464045",
+          "#655F65",
+          "#868086",
+          "#A9A2A9",
+          "#CDC6CD",
+          "#F3ECF3"
+        ]
+      },
+      "warning-orange": {
+        "role": "functional",
+        "displayName": "Warning Orange (system orange, dark)",
+        "canonical": "#FF9F0A",
+        "tonalRamp": [
+          "#180600",
+          "#391E00",
+          "#5E3804",
+          "#88540D",
+          "#B67003",
+          "#E58E0A",
+          "#FEB96E",
+          "#FEEBD8"
+        ]
+      },
+      "positive-green": {
+        "role": "functional",
+        "displayName": "Positive Green (system green, dark)",
+        "canonical": "#30D158",
+        "tonalRamp": [
+          "#001100",
+          "#012E0C",
+          "#08501C",
+          "#14752D",
+          "#0F9D3B",
+          "#1AC64D",
+          "#54EC72",
+          "#CAFECE"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "page-title": {
+        "displayName": "Page Title",
+        "purpose": "Server name on home and library name on grids, via the system large navigation title; 64pt UIKit header on tvOS."
+      },
+      "item-title": {
+        "displayName": "Item Title",
+        "purpose": "Title on the item page and full details, up to 3 lines, scaled relative to Title."
+      },
+      "section-title": {
+        "displayName": "Section Title",
+        "purpose": "Shelf names, child-list headers, dialog titles."
+      },
+      "tile-title": {
+        "displayName": "Tile Title",
+        "purpose": "Titles under tiles; marquee on Mac hover and tvOS focus."
+      },
+      "facts": {
+        "displayName": "Facts",
+        "purpose": "Year · runtime · rating line under an item title, Dimmed White."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Synopses and explanations, Dimmed White."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Tile subtitles, metadata labels, remaining time."
+      },
+      "detail-value": {
+        "displayName": "Detail Value",
+        "purpose": "Raw provider values in full details only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "item-artwork",
+        "value": "0 20px 32px rgba(0,0,0,0.35)",
+        "purpose": "Item-page poster reads as an object in the room."
+      },
+      {
+        "name": "hover-lift",
+        "value": "0 10px 18px rgba(0,0,0,0.35)",
+        "purpose": "Mac poster tile under the pointer, with 103% scale."
+      }
+    ],
+    "motion": [
+      {
+        "name": "focus",
+        "value": "easeOut 0.16s",
+        "purpose": "Hover and focus surface changes, tile lift, focus scale."
+      },
+      {
+        "name": "pressed-scale",
+        "value": "0.98",
+        "purpose": "Surface buttons while pressed."
+      },
+      {
+        "name": "focused-scale",
+        "value": "1.02",
+        "purpose": "SwiftUI surfaces on tvOS focus."
+      },
+      {
+        "name": "hover-scale",
+        "value": "1.03",
+        "purpose": "Poster tile under the Mac pointer."
+      },
+      {
+        "name": "room-relight",
+        "value": "1.4s smoothstep blend after 300ms debounce (uncached palettes)",
+        "purpose": "Ambient mesh moves to a new artwork palette; instant with Reduce Motion."
+      },
+      {
+        "name": "mesh-drift",
+        "value": "4x4 mesh points on slow sine waves (0.04–0.05 rad/s), hue rotation ±10°",
+        "purpose": "Continuous ambient drift; paused with Reduce Motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "iPhone",
+        "value": "userInterfaceIdiom .phone"
+      },
+      {
+        "name": "iPad",
+        "value": "userInterfaceIdiom .pad"
+      },
+      {
+        "name": "Mac",
+        "value": "Mac Catalyst"
+      },
+      {
+        "name": "tvOS",
+        "value": "userInterfaceIdiom .tv"
+      },
+      {
+        "name": "full-details-compact",
+        "value": "width < 600pt"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Play Button",
+      "kind": "button",
+      "refersTo": "play-button",
+      "description": "The one prominent glass action: Freya Gold tint, black label. Used for Play, Resume, and prominent Play All.",
+      "html": "<div class=\"ds-stage\"><button class=\"ds-play\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z\"/></svg>Resume at 42:10</button></div>",
+      "css": ".ds-stage { padding: 24px; background: radial-gradient(60% 70% at 25% 30%, rgba(140,97,20,0.55), transparent 70%), radial-gradient(50% 60% at 80% 70%, rgba(56,51,77,0.6), transparent 70%), linear-gradient(#14171F, #0A0D12); } .ds-play { display: inline-flex; align-items: center; gap: 8px; min-height: 24px; padding: 10px 20px; border: none; border-radius: 9999px; background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0) 60%), #E3AF32; color: #000; font: 600 17px -apple-system, 'SF Pro Text', system-ui, sans-serif; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35); transition: transform 0.16s ease-out, filter 0.16s ease-out; cursor: pointer; } .ds-play:hover { filter: brightness(1.06); } .ds-play:focus-visible { outline: none; transform: scale(1.06); } .ds-play:active { transform: scale(0.98); }"
+    },
+    {
+      "name": "Glass Icon Button",
+      "kind": "button",
+      "refersTo": "glass-icon-button",
+      "description": "Circular system Liquid Glass button beside Play: Play Options, Seen, Details.",
+      "html": "<div class=\"ds-stage\"><button class=\"ds-glass-icon\" aria-label=\"Play Options\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M4 7h10M18 7h2M4 17h4M12 17h8\"/><circle cx=\"16\" cy=\"7\" r=\"2\"/><circle cx=\"10\" cy=\"17\" r=\"2\"/></svg></button> <button class=\"ds-glass-icon\" aria-label=\"Seen\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#E3AF32\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12.5l4.5 4.5L19 7.5\"/></svg></button></div>",
+      "css": ".ds-stage { padding: 24px; display: flex; gap: 12px; background: radial-gradient(60% 70% at 25% 30%, rgba(140,97,20,0.55), transparent 70%), radial-gradient(50% 60% at 80% 70%, rgba(56,51,77,0.6), transparent 70%), linear-gradient(#14171F, #0A0D12); } .ds-glass-icon { width: 44px; height: 44px; display: inline-grid; place-items: center; border-radius: 50%; border: none; color: #fff; background: rgba(255,255,255,0.12); backdrop-filter: blur(20px) saturate(1.6); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22), inset 0 1px 0 rgba(255,255,255,0.3); transition: transform 0.16s ease-out, background 0.16s ease-out; cursor: pointer; } .ds-glass-icon:hover { background: rgba(255,255,255,0.18); } .ds-glass-icon:focus-visible { outline: none; transform: scale(1.08); background: rgba(255,255,255,0.24); } .ds-glass-icon:active { transform: scale(0.96); }"
+    },
+    {
+      "name": "Glass Pill",
+      "kind": "button",
+      "refersTo": "glass-icon-button",
+      "description": "Secondary labelled glass capsule: Cancel, Play Options menus, non-prominent Play All.",
+      "html": "<div class=\"ds-stage\"><button class=\"ds-glass-pill\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z\"/></svg>Play All</button></div>",
+      "css": ".ds-stage { padding: 24px; background: radial-gradient(60% 70% at 25% 30%, rgba(140,97,20,0.55), transparent 70%), radial-gradient(50% 60% at 80% 70%, rgba(56,51,77,0.6), transparent 70%), linear-gradient(#14171F, #0A0D12); } .ds-glass-pill { display: inline-flex; align-items: center; gap: 8px; min-height: 24px; padding: 10px 18px; border: none; border-radius: 9999px; color: #fff; background: rgba(255,255,255,0.12); backdrop-filter: blur(20px) saturate(1.6); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22); font: 600 17px -apple-system, system-ui, sans-serif; transition: transform 0.16s ease-out, background 0.16s ease-out; cursor: pointer; } .ds-glass-pill:hover { background: rgba(255,255,255,0.18); } .ds-glass-pill:focus-visible { outline: none; transform: scale(1.05); } .ds-glass-pill:active { transform: scale(0.98); }"
+    },
+    {
+      "name": "Poster Tile",
+      "kind": "card",
+      "refersTo": "poster-tile",
+      "description": "2:3 artwork with hairline edge, gold watch state, marquee title and dimmed subtitle. Hover lifts on Mac.",
+      "html": "<div class=\"ds-stage\"><div class=\"ds-tile\"><div class=\"ds-art\"><div class=\"ds-bar\"><span style=\"width:40%\"></span></div></div><div class=\"ds-t\">The Night Garden</div><div class=\"ds-s\">1h 52m</div></div><div class=\"ds-tile\"><div class=\"ds-art ds-art2\"><span class=\"ds-check\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 12.5l5 5L20 6.5\"/></svg></span></div><div class=\"ds-t\">Harbour Lights</div><div class=\"ds-s\">2h 04m</div></div></div>",
+      "css": ".ds-stage { padding: 24px; display: flex; gap: 16px; background: radial-gradient(60% 70% at 25% 30%, rgba(140,97,20,0.55), transparent 70%), radial-gradient(50% 60% at 80% 70%, rgba(56,51,77,0.6), transparent 70%), linear-gradient(#14171F, #0A0D12); } .ds-tile { width: 128px; font-family: -apple-system, system-ui, sans-serif; } .ds-art { position: relative; aspect-ratio: 2/3; border-radius: 18px; background: linear-gradient(160deg, #5C3D0F, #1A2138); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); overflow: hidden; transition: transform 0.16s ease-out, box-shadow 0.16s ease-out; } .ds-art2 { background: linear-gradient(200deg, #38334D, #0A0D12); } .ds-tile:hover .ds-art { transform: scale(1.03); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 0 10px 18px rgba(0,0,0,0.35); } .ds-bar { position: absolute; left: 10px; right: 10px; bottom: 10px; height: 5px; border-radius: 9999px; background: rgba(0,0,0,0.55); } .ds-bar span { display: block; height: 100%; border-radius: 9999px; background: #E3AF32; } .ds-check { position: absolute; right: 10px; bottom: 10px; width: 22px; height: 22px; border-radius: 50%; background: #E3AF32; display: grid; place-items: center; } .ds-t { margin-top: 8px; color: #fff; font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-s { margin-top: 4px; color: rgba(255,255,255,0.72); font-size: 13px; }"
+    },
+    {
+      "name": "Open Library Tile",
+      "kind": "card",
+      "refersTo": "open-library-tile",
+      "description": "Leads each home shelf: Surface tile with grid symbol, title and count.",
+      "html": "<div class=\"ds-stage\"><div class=\"ds-open\"><div class=\"ds-box\"><svg width=\"26\" height=\"26\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(255,255,255,0.72)\" stroke-width=\"2\"><rect x=\"4\" y=\"4\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"13\" y=\"4\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"4\" y=\"13\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"13\" y=\"13\" width=\"7\" height=\"7\" rx=\"1.5\"/></svg></div><div class=\"ds-t\">Open Library</div><div class=\"ds-s\">312 movies</div></div></div>",
+      "css": ".ds-stage { padding: 24px; background: radial-gradient(60% 70% at 25% 30%, rgba(140,97,20,0.55), transparent 70%), radial-gradient(50% 60% at 80% 70%, rgba(56,51,77,0.6), transparent 70%), linear-gradient(#14171F, #0A0D12); } .ds-open { width: 128px; font-family: -apple-system, system-ui, sans-serif; } .ds-box { aspect-ratio: 2/3; border-radius: 18px; background: rgba(255,255,255,0.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); display: grid; place-items: center; transition: background 0.16s ease-out; } .ds-open:hover .ds-box { background: rgba(255,255,255,0.16); } .ds-t { margin-top: 8px; color: #fff; font-weight: 600; font-size: 15px; } .ds-s { margin-top: 4px; color: rgba(255,255,255,0.72); font-size: 13px; }"
+    },
+    {
+      "name": "Media Row",
+      "kind": "custom",
+      "refersTo": "media-row",
+      "description": "Episode and search rows: thumbnail, title, dimmed facts; 16% focused surface with 102% scale on tvOS.",
+      "html": "<div class=\"ds-stage\"><button class=\"ds-row\"><span class=\"ds-thumb\"></span><span class=\"ds-txt\"><span class=\"ds-t\">3. The Lighthouse Keeper</span><span class=\"ds-s\">Mar 4, 2024 · 48m · 12m left</span></span></button></div>",
+      "css": ".ds-stage { padding: 24px; background: radial-gradient(60% 70% at 25% 30%, rgba(140,97,20,0.55), transparent 70%), radial-gradient(50% 60% at 80% 70%, rgba(56,51,77,0.6), transparent 70%), linear-gradient(#14171F, #0A0D12); } .ds-row { width: 100%; display: flex; align-items: center; gap: 16px; padding: 12px; border: none; border-radius: 20px; background: rgba(255,255,255,0.05); color: #fff; text-align: left; font-family: -apple-system, system-ui, sans-serif; transition: transform 0.16s ease-out, background 0.16s ease-out; cursor: pointer; } .ds-row:hover, .ds-row:focus-visible { outline: none; background: rgba(255,255,255,0.16); transform: scale(1.02); } .ds-row:active { transform: scale(0.98); } .ds-thumb { width: 136px; aspect-ratio: 16/9; border-radius: 8px; background: linear-gradient(120deg, #29334D, #8C6114); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); flex: none; } .ds-txt { display: flex; flex-direction: column; gap: 4px; } .ds-t { font-weight: 600; font-size: 17px; } .ds-s { color: rgba(255,255,255,0.72); font-size: 13px; }"
+    },
+    {
+      "name": "Ambient Room",
+      "kind": "custom",
+      "refersTo": "item-artwork",
+      "description": "The signature: near-black ground lit by a slowly drifting, artwork-tinted mesh with top and leading vignettes.",
+      "html": "<div class=\"ds-room\"><div class=\"ds-mesh\"></div><div class=\"ds-vig\"></div><div class=\"ds-copy\"><div class=\"ds-title\">Harbour Lights</div><div class=\"ds-facts\">2023 · 2h 04m · PG-13</div></div></div>",
+      "css": ".ds-room { position: relative; height: 220px; overflow: hidden; border-radius: 20px; background: linear-gradient(#14171F, #0A0D12); font-family: -apple-system, system-ui, sans-serif; } .ds-mesh { position: absolute; inset: -20%; background: radial-gradient(40% 50% at 30% 35%, #8C6114, transparent 70%), radial-gradient(45% 55% at 70% 60%, #38334D, transparent 70%), radial-gradient(35% 45% at 55% 20%, #5C3D0F, transparent 70%); filter: blur(40px) saturate(1.05); opacity: 0.8; animation: ds-drift 20s ease-in-out infinite alternate; } .ds-vig { position: absolute; inset: 0; background: linear-gradient(transparent, rgba(0,0,0,0.18), rgba(0,0,0,0.5)), linear-gradient(90deg, rgba(0,0,0,0.22), transparent); } .ds-copy { position: absolute; left: 24px; bottom: 24px; } .ds-title { color: #fff; font-weight: 700; font-size: 34px; } .ds-facts { margin-top: 8px; color: rgba(255,255,255,0.72); font-weight: 500; font-size: 15px; } @keyframes ds-drift { from { transform: translate(-3%, -2%) rotate(-4deg); } to { transform: translate(3%, 2%) rotate(4deg); } } @media (prefers-reduced-motion: reduce) { .ds-mesh { animation: none; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Private Screening Room",
+    "overview": "Freya is a dark room that belongs to you, and the room takes its colour from whatever artwork is in view. The ground is near-black. Behind every browsing screen an animated mesh glows in colours lifted from the focused poster (tvOS), the hovered poster (Mac), or the lead artwork on screen (iOS and iPadOS), like spill from a projector. When the artwork changes, the room re-lights in place rather than cutting.\n\nThe structure is stock Apple: one navigation stack, system large titles, toolbars, menus, sheets, grouped Forms, `.searchable`, and AVPlayerViewController for playback. Controls are system Liquid Glass. Type is San Francisco in white. Surfaces are translucent white over the mesh, and density is low: large artwork, wide gutters, few controls per screen.\n\nFreya Gold, taken from the logo, is the one interface hue. It marks the viewer's own path through the collection: the Play pill, the progress bar, and the watched check. Everything else stays neutral so the artwork can carry the colour.",
+    "keyCharacteristics": [
+      "Always dark (forced dark appearance), with a launch screen that matches the room's floor.",
+      "The room is lit by an artwork-tinted mesh. It is the signature, and it sits behind content, never on it.",
+      "White type at full strength and at 72%, plus a rare 50% for disclosure chevrons.",
+      "Translucent white surfaces at 5%, 8%, and 16%, with 10% hairlines on artwork edges.",
+      "System Liquid Glass for every control. Freya Gold tints only the prominent Play action.",
+      "Continuous (squircle) corners everywhere."
+    ],
+    "rules": [
+      {
+        "name": "The Viewer's Path Rule",
+        "body": "Freya Gold appears only where the viewer acts on or tracks their own watching: Play, progress, watched. It never marks selection, links, headers, or decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Projector Rule",
+        "body": "Saturated colour comes from the artwork through the mesh, posters, and backdrops. The interface adds no hue of its own beyond Freya Gold and functional status colours.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dynamic Type Rule",
+        "body": "Item titles go through `itemTitleFont()` (a scaled metric relative to Title), and the tvOS page title through `uiPageTitleFont` (scaled relative to Title 1). Everything else is a system text style. New text never uses a fixed point size.",
+        "section": "typography"
+      },
+      {
+        "name": "The Lights-Down Rule",
+        "body": "Panels and controls stay flat and translucent. Only artwork casts a shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The System Glass Rule",
+        "body": "Controls use system Liquid Glass: `.glass`, `.glassProminent` for the one Play action, and `UIButton.Configuration.glass()` in tvOS UIKit. Never hand-roll a white-alpha fill for a control.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** light every browsing surface with `AmbientBackdrop` or `ArtworkLitBackground`, fed by the artwork the viewer is looking at, and use the Ember palette only where there is no artwork to borrow.",
+      "**Do** reserve Freya Gold for Play, progress, and watched state, with black content on gold fills.",
+      "**Do** use system components first: navigation titles, toolbars, menus, sheets, `.searchable`, `Form`, and AVPlayerViewController.",
+      "**Do** use `glassIconButton()`, `glassPillLabel()`, and `playActionStyle()` for controls next to Play.",
+      "**Do** edge artwork with the 10% hairline and use the spacing and radius tokens. Add a token rather than an inline number.",
+      "**Do** honour Reduce Motion: no mesh drift, instant palette changes.",
+      "**Do** keep the SwiftUI and tvOS UIKit renderings of a surface visually identical, and change them together."
+    ],
+    "donts": [
+      "**Don't** use Freya Gold for selection, links, focus, section headers, or decoration.",
+      "**Don't** hand-roll glassmorphism (white-alpha fills and strokes) for controls.",
+      "**Don't** cut between room colours. Blend them, unless Reduce Motion is on.",
+      "**Don't** add shadows to panels or controls. Only artwork casts one.",
+      "**Don't** use fixed point sizes for text.",
+      "**Don't** make inert elements focusable on tvOS.",
+      "**Don't** hide the system navigation bar or back gesture to draw a custom one."
+    ]
+  }
+}

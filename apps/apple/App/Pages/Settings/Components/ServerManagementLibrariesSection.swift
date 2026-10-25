@@ -28,7 +28,7 @@ struct ServerManagementLibrariesSection: View {
                             set: { onToggleVisibility(index, !$0) }
                         )
                     )
-                    .tint(.green)
+                    .tint(AppTheme.positive)
                 }
                 .onMove { source, destination in
                     guard let index = source.first else { return }
