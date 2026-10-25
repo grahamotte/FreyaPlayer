@@ -20,9 +20,12 @@ struct ArtworkImage: View {
                     .resizable()
                     .scaledToFill()
             } else {
-                Image(systemName: style.placeholderIconName)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(AppTheme.secondaryText)
+                GeometryReader { proxy in
+                    Image(systemName: style.placeholderIconName)
+                        .font(.system(size: max(min(proxy.size.width, proxy.size.height) * 0.22, 12), weight: .medium))
+                        .foregroundStyle(AppTheme.tertiaryText)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

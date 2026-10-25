@@ -93,7 +93,8 @@ extension View {
 private struct GlassIconLabelStyle: LabelStyle {
     func makeBody(configuration: Configuration) -> some View {
         IconOnlyLabelStyle().makeBody(configuration: configuration)
-            .font(PlatformMetadata.isTV ? .title3.weight(.semibold) : .body.weight(.semibold))
+            .font(.body.weight(.medium))
+            .imageScale(.medium)
             .frame(width: PlatformMetadata.controlContentSide, height: PlatformMetadata.controlContentSide)
     }
 }

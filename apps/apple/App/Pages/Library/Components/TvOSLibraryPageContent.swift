@@ -714,8 +714,10 @@ private final class LibraryPageHeaderView: UICollectionReusableView {
         if #available(tvOS 16.0, *) {
             nextHostingController.sizingOptions = [.intrinsicContentSize]
         }
+        nextHostingController.safeAreaRegions = []
         nextHostingController.view.translatesAutoresizingMaskIntoConstraints = false
         nextHostingController.view.backgroundColor = .clear
+        nextHostingController.view.clipsToBounds = false
         nextHostingController.view.setContentHuggingPriority(.required, for: .horizontal)
         nextHostingController.view.setContentCompressionResistancePriority(.required, for: .horizontal)
 

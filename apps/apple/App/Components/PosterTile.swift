@@ -85,7 +85,7 @@ struct OpenLibraryTile: View {
                 .fill(isHovered ? AppTheme.focusedSurfaceFill : AppTheme.surfaceFill)
                 .overlay {
                     Image(systemName: "square.grid.2x2")
-                        .font(.title.weight(.semibold))
+                        .font(.title2.weight(.medium))
                         .foregroundStyle(AppTheme.secondaryText)
                 }
                 .overlay {
