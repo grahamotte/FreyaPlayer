@@ -275,6 +275,16 @@ private final class LibraryPageCollectionViewController: UIViewController, UICol
             return
         }
         light.light(artworkURL(for: state.displayedItems[indexPath.item]))
+
+        if context.previouslyFocusedView == nil, indexPath.item < tileStyle.gridColumns {
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                collectionView.setContentOffset(
+                    CGPoint(x: collectionView.contentOffset.x, y: -collectionView.adjustedContentInset.top),
+                    animated: false
+                )
+            }
+        }
     }
 
     private func configure(_ cell: PosterCell, with item: MediaItem) {
@@ -290,20 +300,7 @@ private final class LibraryPageCollectionViewController: UIViewController, UICol
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        let topOffset = -scrollView.adjustedContentInset.top
-        if scrollView.contentOffset.y > topOffset, focusedRow() == 0 {
-            scrollView.contentOffset.y = topOffset
-        }
         updateHeaderFocusGuide()
-    }
-
-    private func focusedRow() -> Int? {
-        guard let cell = collectionView.visibleCells.first(where: \.isFocused),
-              let indexPath = collectionView.indexPath(for: cell)
-        else {
-            return nil
-        }
-        return indexPath.item / tileStyle.gridColumns
     }
 
     private var tileStyle: MediaArtworkStyle {
@@ -501,7 +498,7 @@ private final class LibraryPageCollectionViewController: UIViewController, UICol
             verticalFittingPriority: .fittingSizeLevel
         ).height)
 
-        let headerHeight = titleTop + titleHeight + gapBetweenTitleAndButtons + buttonHeight + AppTheme.Spacing.xLarge
+        let headerHeight = titleTop + titleHeight + gapBetweenTitleAndButtons + buttonHeight
 
         let configuration = UICollectionViewCompositionalLayoutConfiguration()
         configuration.contentInsetsReference = .none
@@ -532,7 +529,7 @@ private final class LibraryPageCollectionViewController: UIViewController, UICol
 
             let section = NSCollectionLayoutSection(group: group)
             section.interGroupSpacing = lineSpacing
-            section.contentInsets = .init(top: AppTheme.Spacing.medium, leading: horizontalInset, bottom: AppTheme.Spacing.xxLarge, trailing: horizontalInset)
+            section.contentInsets = .init(top: AppTheme.Spacing.xLarge, leading: horizontalInset, bottom: AppTheme.Spacing.xxLarge, trailing: horizontalInset)
             return section
         }, configuration: configuration)
     }
@@ -640,7 +637,7 @@ private final class LibraryPageHeaderView: UICollectionReusableView {
             watchButtonHostView.centerYAnchor.constraint(equalTo: filterButton.centerYAnchor),
             watchButtonHostView.heightAnchor.constraint(equalTo: filterButton.heightAnchor),
 
-            filterButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -AppTheme.Spacing.xLarge),
+            filterButton.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
     }
 
