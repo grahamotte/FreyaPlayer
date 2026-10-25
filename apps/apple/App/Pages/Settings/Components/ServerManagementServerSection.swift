@@ -5,33 +5,12 @@ struct ServerManagementServerSection: View {
     let onDeactivate: () -> Void
 
     var body: some View {
-        ServerManagementSection("Server") {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                Text(server.serverName)
-                    .font(.headline)
+        Section("Server") {
+            LabeledContent("Name", value: server.serverName)
+            LabeledContent("Address", value: server.serverURL)
+            LabeledContent("Provider", value: server.providerID.title)
 
-                Text("\(server.serverURL) (\(server.providerID.title))")
-                    .foregroundStyle(AppTheme.secondaryText)
-
-                if PlatformMetadata.isPhone {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                        actionButtons
-                    }
-                } else {
-                    HStack(spacing: AppTheme.Spacing.small) {
-                        actionButtons
-                    }
-                }
-            }
-        }
-    }
-
-    private var actionButtons: some View {
-        Group {
-            Button("Deactivate") {
-                onDeactivate()
-            }
-            .buttonStyle(MediaGlassButtonStyle(role: .destructive))
+            Button("Deactivate Server…", role: PlatformMetadata.isTV ? nil : .destructive, action: onDeactivate)
         }
     }
 }

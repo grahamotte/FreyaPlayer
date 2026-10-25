@@ -18,7 +18,7 @@ enum MediaPlayerItemFactory {
             metadata(.commonIdentifierTitle, value: item.title),
             metadata(
                 .commonIdentifierDescription,
-                value: [item.synopsis, descriptionSuffix].compactMap { $0 }.joined(separator: "\n")
+                value: [item.synopsis, descriptionSuffix].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
             ),
             artworkMetadata(for: item)
         ]

@@ -34,7 +34,7 @@ enum PlatformMetadata {
 
     static var pageGutter: CGFloat {
         if isTV { return AppTheme.Spacing.xxLarge }
-        return isPhone ? AppTheme.Spacing.medium : AppTheme.Spacing.xLarge
+        return isPhone ? AppTheme.Spacing.medium : 20
     }
 
     static var controlSpacing: CGFloat {
@@ -77,16 +77,16 @@ enum PlatformMetadata {
         return isPhone ? 28 : 38
     }
 
-    static var pageTitleFont: Font {
-        .system(size: pageTitleSize, weight: .bold)
-    }
-
-    static var itemTitleFont: Font {
-        .system(size: itemTitleSize, weight: .bold)
-    }
-
     static var uiPageTitleFont: UIFont {
-        .systemFont(ofSize: pageTitleSize, weight: .bold)
+        UIFontMetrics(forTextStyle: .title1).scaledFont(for: .systemFont(ofSize: pageTitleSize, weight: .bold))
+    }
+
+    static var controlContentSide: CGFloat {
+        isTV ? 40 : 24
+    }
+
+    static var tvActionButtonSize: CGSize {
+        CGSize(width: 360, height: 72)
     }
 
     static var sectionTitleFont: Font {
@@ -95,14 +95,6 @@ enum PlatformMetadata {
 
     static var uiSectionTitleFont: UIFont {
         uiFont(sectionTitleUITextStyle, weight: .semibold)
-    }
-
-    static var controlFont: Font {
-        .body.weight(.semibold)
-    }
-
-    static var uiControlFont: UIFont {
-        uiFont(.body, weight: .semibold)
     }
 
     static var tileTitleFont: Font {
@@ -159,6 +151,32 @@ extension PlatformMetadata {
         #endif
     }
 
+    static var readableFormWidth: CGFloat? {
+        if isTV { return 1200 }
+        return isPhone ? nil : 760
+    }
+
+    static func focusableRowModifier<Content: View>(_ content: Content) -> some View {
+        #if os(tvOS)
+        return content.focusable()
+        #else
+        return content
+        #endif
+    }
+
+    static func macWindowModifier<Content: View>(_ content: Content) -> some View {
+        #if targetEnvironment(macCatalyst)
+        return content.onAppear {
+            for scene in UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }) {
+                scene.titlebar?.titleVisibility = .hidden
+                scene.titlebar?.toolbarStyle = .unified
+            }
+        }
+        #else
+        return content
+        #endif
+    }
+
     static func macCommandsModifier<Content: Scene>(_ content: Content) -> some Scene {
         #if targetEnvironment(macCatalyst)
         return content.commands {
@@ -182,6 +200,14 @@ extension PlatformMetadata {
         #if os(tvOS)
         imageView.adjustsImageWhenAncestorFocused = true
         imageView.overlayContentView.clipsToBounds = false
+        #endif
+    }
+
+    static func focusedBottomAnchor(for imageView: UIImageView) -> NSLayoutYAxisAnchor {
+        #if os(tvOS)
+        return imageView.focusedFrameGuide.bottomAnchor
+        #else
+        return imageView.bottomAnchor
         #endif
     }
 

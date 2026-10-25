@@ -36,6 +36,18 @@ struct MarqueeText: View {
                     .offset(x: isAnimating ? -(textWidth + gap) : 0)
                     .frame(width: viewWidth, alignment: .leading)
                     .clipped()
+                    .mask {
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: 0),
+                                .init(color: .black, location: 0.06),
+                                .init(color: .black, location: 0.94),
+                                .init(color: .clear, location: 1)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    }
                 }
             }
             .overlay {
@@ -102,6 +114,14 @@ final class MarqueeLabel: UIView {
     private var isAnimating = false
     private let gap: CGFloat = 32
     private let speed: CGFloat = 52.5
+    private let fadeMask: CAGradientLayer = {
+        let layer = CAGradientLayer()
+        layer.startPoint = CGPoint(x: 0, y: 0.5)
+        layer.endPoint = CGPoint(x: 1, y: 0.5)
+        layer.colors = [UIColor.clear.cgColor, UIColor.black.cgColor, UIColor.black.cgColor, UIColor.clear.cgColor]
+        layer.locations = [0, 0.06, 0.94, 1]
+        return layer
+    }()
 
     var text: String? {
         get { firstLabel.text }
@@ -161,6 +181,7 @@ final class MarqueeLabel: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        fadeMask.frame = bounds
         layoutLabels()
     }
 
@@ -172,6 +193,7 @@ final class MarqueeLabel: UIView {
         firstLabel.lineBreakMode = .byClipping
         secondLabel.lineBreakMode = .byClipping
         secondLabel.isHidden = false
+        layer.mask = fadeMask
         layoutLabels()
         displayLink = CADisplayLink(target: self, selector: #selector(tick))
         displayLink?.add(to: .main, forMode: .common)
@@ -185,6 +207,7 @@ final class MarqueeLabel: UIView {
         lastTimestamp = 0
         firstLabel.lineBreakMode = .byTruncatingTail
         secondLabel.isHidden = true
+        layer.mask = nil
         setNeedsLayout()
     }
 

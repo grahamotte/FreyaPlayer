@@ -59,9 +59,22 @@ struct MediaItem: Hashable, Identifiable, Codable {
     }
 
     var runtimeText: String? {
-        guard let durationMilliseconds else { return nil }
+        durationMilliseconds.map(Self.durationText)
+    }
 
-        let minutes = durationMilliseconds / 60_000
+    var remainingText: String? {
+        guard hasResume, let durationMilliseconds, let resumeOffsetMilliseconds, durationMilliseconds > resumeOffsetMilliseconds else {
+            return nil
+        }
+        return "\(Self.durationText(durationMilliseconds - resumeOffsetMilliseconds)) left"
+    }
+
+    var factsLine: [String] {
+        [year.map(String.init), contentRating, kind.isPlayable ? runtimeText : nil].compactMap { $0 }
+    }
+
+    nonisolated private static func durationText(_ milliseconds: Int) -> String {
+        let minutes = milliseconds / 60_000
         guard minutes > 0 else { return "<1m" }
 
         let hours = minutes / 60
@@ -79,9 +92,10 @@ struct MediaItem: Hashable, Identifiable, Codable {
     }
 
     func libraryTileSubtitle(showsAddedAt: Bool) -> String? {
-        guard let runtimeText else { return nil }
-        guard showsAddedAt, let addedAtFormatted else { return runtimeText }
-        return "\(runtimeText) • \(addedAtFormatted)"
+        guard showsAddedAt, let addedAt else {
+            return kind.isPlayable ? runtimeText : year.map(String.init)
+        }
+        return Self.dateFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(addedAt)))
     }
 
     var addedAtFormatted: String? {
@@ -111,10 +125,6 @@ struct MediaItem: Hashable, Identifiable, Codable {
         return "Resume at \(timestamp)"
     }
 
-    var quickPlayButtonTitle: String {
-        hasResume ? "Resume Now" : "Play Now"
-    }
-
     func quickPlayItem(from orderedDescendants: [MediaItem]) -> MediaItem? {
         if kind.isPlayable {
             return self
@@ -126,7 +136,7 @@ struct MediaItem: Hashable, Identifiable, Codable {
 
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateStyle = .long
+        formatter.dateStyle = .medium
         formatter.timeStyle = .none
         return formatter
     }()
@@ -284,12 +294,6 @@ struct MediaItemDetailSection: Hashable, Codable, Identifiable {
 
 extension Optional where Wrapped == String {
     var appSynopsis: String {
-        self?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? "No description available."
-    }
-}
-
-private extension String {
-    var nilIfEmpty: String? {
-        isEmpty ? nil : self
+        self?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 }

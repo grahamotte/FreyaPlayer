@@ -44,7 +44,7 @@ enum LibraryPageSort: Int, CaseIterable {
         case .title:
             return "Title"
         case .addedAt:
-            return "Added At"
+            return "Date Added"
         case .duration:
             return "Duration"
         }
@@ -98,12 +98,12 @@ enum LibraryPageSortOrder: Int, CaseIterable {
         }
     }
 
-    var shortTitle: String {
+    var iconName: String {
         switch self {
         case .ascending:
-            return "Asc"
+            return "arrow.up"
         case .descending:
-            return "Desc"
+            return "arrow.down"
         }
     }
 

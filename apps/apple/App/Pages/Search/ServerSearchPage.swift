@@ -1,9 +1,7 @@
 import Fuse
 import SwiftUI
-import UIKit
 
 struct ServerSearchPage: View {
-    @Environment(\.dismiss) private var dismiss
     @StateObject private var search: ServerTitleSearch
     @FocusState private var isSearchFieldFocused: Bool
 
@@ -14,29 +12,26 @@ struct ServerSearchPage: View {
     }
 
     var body: some View {
-        Group {
-            if PlatformMetadata.isTV {
-                pageContent
-                    .searchable(text: $search.query, prompt: "Search titles")
-            } else {
-                VStack(spacing: 0) {
-                    searchHeader
-                    pageContent
-                }
-                .toolbar(.hidden, for: .navigationBar)
+        pageContent
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background {
+                ArtworkLitBackground(url: search.results.first.map { $0.item.artwork.url(for: $0.item.kind.artworkStyle) } ?? nil)
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background {
-            LibrariesAmbientBackground()
-                .ignoresSafeArea()
-        }
-        .navigationTitle("")
-        .navigationBarBackButtonHidden(!PlatformMetadata.isTV)
-        .task {
-            guard !PlatformMetadata.isTV else { return }
-            isSearchFieldFocused = true
-        }
+            .searchable(text: $search.query, placement: searchPlacement, prompt: "Search titles")
+            .iOSSearchFocused($isSearchFieldFocused)
+            .navigationTitle("Search")
+            .task {
+                guard !PlatformMetadata.isTV else { return }
+                isSearchFieldFocused = true
+            }
+    }
+
+    private var searchPlacement: SearchFieldPlacement {
+        #if os(tvOS)
+        .automatic
+        #else
+        .navigationBarDrawer(displayMode: .always)
+        #endif
     }
 
     @ViewBuilder
@@ -58,15 +53,18 @@ struct ServerSearchPage: View {
 
     private var searchResults: some View {
         ScrollView {
-            LazyVStack(spacing: PlatformMetadata.isTV ? AppTheme.Spacing.large : AppTheme.Spacing.medium) {
+            LazyVStack(spacing: PlatformMetadata.isTV ? AppTheme.Spacing.medium : AppTheme.Spacing.xSmall) {
                 ForEach(search.results) { result in
                     NavigationLink(value: result.item.route) {
-                        SearchResultRow(
+                        MediaRow(
                             item: result.item,
-                            title: highlightedTitle(for: result)
+                            title: highlightedTitle(for: result),
+                            usesUniformThumbnail: true
                         )
+                        .padding(.vertical, AppTheme.Spacing.small)
+                        .padding(.horizontal, PlatformMetadata.isTV ? AppTheme.Spacing.medium : 0)
                     }
-                    .buttonStyle(MediaSurfaceButtonStyle(restingFill: AppTheme.surfaceFill))
+                    .buttonStyle(MediaSurfaceButtonStyle(restingFill: PlatformMetadata.isTV ? AppTheme.subtleSurfaceFill : Color.clear))
                 }
             }
             .padding(.horizontal, contentHorizontalPadding)
@@ -74,49 +72,6 @@ struct ServerSearchPage: View {
             .padding(.bottom, contentHorizontalPadding)
         }
         .scrollIndicators(.hidden)
-    }
-
-    private var searchHeader: some View {
-        HStack(spacing: PlatformMetadata.controlSpacing) {
-            Button {
-                dismiss()
-            } label: {
-                Label("Back", systemImage: "chevron.left")
-            }
-            .buttonStyle(MediaGlassButtonStyle(size: .compact))
-
-            HStack(spacing: AppTheme.Spacing.medium) {
-                Image(systemName: "magnifyingglass")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(AppTheme.secondaryText)
-
-                TextField("Search titles", text: $search.query)
-                    .textFieldStyle(.plain)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .focused($isSearchFieldFocused)
-                    .submitLabel(.search)
-
-                if !search.query.isEmpty {
-                    Button {
-                        search.query = ""
-                        isSearchFieldFocused = true
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(AppTheme.secondaryText)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Clear Search")
-                }
-            }
-            .font(.title2)
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.vertical, AppTheme.Spacing.medium)
-            .glassField(isFocused: isSearchFieldFocused)
-        }
-        .padding(.horizontal, contentHorizontalPadding)
-        .padding(.top, AppTheme.Spacing.medium)
-        .padding(.bottom, AppTheme.Spacing.medium)
     }
 
     private var contentHorizontalPadding: CGFloat {
@@ -154,120 +109,14 @@ struct ServerSearchPage: View {
     }
 }
 
-private struct SearchResultRow: View {
-    let item: MediaItem
-    let title: Text
-
-    var body: some View {
-        HStack(spacing: PlatformMetadata.isTV ? AppTheme.Spacing.xLarge : AppTheme.Spacing.large) {
-            SearchResultArtwork(item: item)
-
-            VStack(alignment: .leading, spacing: PlatformMetadata.isTV ? AppTheme.Spacing.small : AppTheme.Spacing.xSmall) {
-                title
-                    .font(PlatformMetadata.isTV ? .title2 : .title3)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-
-                if let metadata {
-                    Text(metadata)
-                        .font(PlatformMetadata.labelFont.weight(.medium))
-                        .foregroundStyle(AppTheme.secondaryText)
-                        .lineLimit(1)
-                }
-
-                if let synopsis {
-                    Text(synopsis)
-                        .font(PlatformMetadata.isTV ? .body : .subheadline)
-                        .foregroundStyle(AppTheme.secondaryText)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                }
-            }
-
-            Spacer(minLength: AppTheme.Spacing.large)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(resultPadding)
-        .contentShape(Rectangle())
-    }
-
-    private var metadata: String? {
-        if let releasedAt = item.releasedAtFormatted {
-            return releasedAt
-        }
-        return item.year.map(String.init)
-    }
-
-    private var synopsis: String? {
-        let value = item.synopsis.trimmingCharacters(in: .whitespacesAndNewlines)
-        return value.isEmpty ? nil : value
-    }
-
-    private var resultPadding: CGFloat {
-        PlatformMetadata.isPhone ? AppTheme.Spacing.medium : AppTheme.Spacing.large
-    }
-}
-
-private struct SearchResultArtwork: View {
-    let item: MediaItem
-
-    @State private var image: UIImage?
-
-    private var style: MediaArtworkStyle {
-        item.kind.artworkStyle
-    }
-
-    private var artworkURL: URL? {
-        item.artwork.url(for: style)
-    }
-
-    var body: some View {
-        ZStack {
-            if let image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: imageSize.width, height: imageSize.height)
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            } else {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(AppTheme.surfaceFill)
-                    .frame(width: imageSize.width, height: imageSize.height)
-                    .overlay {
-                        Image(systemName: style == .poster ? "film.stack.fill" : "tv.fill")
-                            .font(.title2.weight(.semibold))
-                            .foregroundStyle(AppTheme.secondaryText)
-                    }
-            }
-        }
-        .frame(width: previewDimension, height: previewDimension)
-        .task(id: artworkURL) {
-            image = nil
-            guard let artworkURL else { return }
-            image = await ArtworkImageCache.shared.loadImage(from: artworkURL)
-        }
-    }
-
-    private var previewDimension: CGFloat {
-        if PlatformMetadata.isTV { return 240 }
-        if PlatformMetadata.isPhone { return 140 }
-        return 200
-    }
-
-    private var imageSize: CGSize {
-        if style.aspectRatio >= 1 {
-            return CGSize(
-                width: previewDimension,
-                height: previewDimension / style.aspectRatio
-            )
-        }
-        return CGSize(
-            width: previewDimension * style.aspectRatio,
-            height: previewDimension
-        )
-    }
-
-    private var cornerRadius: CGFloat {
-        AppTheme.Radius.inline
+private extension View {
+    @ViewBuilder
+    func iOSSearchFocused(_ isFocused: FocusState<Bool>.Binding) -> some View {
+        #if os(tvOS)
+        self
+        #else
+        searchFocused(isFocused)
+            .searchPresentationToolbarBehavior(.avoidHidingContent)
+        #endif
     }
 }

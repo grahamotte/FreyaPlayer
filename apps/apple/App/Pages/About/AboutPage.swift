@@ -1,76 +1,93 @@
 import SwiftUI
 
 struct AboutPage: View {
+    private let repositoryURL = URL(string: "https://github.com/grahamotte/FreyaPlayer")!
+
     var body: some View {
-        VStack(spacing: AppTheme.Spacing.xLarge) {
-            Spacer()
+        Form {
+            Section {
+                VStack(spacing: AppTheme.Spacing.small) {
+                    Image("FreyaLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: PlatformMetadata.isTV ? 160 : 96, height: PlatformMetadata.isTV ? 160 : 96)
+                        .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
-                Label("About Freya Player", systemImage: "info.circle")
-                    .font(PlatformMetadata.sectionTitleFont)
+                    Text("Freya Player")
+                        .font(.title2.weight(.bold))
 
-                Text("A small, native player for Jellyfin and Plex, built to feel like it came with the device.")
-                    .foregroundStyle(AppTheme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                section(
-                    title: "Free Forever",
-                    body: "Freya Player is free. No subscriptions, no upsell, no plus premium max whatever. Oh also, no ads."
-                )
-
-                section(
-                    title: "Private by Default",
-                    body: "Your data lives only on this device, so the app can talk to your server. There's no analytics or telemetry, not even a crash reporter."
-                )
-
-                section(
-                    title: "Open Source",
-                    body: "Read it, fork it, send a pull request."
-                )
-
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-                    sectionTitle("Bugs?")
-                    Text("Open an issue!")
+                    Text("A small, native player for Jellyfin and Plex, built to feel like it came with the device.")
+                        .font(.subheadline)
                         .foregroundStyle(AppTheme.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("https://github.com/grahamotte/FreyaPlayer")
-                        .font(.body.monospaced())
-                        .foregroundStyle(AppTheme.primaryText)
-                        .userSelectableText()
+                        .multilineTextAlignment(.center)
+
+                    Text("Version \(appVersion)")
+                        .font(PlatformMetadata.labelFont)
+                        .foregroundStyle(AppTheme.tertiaryText)
                 }
-
-                Text("Version \(appVersion)")
-                    .font(PlatformMetadata.labelFont)
-                    .foregroundStyle(AppTheme.secondaryText)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppTheme.Spacing.small)
+                .listRowBackground(Color.clear)
+                .tvOSFocusableRow()
             }
-            .frame(maxWidth: PlatformMetadata.isTV ? 1200 : 720, alignment: .leading)
-            .padding(PlatformMetadata.panelPadding)
-            .background(PanelBackground())
 
-            Spacer()
+            Section {
+                point("Free Forever", "No subscriptions, no upsell, no plus premium max whatever. Oh also, no ads.")
+                point("Private by Default", "Your data lives only on this device, so the app can talk to your server. There's no analytics or telemetry, not even a crash reporter.")
+                point("Open Source", "Read it, fork it, send a pull request.")
+            }
+
+            Section {
+                repositoryLink
+            } header: {
+                Text("Bugs?")
+            } footer: {
+                Text("Open an issue on GitHub.")
+            }
         }
-        .padding(PlatformMetadata.pageGutter)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppBackground())
+        .readableFormWidth()
+        .formBackdrop(.brand)
+        .tint(AppTheme.primaryText)
         .navigationTitle("About")
+        .aboutTitleDisplayMode()
     }
 
-    private func section(title: String, body: String) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-            sectionTitle(title)
-            Text(body)
-                .foregroundStyle(AppTheme.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
+    @ViewBuilder
+    private var repositoryLink: some View {
+        #if os(tvOS)
+        LabeledContent("GitHub", value: "grahamotte/FreyaPlayer")
+            .tvOSFocusableRow()
+        #else
+        Link(destination: repositoryURL) {
+            LabeledContent("GitHub", value: "grahamotte/FreyaPlayer")
         }
+        #endif
     }
 
-    private func sectionTitle(_ title: String) -> some View {
-        Text(title)
-            .font(.headline)
-            .foregroundStyle(AppTheme.primaryText)
+    private func point(_ title: String, _ body: String) -> some View {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.xxSmall) {
+            Text(title)
+                .font(.body.weight(.semibold))
+            Text(body)
+                .font(.subheadline)
+                .foregroundStyle(AppTheme.secondaryText)
+        }
+        .padding(.vertical, AppTheme.Spacing.xxSmall)
+        .tvOSFocusableRow()
     }
 
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func aboutTitleDisplayMode() -> some View {
+        #if os(tvOS)
+        self
+        #else
+        navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 }

@@ -56,6 +56,10 @@ struct MediaPlaybackConversion: Equatable, Identifiable {
     var isConverted: Bool {
         output != nil && source != output
     }
+
+    var isTranscode: Bool {
+        element != .container && isConverted
+    }
 }
 
 struct MediaPlaybackPlan: Equatable {
@@ -144,9 +148,7 @@ extension MediaPlaybackOptions {
                 output: subtitleTarget
             ),
         ]
-        let path: MediaPlaybackPath = if conversions.contains(where: {
-            $0.element != .container && $0.isConverted
-        }) {
+        let path: MediaPlaybackPath = if conversions.contains(where: \.isTranscode) {
             .transcode
         } else if conversions.contains(where: { $0.element == .container && $0.isConverted }) {
             .remux

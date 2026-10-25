@@ -17,22 +17,19 @@ struct SeriesItemContent: View {
 
     var body: some View {
         MediaView(model: model, data: item.mediaViewData()) {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.xLarge) {
-                MediaItemActionRow {
-                    MediaPlayAllButton(model: model, items: playableItems)
-                    MediaCollectionWatchStatusButton(model: model, item: item)
-                }
-
-                ItemChildListSection(
-                    model: model,
-                    item: item,
-                    title: "Seasons",
-                    emptyMessage: "No seasons yet.",
-                    destination: { $0.route },
-                    rowStyle: .standard,
-                    autoFocusNextUnwatched: true
-                )
-            }
+            MediaPlayAllButton(model: model, items: playableItems, isProminent: true)
+            MediaCollectionWatchStatusButton(model: model, item: item)
+        } below: {
+            ItemChildListSection(
+                model: model,
+                item: item,
+                title: "Seasons",
+                emptyMessage: "No seasons yet.",
+                destination: { $0.route },
+                rowStyle: .standard,
+                autoFocusNextUnwatched: true
+            )
+            .padding(.top, PlatformMetadata.isTV ? 0 : AppTheme.Spacing.medium)
         }
         .task(id: originalItem.id) { model.refreshItem(originalItem) }
     }

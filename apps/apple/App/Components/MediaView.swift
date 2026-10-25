@@ -1,19 +1,10 @@
 import SwiftUI
 
-private struct MediaViewScrollActionKey: EnvironmentKey {
-    static let defaultValue: (String) -> Void = { _ in }
-}
-
-extension EnvironmentValues {
-    var mediaViewScrollTo: (String) -> Void {
-        get { self[MediaViewScrollActionKey.self] }
-        set { self[MediaViewScrollActionKey.self] = newValue }
-    }
-}
-
 struct MediaViewData {
     let title: String
-    let metadata: [Metadata]
+    let facts: [String]
+    let remainingText: String?
+    let progress: Double?
     let detailSections: [MediaItemDetailSection]
     let detailArtwork: [Artwork]
     let synopsis: String
@@ -24,13 +15,6 @@ struct MediaViewData {
     let hasResume: Bool
     let resumeOffsetMilliseconds: Int?
 
-    struct Metadata: Identifiable {
-        let label: String
-        let value: String
-
-        var id: String { label }
-    }
-
     struct Artwork: Identifiable {
         let label: String
         let url: URL
@@ -40,21 +24,24 @@ struct MediaViewData {
     }
 }
 
-struct MediaView<Content: View>: View {
+struct MediaView<Actions: View, Below: View>: View {
     @ObservedObject var model: AppModel
     let data: MediaViewData
-    let content: Content
+    let actions: Actions
+    let below: Below
     @State private var isShowingDetails = false
     @State private var detailScrollOffset: CGFloat = 0
 
     init(
         model: AppModel,
         data: MediaViewData,
-        @ViewBuilder content: () -> Content
+        @ViewBuilder actions: () -> Actions,
+        @ViewBuilder below: () -> Below
     ) {
         self.model = model
         self.data = data
-        self.content = content()
+        self.actions = actions()
+        self.below = below()
     }
 
     var body: some View {
@@ -81,6 +68,10 @@ struct MediaView<Content: View>: View {
             )
                 .presentationBackground(.clear)
         }
+    }
+
+    private var centersContent: Bool {
+        PlatformMetadata.isTV && Below.self == EmptyView.self
     }
 
     private func usesPortraitLayout(_ proxy: GeometryProxy) -> Bool {
@@ -139,10 +130,15 @@ struct MediaView<Content: View>: View {
 
     private func splitLayout(proxy: GeometryProxy, metrics: MediaViewMetrics) -> some View {
         let availableWidth = proxy.size.width - (metrics.horizontalPadding * 2) - metrics.artworkSpacing
-        let detailWidth = availableWidth * 0.62
-        let artworkWidth = availableWidth * 0.38
+        let artworkFraction: CGFloat = centersContent && data.artworkStyle == .landscape ? 0.5 : 0.38
+        let detailWidth = availableWidth * (1 - artworkFraction)
+        let artworkWidth = availableWidth * artworkFraction
         let synopsisWidth = min(detailWidth - metrics.panelHorizontalPadding, 980)
-        let artworkBounds = CGSize(width: artworkWidth, height: proxy.size.height - (metrics.verticalPadding * 2))
+        let artworkTopInset = centersContent ? 0 : metrics.panelVerticalPadding + AppTheme.Spacing.xSmall
+        let artworkBounds = CGSize(
+            width: artworkWidth,
+            height: max(proxy.size.height - metrics.topPadding - metrics.bottomPadding - artworkTopInset, 1)
+        )
         let artworkSize = data.artworkStyle.fittedSize(in: artworkBounds)
 
         return HStack(spacing: metrics.artworkSpacing) {
@@ -153,30 +149,71 @@ struct MediaView<Content: View>: View {
                 tracksOffset: false
             )
 
-            VStack {
-                MediaArtworkView(url: data.artworkURL, title: data.title, style: data.artworkStyle)
-                    .frame(width: artworkSize.width, height: artworkSize.height)
-            }
-            .frame(width: artworkWidth)
+            MediaArtworkView(url: data.artworkURL, title: data.title, style: data.artworkStyle)
+                .frame(width: artworkSize.width, height: artworkSize.height)
+                .frame(width: artworkWidth)
+                .padding(.top, artworkTopInset)
+                .padding(.bottom, PlatformMetadata.isTV && !centersContent ? metrics.bottomPadding : 0)
+                .frame(maxHeight: .infinity, alignment: centersContent ? .center : .top)
         }
         .padding(.horizontal, metrics.horizontalPadding)
         .padding(.top, metrics.topPadding)
-        .padding(.bottom, metrics.bottomPadding)
+        .padding(.bottom, PlatformMetadata.isTV && !centersContent ? 0 : metrics.bottomPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    @ViewBuilder
     private func detailsPanel(
         width: CGFloat,
         synopsisWidth: CGFloat,
         metrics: MediaViewMetrics,
         tracksOffset: Bool
     ) -> some View {
-        ScrollViewReader { scrollProxy in
-            ScrollView {
-                detailsContent(synopsisWidth: synopsisWidth, metrics: metrics)
+        if centersContent {
+            detailsHeader(synopsisWidth: synopsisWidth, metrics: metrics)
+                .padding(.leading, metrics.panelLeadingPadding)
+                .padding(.trailing, metrics.panelTrailingPadding)
+                .frame(width: width, alignment: .leading)
+                .frame(maxHeight: .infinity, alignment: .leading)
+        } else if PlatformMetadata.isTV {
+            VStack(alignment: .leading, spacing: metrics.contentSpacing) {
+                detailsHeader(synopsisWidth: synopsisWidth, metrics: metrics)
+
+                ScrollView {
+                    below
+                        .padding(.horizontal, AppTheme.Spacing.small)
+                        .padding(.top, AppTheme.Spacing.large)
+                        .padding(.bottom, AppTheme.Spacing.xxLarge * 2)
+                        .frame(maxWidth: synopsisWidth, alignment: .leading)
+                }
+                .padding(.horizontal, -AppTheme.Spacing.small)
+                .scrollIndicators(.hidden)
+                .mask {
+                    VStack(spacing: 0) {
+                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                            .frame(height: AppTheme.Spacing.xLarge)
+
+                        Color.black
+
+                        LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+                            .frame(height: AppTheme.Spacing.xxLarge * 2)
+                    }
+                    .padding(.horizontal, -AppTheme.Spacing.xLarge)
+                }
             }
-            .environment(\.mediaViewScrollTo) { targetID in
-                scrollProxy.scrollTo(targetID, anchor: .center)
+            .frame(maxWidth: synopsisWidth, alignment: .leading)
+            .padding(.leading, metrics.panelLeadingPadding)
+            .padding(.trailing, metrics.panelTrailingPadding)
+            .padding(.top, metrics.panelVerticalPadding)
+            .frame(width: width, alignment: .leading)
+            .frame(maxHeight: .infinity, alignment: .topLeading)
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: metrics.contentSpacing) {
+                    detailsHeader(synopsisWidth: synopsisWidth, metrics: metrics)
+                    below
+                }
+                .frame(maxWidth: synopsisWidth, alignment: .leading)
             }
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 guard tracksOffset else { return 0 }
@@ -195,72 +232,66 @@ struct MediaView<Content: View>: View {
         }
     }
 
-    @ViewBuilder
-    private func detailsContent(synopsisWidth: CGFloat, metrics: MediaViewMetrics) -> some View {
+    private func detailsHeader(synopsisWidth: CGFloat, metrics: MediaViewMetrics) -> some View {
         VStack(alignment: .leading, spacing: metrics.contentSpacing) {
-            Button {} label: {
-                Text(data.title)
-                    .font(PlatformMetadata.itemTitleFont)
-                    .lineLimit(3)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(MediaDetailTextButtonStyle())
+            Text(data.title)
+                .itemTitleFont()
+                .lineLimit(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            if !data.metadata.isEmpty || !data.detailSections.isEmpty {
-                ScrollView(.horizontal) {
-                    HStack(alignment: .top, spacing: metrics.horizontalItemSpacing) {
-                        ForEach(data.metadata) { entry in
-                            Button {} label: {
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-                                    Text(entry.label)
-                                        .font(metrics.metadataLabelFont)
-                                        .foregroundStyle(AppTheme.secondaryText)
-
-                                    Text(entry.value)
-                                        .font(metrics.metadataValueFont)
-                                }
-                                .frame(minWidth: metrics.metadataTileWidth, alignment: .leading)
-                            }
-                            .buttonStyle(MediaDetailTileStyle())
-                        }
-
-                        Button { isShowingDetails = true } label: {
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-                                Text("More")
-                                    .font(metrics.metadataLabelFont)
-                                    .foregroundStyle(AppTheme.secondaryText)
-
-                                Text("Details")
-                                    .font(metrics.metadataValueFont)
-                            }
-                            .frame(minWidth: metrics.metadataTileWidth, alignment: .leading)
-                        }
-                        .buttonStyle(MediaDetailTileStyle())
-                    }
-                }
-                .scrollIndicators(.hidden)
-                .frame(maxWidth: synopsisWidth, alignment: .leading)
-                .horizontalFade()
-            }
-
-            Button {
-                if PlatformMetadata.isTV {
-                    isShowingDetails = true
-                }
-            } label: {
-                Text(data.synopsis)
-                    .font(.body)
+            if !data.facts.isEmpty {
+                Text(data.facts.joined(separator: " · "))
+                    .font(PlatformMetadata.isTV ? .callout.weight(.medium) : .subheadline.weight(.medium))
                     .foregroundStyle(AppTheme.secondaryText)
-                    .lineLimit(5)
-                    .frame(maxWidth: synopsisWidth, alignment: .topLeading)
+                    .lineLimit(1)
             }
-            .buttonStyle(MediaDetailTextButtonStyle())
 
-            content
+            if !data.synopsis.isEmpty {
+                Button {
+                    isShowingDetails = true
+                } label: {
+                    Text(data.synopsis)
+                        .font(.body)
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .lineLimit(PlatformMetadata.isTV ? 2 : 5)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: synopsisWidth, alignment: .topLeading)
+                }
+                .buttonStyle(MediaDetailTextButtonStyle())
+                .accessibilityHint("Shows all details")
+            }
+
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                MediaItemActionRow {
+                    actions
+
+                    Button {
+                        isShowingDetails = true
+                    } label: {
+                        Label("Details", systemImage: "info")
+                    }
+                    .glassIconButton()
+                }
+
+                if let remainingText = data.remainingText {
+                    HStack(spacing: AppTheme.Spacing.small) {
+                        ProgressView(value: min(max(data.progress ?? 0, 0), 1))
+                            .tint(AppTheme.accent)
+                            .frame(width: PlatformMetadata.isTV ? 180 : 96)
+
+                        Text(remainingText)
+                            .font(PlatformMetadata.labelFont.weight(.medium))
+                            .foregroundStyle(AppTheme.secondaryText)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .controlSize(.large)
         }
         .frame(maxWidth: synopsisWidth, alignment: .leading)
     }
 }
+
 
 struct MediaItemActionRow<Content: View>: View {
     let content: Content
@@ -270,19 +301,15 @@ struct MediaItemActionRow<Content: View>: View {
     }
 
     var body: some View {
-        ScrollView(.horizontal) {
-            HStack(alignment: .top, spacing: PlatformMetadata.controlSpacing) {
-                content
-            }
+        HStack(alignment: .center, spacing: PlatformMetadata.controlSpacing) {
+            content
         }
-        .scrollIndicators(.hidden)
-        .horizontalFade()
     }
 }
 
-extension MediaView where Content == EmptyView {
-    init(model: AppModel, data: MediaViewData) {
-        self.init(model: model, data: data) {
+extension MediaView where Below == EmptyView {
+    init(model: AppModel, data: MediaViewData, @ViewBuilder actions: () -> Actions) {
+        self.init(model: model, data: data, actions: actions) {
             EmptyView()
         }
     }
@@ -337,7 +364,9 @@ private struct FullItemDetailsView: View {
                     VStack(alignment: .leading, spacing: contentSpacing) {
                         closeButton
                         header
-                        descriptionSection
+                        if !synopsis.isEmpty {
+                            descriptionSection
+                        }
 
                         if !artwork.isEmpty {
                             artworkGallery(availableWidth: contentWidth)
@@ -366,15 +395,9 @@ private struct FullItemDetailsView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-            Text(title)
-                .font(PlatformMetadata.itemTitleFont)
-                .frame(maxWidth: 1100, alignment: .leading)
-
-            Text("\(rowCount) fields across \(nonemptySections.count) sections")
-                .font(.callout)
-                .foregroundStyle(AppTheme.secondaryText)
-        }
+        Text(title)
+            .itemTitleFont()
+            .frame(maxWidth: 1100, alignment: .leading)
     }
 
     private var descriptionSection: some View {
@@ -389,9 +412,9 @@ private struct FullItemDetailsView: View {
                 .foregroundStyle(AppTheme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
                 .userSelectableText()
-                .padding(PlatformMetadata.isTV ? AppTheme.Spacing.large : AppTheme.Spacing.medium)
+                .padding(PlatformMetadata.isTV ? AppTheme.Spacing.large : 0)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .focusSurface(isFocused: isFocused, restingFill: AppTheme.subtleSurfaceFill, cornerRadius: AppTheme.Radius.inline)
+                .focusSurface(isFocused: isFocused, restingFill: PlatformMetadata.isTV ? AppTheme.subtleSurfaceFill : Color.clear, cornerRadius: AppTheme.Radius.inline)
                 .focusable(PlatformMetadata.isTV)
                 .focused($focusedItemID, equals: focusID)
         }
@@ -417,9 +440,10 @@ private struct FullItemDetailsView: View {
                     }
                 }
                 .padding(.vertical, AppTheme.Spacing.xSmall)
-                .padding(.horizontal, AppTheme.Spacing.xxSmall)
+                .padding(.horizontal, PlatformMetadata.isTV ? AppTheme.Spacing.xxSmall : 0)
             }
             .scrollIndicators(.hidden)
+            .scrollClipDisabled()
         }
         .tvOSFocusSection()
     }
@@ -496,19 +520,11 @@ private struct FullItemDetailsView: View {
     }
 
     private var gridSpacing: CGFloat {
-        PlatformMetadata.isTV ? AppTheme.Spacing.medium : AppTheme.Spacing.small
-    }
-
-    private var nonemptySections: [MediaItemDetailSection] {
-        sections.filter { !$0.rows.isEmpty }
-    }
-
-    private var rowCount: Int {
-        sections.reduce(0) { $0 + $1.rows.count }
+        PlatformMetadata.isTV ? AppTheme.Spacing.medium : AppTheme.Spacing.large
     }
 
     private var initialFocusID: String? {
-        guard PlatformMetadata.isTV else { return nil }
+        guard PlatformMetadata.isTV, !synopsis.isEmpty else { return nil }
         return "description"
     }
 
@@ -520,7 +536,8 @@ private struct FullItemDetailsView: View {
         Button { dismiss() } label: {
             Label("Close", systemImage: "xmark")
         }
-        .buttonStyle(MediaGlassButtonStyle(size: .compact))
+        .glassIconButton()
+        .controlSize(.large)
     }
 }
 
@@ -544,7 +561,7 @@ private struct FullItemDetailArtwork: View {
                 .font(PlatformMetadata.labelFont.weight(.semibold))
                 .foregroundStyle(AppTheme.secondaryText)
         }
-        .padding(AppTheme.Spacing.xSmall)
+        .padding(PlatformMetadata.isTV ? AppTheme.Spacing.xSmall : 0)
         .focusSurface(isFocused: isFocused, restingFill: Color.clear, cornerRadius: AppTheme.Radius.large)
     }
 }
@@ -565,9 +582,9 @@ private struct FullItemDetailRow: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .userSelectableText()
         }
-        .frame(maxWidth: .infinity, minHeight: PlatformMetadata.isTV ? 86 : 72, alignment: .topLeading)
-        .padding(PlatformMetadata.isTV ? AppTheme.Spacing.large : AppTheme.Spacing.medium)
-        .focusSurface(isFocused: isFocused, restingFill: AppTheme.subtleSurfaceFill, cornerRadius: AppTheme.Radius.inline)
+        .frame(maxWidth: .infinity, minHeight: PlatformMetadata.isTV ? 86 : nil, alignment: .topLeading)
+        .padding(PlatformMetadata.isTV ? AppTheme.Spacing.large : 0)
+        .focusSurface(isFocused: isFocused, restingFill: PlatformMetadata.isTV ? AppTheme.subtleSurfaceFill : Color.clear, cornerRadius: AppTheme.Radius.inline)
     }
 }
 
@@ -579,10 +596,6 @@ private struct MediaViewMetrics {
     let panelTrailingPadding: CGFloat
     let panelVerticalPadding: CGFloat
     let contentSpacing: CGFloat
-    let horizontalItemSpacing: CGFloat
-    let metadataTileWidth: CGFloat
-    let metadataLabelFont: Font
-    let metadataValueFont: Font
     let headerOffset: CGFloat
 
     var panelHorizontalPadding: CGFloat {
@@ -606,10 +619,6 @@ private struct MediaViewMetrics {
             panelTrailingPadding: 0,
             panelVerticalPadding: panelVerticalPadding,
             contentSpacing: contentSpacing,
-            horizontalItemSpacing: horizontalItemSpacing,
-            metadataTileWidth: metadataTileWidth,
-            metadataLabelFont: metadataLabelFont,
-            metadataValueFont: metadataValueFont,
             headerOffset: headerOffset
         )
     }
@@ -623,11 +632,7 @@ private struct MediaViewMetrics {
                 panelLeadingPadding: 36,
                 panelTrailingPadding: 36,
                 panelVerticalPadding: 24,
-                contentSpacing: 32,
-                horizontalItemSpacing: 12,
-                metadataTileWidth: 128,
-                metadataLabelFont: .caption.weight(.semibold),
-                metadataValueFont: .callout.weight(.medium),
+                contentSpacing: 24,
                 headerOffset: 0
             )
         }
@@ -640,10 +645,6 @@ private struct MediaViewMetrics {
                 panelTrailingPadding: 40,
                 panelVerticalPadding: 16,
                 contentSpacing: 24,
-                horizontalItemSpacing: 12,
-                metadataTileWidth: 112,
-                metadataLabelFont: .footnote.weight(.semibold),
-                metadataValueFont: .headline.weight(.medium),
                 headerOffset: 18
             )
         }
@@ -656,10 +657,6 @@ private struct MediaViewMetrics {
                 panelTrailingPadding: 0,
                 panelVerticalPadding: 12,
                 contentSpacing: 16,
-                horizontalItemSpacing: 12,
-                metadataTileWidth: 96,
-                metadataLabelFont: .footnote.weight(.semibold),
-                metadataValueFont: .headline.weight(.medium),
                 headerOffset: 0
             )
         }
@@ -671,29 +668,9 @@ private struct MediaViewMetrics {
             panelTrailingPadding: 40,
             panelVerticalPadding: 16,
             contentSpacing: 24,
-            horizontalItemSpacing: 12,
-            metadataTileWidth: 112,
-            metadataLabelFont: .footnote.weight(.semibold),
-            metadataValueFont: .headline.weight(.medium),
             headerOffset: 0
         )
     }()
-}
-
-private extension View {
-    func horizontalFade() -> some View {
-        mask(
-            LinearGradient(
-                stops: [
-                    .init(color: .black, location: 0),
-                    .init(color: .black, location: 0.9),
-                    .init(color: .clear, location: 1)
-                ],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        )
-    }
 }
 
 private struct MediaDetailTextButtonStyle: ButtonStyle {
@@ -706,18 +683,6 @@ private struct MediaDetailTextButtonStyle: ButtonStyle {
             .focusSurface(isFocused: isFocused, restingFill: Color.clear, cornerRadius: AppTheme.Radius.inline)
             .scaleEffect(configuration.isPressed ? AppTheme.pressedScale : 1)
             .padding(.horizontal, -AppTheme.Spacing.medium)
-    }
-}
-
-private struct MediaDetailTileStyle: ButtonStyle {
-    @Environment(\.isFocused) private var isFocused
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.vertical, AppTheme.Spacing.small)
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .focusSurface(isFocused: isFocused, restingFill: AppTheme.subtleSurfaceFill, cornerRadius: AppTheme.Radius.card)
-            .scaleEffect(configuration.isPressed ? AppTheme.pressedScale : 1)
     }
 }
 
@@ -734,68 +699,34 @@ private extension View {
 private struct MediaBackdropView: View {
     let artworkURL: URL?
     let backdropURL: URL?
-    @State private var colors: [Color] = []
-
-    private var paletteURL: URL? {
-        artworkURL ?? backdropURL
-    }
 
     var body: some View {
         ZStack {
-            AppBackground()
-
-            if !colors.isEmpty {
-                AmbientMeshBackground(
-                    colors: colors,
-                    hueRotationRange: 0,
-                    blurRadius: 132,
-                    saturation: 0.9,
-                    opacity: 0.66
-                )
-                .ignoresSafeArea()
-            }
+            ArtworkLitBackground(url: artworkURL ?? backdropURL)
 
             AsyncImage(url: backdropURL) { phase in
                 if case .success(let image) = phase {
                     image
                         .resizable()
                         .scaledToFill()
-                        .blur(radius: 56)
-                        .opacity(0.16)
+                        .blur(radius: 40)
+                        .opacity(0.22)
                 }
             }
             .ignoresSafeArea()
 
             LinearGradient(
                 colors: [
-                    Color.black.opacity(0.2),
-                    Color.black.opacity(0.62)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-
-            LinearGradient(
-                colors: [
-                    Color.black.opacity(0.05),
+                    Color.black.opacity(0.55),
                     Color.black.opacity(0.1),
-                    Color.black.opacity(0.72)
+                    .clear
                 ],
-                startPoint: .trailing,
-                endPoint: .leading
+                startPoint: .leading,
+                endPoint: .trailing
             )
             .ignoresSafeArea()
         }
-        .task(id: paletteURL) {
-            colors = []
-            guard let paletteURL else { return }
-            guard let image = await ArtworkImageCache.shared.loadImage(from: paletteURL) else { return }
-
-            let palette = ArtworkPalette.colors(from: image)
-            guard !palette.isEmpty else { return }
-            colors = palette
-        }
+        .accessibilityHidden(true)
     }
 }
 
@@ -809,25 +740,14 @@ private struct MediaArtworkView: View {
         shape
             .fill(AppTheme.surfaceFill)
             .overlay {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    default:
-                        Image(systemName: "film.fill")
-                            .font(.largeTitle.weight(.semibold))
-                            .foregroundStyle(AppTheme.secondaryText)
-                    }
-                }
-                .padding(1)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
+                ArtworkImage(url: url, style: style)
             }
-        .aspectRatio(style.aspectRatio, contentMode: .fit)
-        .clipShape(shape)
-        .shadow(color: AppTheme.artworkShadow, radius: 28, y: 18)
-        .accessibilityLabel(title)
+            .aspectRatio(style.aspectRatio, contentMode: .fit)
+            .clipShape(shape)
+            .overlay {
+                shape.strokeBorder(AppTheme.hairline, lineWidth: 1)
+            }
+            .shadow(color: AppTheme.artworkShadow, radius: 32, y: 20)
+            .accessibilityLabel(title)
     }
 }

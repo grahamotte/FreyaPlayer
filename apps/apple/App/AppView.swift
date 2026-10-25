@@ -3,6 +3,7 @@ import SwiftUI
 struct AppView: View {
     @StateObject private var model: AppModel
     @State private var path: [AppRoute] = []
+    @Namespace private var zoomNamespace
 
     @MainActor
     init(model: AppModel) {
@@ -35,14 +36,19 @@ struct AppView: View {
                         ServerSearchPage(model: model, server: server)
                     case .movie(let item):
                         MovieItemPage(model: model, item: item)
+                            .zoomDestination(id: item.id)
                     case .series(let item):
                         TvSeriesItemPage(model: model, item: item)
+                            .zoomDestination(id: item.id)
                     case .season(let item):
                         TvSeasonItemPage(model: model, item: item)
+                            .zoomDestination(id: item.id)
                     case .episode(let item):
                         TvEpisodeItemPage(model: model, item: item)
+                            .zoomDestination(id: item.id)
                     case .other(let item):
                         OtherItemPage(model: model, item: item)
+                            .zoomDestination(id: item.id)
                     }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .navigateToAbout)) { _ in
@@ -74,7 +80,9 @@ struct AppView: View {
         } message: {
             Text(savedConnectionFailureMessage ?? "")
         }
+        .environment(\.zoomNamespace, zoomNamespace)
         .appChrome()
+        .macWindowChrome()
     }
 
     private var savedConnectionFailurePresented: Binding<Bool> {
@@ -96,15 +104,15 @@ struct AppView: View {
         } else if case .checking = model.connectionState {
             ProgressView("Checking saved connections...")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(AppBackground())
+                .background(ArtworkLitBackground(url: nil, fallback: .brand))
         } else if case .savedConnectionFailed = model.connectionState {
             ProgressView("Checking saved connections...")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(AppBackground())
+                .background(ArtworkLitBackground(url: nil, fallback: .brand))
         } else if case .connecting(let message) = model.connectionState {
             ProgressView(message)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(AppBackground())
+                .background(ArtworkLitBackground(url: nil, fallback: .brand))
         } else {
             ProviderPickerView()
         }

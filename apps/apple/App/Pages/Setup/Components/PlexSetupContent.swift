@@ -6,13 +6,8 @@ struct PlexSetupContent: View {
     @State private var showingPlexNotice = false
 
     var body: some View {
-        VStack(spacing: AppTheme.Spacing.xLarge) {
-            Spacer()
-
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                MediaProviderLabel(providerID: .plex)
-                    .font(PlatformMetadata.sectionTitleFont)
-
+        Form {
+            Section {
                 switch model.connectionState {
                 case .checking, .savedConnectionFailed:
                     ProgressView("Checking saved Plex connection...")
@@ -20,20 +15,19 @@ struct PlexSetupContent: View {
                 case .signedOut(let message):
                     Text(message)
                         .foregroundStyle(AppTheme.secondaryText)
+                        .tvOSFocusableRow()
 
                 case .connecting(let message):
                     if let code = model.plexLinkCode {
-                        Text("Visit this link in your browser")
-                            .foregroundStyle(AppTheme.secondaryText)
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                            Text("Visit plex.tv/link in a browser and enter this code")
+                                .foregroundStyle(AppTheme.secondaryText)
 
-                        Text("plex.tv/link")
-                            .font(.headline)
-
-                        Text("and enter this code")
-                            .foregroundStyle(AppTheme.secondaryText)
-
-                        Text(code)
-                            .font(.largeTitle.weight(.bold).monospaced())
+                            Text(code)
+                                .font(.largeTitle.weight(.bold).monospaced())
+                                .userSelectableText()
+                        }
+                        .tvOSFocusableRow()
                     }
 
                     Text(message)
@@ -42,44 +36,35 @@ struct PlexSetupContent: View {
                 case .failed(let message):
                     Text(message)
                         .foregroundStyle(AppTheme.secondaryText)
+                        .tvOSFocusableRow()
 
                 case .connected:
                     ProgressView("Loading your server...")
                 }
-
-                HStack(spacing: AppTheme.Spacing.medium) {
-                    switch model.connectionState {
-                    case .signedOut:
-                        Button("Connect With Plex") {
-                            model.startPlexLogin()
-                        }
-                        .buttonStyle(MediaGlassButtonStyle())
-
-                    case .failed:
-                        Button("Try Again") {
-                            model.startPlexLogin()
-                        }
-                        .buttonStyle(MediaGlassButtonStyle())
-
-                    default:
-                        EmptyView()
-                    }
-
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .buttonStyle(MediaGlassButtonStyle())
-                }
             }
-            .frame(maxWidth: 720, alignment: .leading)
-            .padding(PlatformMetadata.panelPadding)
-            .background(PanelBackground())
 
-            Spacer()
+            switch model.connectionState {
+            case .signedOut:
+                Section {
+                    Button("Connect With Plex") {
+                        model.startPlexLogin()
+                    }
+                }
+
+            case .failed:
+                Section {
+                    Button("Try Again") {
+                        model.startPlexLogin()
+                    }
+                }
+
+            default:
+                EmptyView()
+            }
         }
-        .padding(PlatformMetadata.pageGutter)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppBackground())
+        .readableFormWidth()
+        .formBackdrop(.brand)
+        .navigationTitle("Connect to Plex")
         .task {
             showingPlexNotice = true
         }

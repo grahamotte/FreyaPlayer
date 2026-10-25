@@ -15,6 +15,10 @@ struct MediaArtworkSet: Hashable, Codable {
             return landscapeURL ?? thumbnailURL ?? backdropURL ?? posterURL
         }
     }
+
+    var widescreenURL: URL? {
+        landscapeURL ?? backdropURL ?? posterURL ?? thumbnailURL
+    }
 }
 
 enum MediaArtworkStyle: String, Hashable, Codable {
@@ -27,6 +31,15 @@ enum MediaArtworkStyle: String, Hashable, Codable {
             return 2 / 3
         case .landscape:
             return 16 / 9
+        }
+    }
+
+    var placeholderIconName: String {
+        switch self {
+        case .poster:
+            return "film.stack.fill"
+        case .landscape:
+            return "tv.fill"
         }
     }
 

@@ -56,9 +56,7 @@ final class LibraryPageState: ObservableObject {
     }
 
     var countText: String {
-        let count = displayedItems.count
-        let suffix = count == 1 ? library.itemTitle : "\(library.itemTitle)s"
-        return "\(count) \(suffix)"
+        library.countText(displayedItems.count, unseenOnly: filter == .unwatched)
     }
 
     /// True only when the cache is empty AND the first refresh hasn't returned

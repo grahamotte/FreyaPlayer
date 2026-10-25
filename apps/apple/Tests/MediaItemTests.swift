@@ -9,7 +9,6 @@ final class MediaItemTests: XCTestCase {
         XCTAssertEqual(item.runtimeText, "1h 30m")
         XCTAssertTrue(item.hasResume)
         XCTAssertEqual(item.playButtonTitle, "Resume at 0:12")
-        XCTAssertEqual(item.quickPlayButtonTitle, "Resume Now")
         XCTAssertEqual(item.playbackID?.itemID, item.id)
         XCTAssertEqual(item.artworkURL, item.artwork.posterURL)
         XCTAssertEqual(MediaItemKind.episode.artworkStyle, .landscape)
@@ -18,7 +17,39 @@ final class MediaItemTests: XCTestCase {
             makeMediaItem(resumeOffsetMilliseconds: 3_723_000).playButtonTitle,
             "Resume at 1:02:03"
         )
-        XCTAssertEqual(makeMediaItem().quickPlayButtonTitle, "Play Now")
+        XCTAssertEqual(makeMediaItem().playButtonTitle, "Play")
+    }
+
+    func testLibraryTileSubtitleShowsRuntimeOrAddedDate() {
+        let item = makeMediaItem(addedAt: 1_700_000_000, durationMilliseconds: 5_400_000)
+
+        XCTAssertEqual(item.libraryTileSubtitle(showsAddedAt: false), "1h 30m")
+        XCTAssertEqual(makeMediaItem(kind: .series).libraryTileSubtitle(showsAddedAt: false), "2026")
+        XCTAssertEqual(
+            item.libraryTileSubtitle(showsAddedAt: true),
+            DateFormatter.localizedString(from: Date(timeIntervalSince1970: 1_700_000_000), dateStyle: .medium, timeStyle: .none)
+        )
+        XCTAssertNil(makeMediaItem(addedAt: nil, durationMilliseconds: nil).libraryTileSubtitle(showsAddedAt: true))
+    }
+
+    func testAppSynopsisTrimsAndLeavesMissingTextEmpty() {
+        XCTAssertEqual(Optional("  A story.  ").appSynopsis, "A story.")
+        XCTAssertEqual(Optional("   ").appSynopsis, "")
+        XCTAssertEqual(String?.none.appSynopsis, "")
+    }
+
+    func testRemainingTimeAndFactsLine() {
+        let resumed = makeMediaItem(durationMilliseconds: 5_400_000, resumeOffsetMilliseconds: 1_800_000)
+        let short = makeMediaItem(durationMilliseconds: 120_000, resumeOffsetMilliseconds: 90_000)
+        let watched = makeMediaItem(durationMilliseconds: 5_400_000, isWatched: true, resumeOffsetMilliseconds: 1_800_000)
+
+        XCTAssertEqual(resumed.remainingText, "1h left")
+        XCTAssertEqual(short.remainingText, "<1m left")
+        XCTAssertNil(watched.remainingText)
+        XCTAssertNil(makeMediaItem().remainingText)
+        XCTAssertEqual(resumed.factsLine, ["2026", "1h 30m"])
+        XCTAssertEqual(makeMediaItem(durationMilliseconds: nil).factsLine, ["2026"])
+        XCTAssertEqual(makeMediaItem(kind: .series).factsLine, ["2026"])
     }
 
     func testWatchStatusAndDerivedProgress() {
@@ -136,7 +167,7 @@ final class MediaItemTests: XCTestCase {
         ]
 
         XCTAssertEqual(series.quickPlayItem(from: episodes)?.id, "partial")
-        XCTAssertEqual(series.quickPlayItem(from: episodes)?.quickPlayButtonTitle, "Resume Now")
+        XCTAssertEqual(series.quickPlayItem(from: episodes)?.playButtonTitle, "Resume at 0:30")
     }
 
     func testQuickPlaySupportsPlayableItemsAndRejectsOtherContainers() {

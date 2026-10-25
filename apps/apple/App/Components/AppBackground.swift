@@ -10,14 +10,3 @@ struct AppBackground: View {
         .ignoresSafeArea()
     }
 }
-
-struct PanelBackground: View {
-    var body: some View {
-        RoundedRectangle(cornerRadius: AppTheme.Radius.panel, style: .continuous)
-            .fill(AppTheme.surfaceFill)
-            .overlay {
-                RoundedRectangle(cornerRadius: AppTheme.Radius.panel, style: .continuous)
-                    .strokeBorder(AppTheme.surfaceBorder, lineWidth: 1)
-            }
-    }
-}

@@ -5,6 +5,7 @@ struct IOSLibraryPageContent: View {
     let library: LibraryReference
 
     @StateObject private var state: LibraryPageState
+    @StateObject private var light = AmbientLight()
     private let defaultsDidChange = NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
 
     init(model: AppModel, library: LibraryReference) {
@@ -14,26 +15,48 @@ struct IOSLibraryPageContent: View {
     }
 
     var body: some View {
-        Group {
-            if state.isLoadingFirstPage {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: contentSpacing) {
-                        header
+        ScrollView {
+            VStack(alignment: .leading, spacing: contentSpacing) {
+                header
 
-                        LazyVGrid(columns: columns, alignment: .leading, spacing: rowSpacing) {
-                            ForEach(state.displayedItems) { item in
-                                itemLink(item)
-                            }
+                if state.isLoadingFirstPage {
+                    skeletonGrid
+                } else if state.displayedItems.isEmpty {
+                    ContentUnavailableView(
+                        state.filter.emptyStateText(for: state.library.itemTitle),
+                        systemImage: tileArtworkStyle.placeholderIconName
+                    )
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, AppTheme.Spacing.xxLarge)
+                } else {
+                    LazyVGrid(columns: columns, alignment: .leading, spacing: rowSpacing) {
+                        ForEach(state.displayedItems) { item in
+                            itemLink(item)
                         }
                     }
-                    .padding(contentPadding)
                 }
             }
+            .padding(contentPadding)
         }
-        .background(AppBackground())
+        .scrollIndicators(.hidden)
+        .navigationTitle(state.library.title)
+        .largeNavigationTitle(subtitle: state.countText)
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                LibraryPageFilterMenu(filter: state.filter, onChange: state.setFilter)
+
+                LibraryPageSortMenu(
+                    sort: state.sort,
+                    order: state.sortOrder,
+                    onSortChange: state.setSort,
+                    onSortOrderChange: state.setSortOrder
+                )
+            }
+        }
+        .background(AmbientBackdrop(light: light))
+        .task(id: leadArtworkURL) {
+            light.light(leadArtworkURL)
+        }
         .task(id: library.id) {
             state.update(library: library)
         }
@@ -49,140 +72,74 @@ struct IOSLibraryPageContent: View {
 
     private var columns: [GridItem] {
         if PlatformMetadata.isPhone {
-            return Array(repeating: GridItem(.flexible(), spacing: gridSpacing), count: 2)
+            let count = tileArtworkStyle == .poster ? 3 : 2
+            return Array(repeating: GridItem(.flexible(), spacing: gridSpacing, alignment: .top), count: count)
         }
-        if PlatformMetadata.isMac {
-            let minimum: CGFloat = state.library.artworkStyle == .poster ? 180 : 260
-            return [GridItem(.adaptive(minimum: minimum, maximum: minimum + 40), spacing: gridSpacing)]
-        }
-        let count = state.library.artworkStyle == .poster ? 4 : 3
-        return Array(repeating: GridItem(.flexible(), spacing: gridSpacing), count: count)
+        let minimum: CGFloat = tileArtworkStyle == .poster ? 160 : 260
+        return [GridItem(.adaptive(minimum: minimum, maximum: minimum * 1.3), spacing: gridSpacing, alignment: .top)]
     }
 
     private var tileArtworkStyle: MediaArtworkStyle {
-        state.library.artworkStyle == .poster ? .poster : .landscape
+        state.library.artworkStyle
     }
 
     private var showsTileAddedAt: Bool {
         state.sort == .addedAt
     }
 
+    private var leadArtworkURL: URL? {
+        state.displayedItems.first?.artwork.url(for: tileArtworkStyle)
+    }
+
+    private var skeletonGrid: some View {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: rowSpacing) {
+            ForEach(0 ..< 12, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: AppTheme.Radius.artwork, style: .continuous)
+                    .fill(AppTheme.surfaceFill)
+                    .aspectRatio(tileArtworkStyle.aspectRatio, contentMode: .fit)
+            }
+        }
+        .accessibilityLabel("Loading")
+    }
+
     private func itemLink(_ item: MediaItem) -> some View {
         NavigationLink(value: item.route) {
-            LibraryItemCard(
+            PosterTile(
                 item: item,
-                artworkStyle: tileArtworkStyle,
+                style: tileArtworkStyle,
                 showsAddedAt: showsTileAddedAt
             )
         }
         .buttonStyle(.plain)
         .mediaItemQuickActions(model: model, item: item)
-    }
-
-    private var header: some View {
-        Group {
-            if PlatformMetadata.isPhone {
-                phoneHeader
-            } else {
-                padOrMacHeader
+        .platformHover { isHovered in
+            if isHovered {
+                light.light(item.artwork.url(for: tileArtworkStyle))
             }
         }
     }
 
-    private var phoneHeader: some View {
-        VStack(alignment: .leading, spacing: contentSpacing) {
-            Text(state.library.title)
-                .font(PlatformMetadata.pageTitleFont)
-                .lineLimit(1)
+    @ViewBuilder
+    private var header: some View {
+        if let item = state.libraryWatchStatusItem {
+            HStack(spacing: PlatformMetadata.controlSpacing) {
+                MediaPlayAllButton(model: model, items: state.displayedPlayableItems)
 
-            HStack(alignment: .top, spacing: PlatformMetadata.controlSpacing) {
-                LibraryPageFilterControl(filter: state.filter, onChange: state.setFilter)
-
-                LibraryPageSortControl(
-                    sort: state.sort,
-                    order: state.sortOrder,
-                    onSortChange: state.setSort,
-                    onSortOrderChange: state.setSortOrder
+                MediaCollectionWatchStatusButton(
+                    model: model,
+                    libraryItem: item,
+                    libraryID: state.library.id
                 )
 
-                Spacer(minLength: 0)
-            }
-
-            if let item = state.libraryWatchStatusItem {
-                HStack(spacing: PlatformMetadata.controlSpacing) {
-                    MediaPlayAllButton(model: model, items: state.displayedPlayableItems)
-                    MediaCollectionWatchStatusButton(
-                        model: model,
-                        libraryItem: item,
-                        libraryID: state.library.id
-                    )
-                }
-            }
-
-            Text(state.countText)
-                .foregroundStyle(AppTheme.secondaryText)
-        }
-    }
-
-    private var padOrMacHeader: some View {
-        VStack(alignment: .leading, spacing: contentSpacing) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(state.library.title)
-                    .font(PlatformMetadata.pageTitleFont)
-                    .lineLimit(1)
-
-                Spacer(minLength: 0)
-
-                Text(state.countText)
-                    .foregroundStyle(AppTheme.secondaryText)
-                    .layoutPriority(1)
-            }
-
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: PlatformMetadata.controlSpacing) {
-                    LibraryPageFilterControl(filter: state.filter, onChange: state.setFilter)
-
-                    LibraryPageSortControl(
-                        sort: state.sort,
-                        order: state.sortOrder,
-                        onSortChange: state.setSort,
-                        onSortOrderChange: state.setSortOrder
-                    )
-
+                if PlatformMetadata.isMac {
                     Spacer(minLength: 0)
 
-                    if let item = state.libraryWatchStatusItem {
-                        MediaPlayAllButton(model: model, items: state.displayedPlayableItems)
-
-                        MediaCollectionWatchStatusButton(
-                            model: model,
-                            libraryItem: item,
-                            libraryID: state.library.id
-                        )
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: PlatformMetadata.controlSpacing) {
-                    LibraryPageFilterControl(filter: state.filter, onChange: state.setFilter)
-
-                    LibraryPageSortControl(
-                        sort: state.sort,
-                        order: state.sortOrder,
-                        onSortChange: state.setSort,
-                        onSortOrderChange: state.setSortOrder
-                    )
-
-                    if let item = state.libraryWatchStatusItem {
-                        MediaPlayAllButton(model: model, items: state.displayedPlayableItems)
-
-                        MediaCollectionWatchStatusButton(
-                            model: model,
-                            libraryItem: item,
-                            libraryID: state.library.id
-                        )
-                    }
+                    Text(state.countText)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(AppTheme.secondaryText)
                 }
             }
+            .controlSize(.large)
         }
     }
 }

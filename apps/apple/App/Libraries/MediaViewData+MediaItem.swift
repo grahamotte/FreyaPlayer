@@ -4,12 +4,9 @@ extension MediaItem {
     func mediaViewData() -> MediaViewData {
         MediaViewData(
             title: title,
-            metadata: [
-                runtimeText.map { .init(label: "Length", value: $0) },
-                releasedAtFormatted.map { .init(label: "Released", value: $0) },
-                addedAtFormatted.map { .init(label: "Added", value: $0) }
-            ]
-            .compactMap { $0 },
+            facts: factsLine,
+            remainingText: kind.isPlayable ? remainingText : nil,
+            progress: progress,
             detailSections: [
                 MediaItemDetailSection(
                     title: "General",
@@ -19,7 +16,7 @@ extension MediaItem {
                         .init(label: "Type", value: kind.rawValue.capitalized),
                         year.map { .init(label: "Year", value: String($0)) },
                         contentRating.map { .init(label: "Content Rating", value: $0) },
-                        runtimeText.map { .init(label: "Length", value: $0) },
+                        (kind.isPlayable ? runtimeText : nil).map { .init(label: "Length", value: $0) },
                         durationMilliseconds.map { .init(label: "Duration", value: "\($0) ms") },
                         releasedAtFormatted.map { .init(label: "Released", value: $0) },
                         addedAtFormatted.map { .init(label: "Added", value: $0) },

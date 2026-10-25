@@ -6,31 +6,45 @@ struct ServerManagementLibrariesSection: View {
     let onMoveLibrary: (Int, Int) -> Void
 
     var body: some View {
-        ServerManagementSection("Libraries") {
-            VStack(spacing: AppTheme.Spacing.small) {
+        Section {
+            if PlatformMetadata.isTV {
                 ForEach(Array(libraries.enumerated()), id: \.element.id) { index, library in
-                    ServerManagementLibraryRow(
+                    TvLibraryRow(
                         title: library.title,
                         isHidden: library.isHidden,
                         canMoveUp: index > 0,
                         canMoveDown: index < libraries.count - 1,
-                        onToggleVisibility: {
-                            onToggleVisibility(index, !library.isHidden)
-                        },
-                        onMoveUp: {
-                            onMoveLibrary(index, -1)
-                        },
-                        onMoveDown: {
-                            onMoveLibrary(index, 1)
-                        }
+                        onToggleVisibility: { onToggleVisibility(index, !library.isHidden) },
+                        onMoveUp: { onMoveLibrary(index, -1) },
+                        onMoveDown: { onMoveLibrary(index, 1) }
                     )
                 }
+            } else {
+                ForEach(Array(libraries.enumerated()), id: \.element.id) { index, library in
+                    Toggle(
+                        library.title,
+                        isOn: Binding(
+                            get: { !library.isHidden },
+                            set: { onToggleVisibility(index, !$0) }
+                        )
+                    )
+                    .tint(AppTheme.positive)
+                }
+                .onMove { source, destination in
+                    guard let index = source.first else { return }
+                    let target = destination > index ? destination - 1 : destination
+                    onMoveLibrary(index, target - index)
+                }
             }
+        } header: {
+            Text("Libraries")
+        } footer: {
+            Text(PlatformMetadata.isTV ? "Hidden libraries don't appear on Home." : "Hidden libraries don't appear on Home. Choose Edit to reorder.")
         }
     }
 }
 
-private struct ServerManagementLibraryRow: View {
+private struct TvLibraryRow: View {
     let title: String
     let isHidden: Bool
     let canMoveUp: Bool
@@ -40,66 +54,28 @@ private struct ServerManagementLibraryRow: View {
     let onMoveDown: () -> Void
 
     var body: some View {
-        Group {
-            if PlatformMetadata.isPhone {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                    titleText
-                    HStack(spacing: AppTheme.Spacing.medium) {
-                        rowButtons
-                        Spacer(minLength: 0)
-                        eyeButton
-                    }
-                }
-            } else {
-                HStack(spacing: AppTheme.Spacing.medium) {
-                    rowButtons
-                    titleText
-                    Spacer(minLength: 0)
-                    eyeButton
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
+        HStack(spacing: PlatformMetadata.controlSpacing) {
+            Text(title)
+                .lineLimit(1)
+                .foregroundStyle(isHidden ? AppTheme.secondaryText : AppTheme.primaryText)
 
-    private var titleText: some View {
-        Text(title)
-            .font(.body.weight(.medium))
-            .lineLimit(1)
-            .strikethrough(isHidden, color: AppTheme.secondaryText)
-            .foregroundStyle(isHidden ? AppTheme.secondaryText : AppTheme.primaryText)
-    }
+            Spacer(minLength: 0)
 
-    private var rowButtons: some View {
-        Group {
+            Button(isHidden ? "Hidden" : "Shown", action: onToggleVisibility)
+                .buttonStyle(.glass)
+                .accessibilityLabel(isHidden ? "Show \(title)" : "Hide \(title)")
+
             Button(action: onMoveUp) {
-                rowIcon("arrow.up")
+                Label("Move \(title) Up", systemImage: "arrow.up")
             }
-            .buttonStyle(rowButtonStyle)
+            .glassIconButton()
             .disabled(!canMoveUp)
 
             Button(action: onMoveDown) {
-                rowIcon("arrow.down")
+                Label("Move \(title) Down", systemImage: "arrow.down")
             }
-            .buttonStyle(rowButtonStyle)
+            .glassIconButton()
             .disabled(!canMoveDown)
         }
-    }
-
-    private var eyeButton: some View {
-        Button(action: onToggleVisibility) {
-            rowIcon(isHidden ? "eye.slash" : "eye")
-        }
-        .buttonStyle(rowButtonStyle)
-    }
-
-    private var rowButtonStyle: MediaGlassButtonStyle {
-        MediaGlassButtonStyle(size: .square)
-    }
-
-    private func rowIcon(_ systemName: String) -> some View {
-        Image(systemName: systemName)
-            .font(PlatformMetadata.controlFont)
-            .frame(width: AppTheme.Spacing.large, height: AppTheme.Spacing.large)
     }
 }

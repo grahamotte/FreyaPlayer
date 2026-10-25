@@ -6,27 +6,31 @@ struct TvOSLibrariesPageContent: View {
     @ObservedObject var model: AppModel
     let server: ConnectedServer
     @Binding var path: [AppRoute]
+    @StateObject private var light = AmbientLight()
 
     var body: some View {
         LibrariesCollectionView(
             model: model,
             server: server,
+            light: light,
             onSelectRoute: { path.append($0) }
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(LibrariesAmbientBackground())
+        .background(AmbientBackdrop(light: light))
     }
 }
 
 private struct LibrariesCollectionView: UIViewControllerRepresentable {
     let model: AppModel
     let server: ConnectedServer
+    let light: AmbientLight
     let onSelectRoute: (AppRoute) -> Void
 
     func makeUIViewController(context: Context) -> LibrariesCollectionViewController {
         LibrariesCollectionViewController(
             model: model,
             server: server,
+            light: light,
             onSelectRoute: onSelectRoute
         )
     }
@@ -40,14 +44,13 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
     private static let serverHeaderKind = "LibrariesServerHeader"
 
     private let model: AppModel
+    private let light: AmbientLight
     private let onSelectRoute: (AppRoute) -> Void
 
     private var server: ConnectedServer
     private var sections: [LibrariesSection] = []
-    private var selectedItemIDs: [String: String] = [:]
-    private var openLibraryFocusedSections: Set<String> = []
-    private var focusedSectionID: String?
     private var preferredFocusItemID: String?
+    private var prefetchedArtworkURLs: Set<URL> = []
     private var cacheSubscription: AnyCancellable?
     private var defaultsSubscription: AnyCancellable?
     private var refreshSubscription: AnyCancellable?
@@ -68,15 +71,20 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
     init(
         model: AppModel,
         server: ConnectedServer,
+        light: AmbientLight,
         onSelectRoute: @escaping (AppRoute) -> Void
     ) {
         self.model = model
+        self.light = light
         self.server = server
         self.onSelectRoute = onSelectRoute
         self.isRefreshing = model.isLibraryRefreshInProgress
         self.isOffline = model.isOffline
         super.init(nibName: nil, bundle: nil)
         sections = makeSections(from: server)
+        if let section = sections.first(where: { $0.items.contains { $0.kind == .media } }) {
+            light.light(leadArtworkURL(in: section, focusing: 0))
+        }
     }
 
     @available(*, unavailable)
@@ -102,7 +110,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
         collectionView.insetsLayoutMarginsFromSafeArea = false
         collectionView.layoutMargins = .zero
 
-        collectionView.register(LibraryTileCell.self, forCellWithReuseIdentifier: LibraryTileCell.reuseIdentifier)
+        collectionView.register(PosterCell.self, forCellWithReuseIdentifier: PosterCell.reuseIdentifier)
         collectionView.register(LibrariesActionCell.self, forCellWithReuseIdentifier: LibrariesActionCell.reuseIdentifier)
         collectionView.register(
             LibrariesSectionHeaderView.self,
@@ -159,11 +167,6 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
         let didChangeServer = self.server != server
         let didChangeServerIdentity = self.server.id != server.id
         let didChangeOfflineState = self.isOffline != isOffline
-        if didChangeServerIdentity {
-            selectedItemIDs.removeAll()
-            openLibraryFocusedSections.removeAll()
-            focusedSectionID = nil
-        }
         self.server = server
         self.isOffline = isOffline
         isRefreshing = model.isLibraryRefreshInProgress
@@ -207,15 +210,17 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                 title: item.title,
                 isRefreshing: item.kind == .refresh && isRefreshing,
                 isEnabled: isEnabled(item)
-            )
+            ) { [weak self] in
+                self?.handlePrimaryAction(for: item)
+            }
             return cell
 
         case .openLibrary, .media:
             let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: LibraryTileCell.reuseIdentifier,
+                withReuseIdentifier: PosterCell.reuseIdentifier,
                 for: indexPath
-            ) as! LibraryTileCell
-            cell.configure(item: item)
+            ) as! PosterCell
+            configure(cell, with: item)
             return cell
         }
     }
@@ -256,7 +261,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                 withReuseIdentifier: LibrariesSectionFooterView.reuseIdentifier,
                 for: indexPath
             ) as! LibrariesSectionFooterView
-            view.title = footerTitle(for: section)
+            view.title = section.emptyMessage
             return view
         }
     }
@@ -267,7 +272,12 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
     }
 
     func collectionView(_ collectionView: UICollectionView, canFocusItemAt indexPath: IndexPath) -> Bool {
-        isEnabled(sections[indexPath.section].items[indexPath.item])
+        switch sections[indexPath.section].items[indexPath.item].kind {
+        case .openLibrary, .media:
+            return true
+        case .manageServer, .refresh:
+            return false
+        }
     }
 
     func indexPathForPreferredFocusedView(in collectionView: UICollectionView) -> IndexPath? {
@@ -304,43 +314,44 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
     override func didUpdateFocus(in context: UIFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
         super.didUpdateFocus(in: context, with: coordinator)
 
-        if
-            let indexPath = indexPath(for: context.nextFocusedView),
-            sections.indices.contains(indexPath.section)
-        {
-            let section = sections[indexPath.section]
-            preferredFocusItemID = nil
-            if case .library = section.kind {
-                focusedSectionID = section.id
-
-                if section.emptyMessage == nil {
-                    let item = section.items[indexPath.item]
-                    if item.kind == .openLibrary {
-                        openLibraryFocusedSections.insert(section.id)
-                    } else {
-                        openLibraryFocusedSections.remove(section.id)
-                        selectedItemIDs[section.id] = item.id
-                    }
-                }
-            } else {
-                focusedSectionID = nil
-                openLibraryFocusedSections.removeAll()
-            }
-        } else {
-            focusedSectionID = nil
-            openLibraryFocusedSections.removeAll()
+        guard let indexPath = indexPath(for: context.nextFocusedView),
+              sections.indices.contains(indexPath.section),
+              sections[indexPath.section].items.indices.contains(indexPath.item)
+        else {
+            return
         }
 
-        coordinator.addCoordinatedAnimations {
-            self.refreshVisibleFooters()
+        preferredFocusItemID = nil
+        light.light(leadArtworkURL(in: sections[indexPath.section], focusing: indexPath.item))
+    }
+
+    private func leadArtworkURL(in section: LibrariesSection, focusing index: Int) -> URL? {
+        let item = section.items[index]
+        if item.kind == .media {
+            return item.artworkURL
         }
+        return section.items.first { $0.kind == .media }?.artworkURL
+    }
+
+    private func configure(_ cell: PosterCell, with item: LibrariesItem) {
+        cell.configure(
+            title: item.title,
+            subtitle: nil,
+            artworkURL: item.artworkURL,
+            style: item.style,
+            progress: item.progress,
+            isWatched: item.isWatched,
+            placeholderIcon: item.iconName,
+            placeholderTitle: item.kind == .openLibrary ? item.title : nil,
+            captionMode: .focused
+        )
     }
 
     private func makeLayout() -> UICollectionViewLayout {
         let horizontalInset = PlatformMetadata.pageGutter
         let configuration = UICollectionViewCompositionalLayoutConfiguration()
         configuration.contentInsetsReference = .none
-        configuration.interSectionSpacing = PlatformMetadata.pageSectionSpacing
+        configuration.interSectionSpacing = AppTheme.Spacing.xxLarge
         configuration.boundarySupplementaryItems = [
             NSCollectionLayoutBoundarySupplementaryItem(
                 layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .absolute(184)),
@@ -355,19 +366,19 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
 
             switch section.kind {
             case .library(let style):
-                let cellSize = style.cellSize(
+                let cellSize = style.shelfCellSize(
                     for: environment.container.effectiveContentSize.width - (horizontalInset * 2)
                 )
                 let itemSize = NSCollectionLayoutSize(
                     widthDimension: .absolute(cellSize.width),
-                    heightDimension: .absolute(cellSize.height)
+                    heightDimension: .absolute(cellSize.height + PosterCell.captionHeight(showsSubtitle: false))
                 )
                 let item = NSCollectionLayoutItem(layoutSize: itemSize)
                 let group = NSCollectionLayoutGroup.horizontal(layoutSize: itemSize, subitems: [item])
                 let layoutSection = NSCollectionLayoutSection(group: group)
                 layoutSection.interGroupSpacing = PlatformMetadata.tileSpacing
                 layoutSection.orthogonalScrollingBehavior = .continuousGroupLeadingBoundary
-                layoutSection.contentInsets = .init(top: AppTheme.Spacing.xSmall, leading: horizontalInset, bottom: AppTheme.Spacing.xSmall, trailing: horizontalInset)
+                layoutSection.contentInsets = .init(top: AppTheme.Spacing.xLarge, leading: horizontalInset, bottom: 0, trailing: horizontalInset)
 
                 let headerSize = NSCollectionLayoutSize(
                     widthDimension: .fractionalWidth(1),
@@ -387,26 +398,27 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                     elementKind: UICollectionView.elementKindSectionFooter,
                     alignment: .bottom
                 )
-                layoutSection.boundarySupplementaryItems = [header, footer]
+                layoutSection.boundarySupplementaryItems = section.emptyMessage == nil ? [header] : [header, footer]
                 return layoutSection
 
             case .manage:
-                let buttonWidth: CGFloat = 360
+                let buttonSize = PlatformMetadata.tvActionButtonSize
+                let buttonWidth = buttonSize.width
                 let buttonSpacing = PlatformMetadata.controlSpacing
                 let buttonCount = section.items.count
                 let itemSize = NSCollectionLayoutSize(
                     widthDimension: .absolute(buttonWidth),
-                    heightDimension: .absolute(72)
+                    heightDimension: .absolute(buttonSize.height)
                 )
                 let item = NSCollectionLayoutItem(layoutSize: itemSize)
                 let groupWidth = (buttonWidth * CGFloat(buttonCount)) + (buttonSpacing * CGFloat(max(buttonCount - 1, 0)))
                 let groupSize = NSCollectionLayoutSize(
                     widthDimension: .absolute(groupWidth),
-                    heightDimension: .absolute(72)
+                    heightDimension: .absolute(buttonSize.height)
                 )
                 let group = NSCollectionLayoutGroup.horizontal(
                     layoutSize: groupSize,
-                    subitem: item,
+                    repeatingSubitem: item,
                     count: buttonCount
                 )
                 group.interItemSpacing = .fixed(buttonSpacing)
@@ -417,10 +429,21 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
         }, configuration: configuration)
     }
 
+    private func prefetchArtwork(for sections: [LibrariesSection]) {
+        let urls = sections.flatMap { $0.items.compactMap(\.artworkURL) }.filter { !prefetchedArtworkURLs.contains($0) }
+        guard !urls.isEmpty else { return }
+        prefetchedArtworkURLs.formUnion(urls)
+        Task {
+            for url in urls {
+                _ = await ArtworkImageCache.shared.loadImage(from: url)
+            }
+        }
+    }
+
     private func makeSections(from server: ConnectedServer) -> [LibrariesSection] {
         let projection = LibrariesHomeProjection(server: server, cache: model.libraryCache)
         let librarySections = projection.shelves.map { shelf in
-            let style = shelf.artworkStyle == .poster ? LibrariesShelfStyle.poster : .wide
+            let style = shelf.artworkStyle
             let openItem = LibrariesItem(
                 id: "\(shelf.id)-open",
                 title: "Open Library",
@@ -431,14 +454,14 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                 route: shelf.libraryRoute,
                 style: style,
                 kind: .openLibrary,
-                iconName: "arrow.right"
+                iconName: "square.grid.2x2"
             )
 
             let mediaItems = shelf.previewItems.map { item in
                 LibrariesItem(
                     id: item.id,
                     title: item.title,
-                    artworkURL: item.artwork.url(for: style.mediaArtworkStyle),
+                    artworkURL: item.artwork.url(for: style),
                     progress: item.progress,
                     isWatched: item.isWatched,
                     mediaItem: item,
@@ -454,7 +477,6 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                 title: shelf.title,
                 kind: .library(style),
                 items: [openItem] + mediaItems,
-                defaultSelectionTitle: shelf.title,
                 emptyMessage: shelf.emptyMessage
             )
         }
@@ -472,7 +494,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                     isWatched: false,
                     mediaItem: nil,
                     route: nil,
-                    style: .wide,
+                    style: .landscape,
                     kind: .refresh,
                     iconName: nil
                 ),
@@ -484,7 +506,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                     isWatched: false,
                     mediaItem: nil,
                     route: projection.manageRoute,
-                    style: .wide,
+                    style: .landscape,
                     kind: .manageServer,
                     iconName: nil
                 ),
@@ -496,40 +518,16 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                     isWatched: false,
                     mediaItem: nil,
                     route: .about,
-                    style: .wide,
+                    style: .landscape,
                     kind: .manageServer,
                     iconName: nil
                 )
             ],
-            defaultSelectionTitle: nil,
             emptyMessage: nil
         )
 
+        prefetchArtwork(for: librarySections)
         return librarySections + [manageSection]
-    }
-
-    private func footerTitle(for section: LibrariesSection) -> String? {
-        if let emptyMessage = section.emptyMessage {
-            return emptyMessage
-        }
-
-        guard section.id == focusedSectionID else { return nil }
-        guard !openLibraryFocusedSections.contains(section.id) else { return nil }
-        guard let selectedItemID = selectedItemIDs[section.id] else {
-            return section.defaultSelectionTitle
-        }
-        return section.items.first { $0.id == selectedItemID }?.title ?? section.defaultSelectionTitle
-    }
-
-    private func refreshVisibleFooters() {
-        for sectionIndex in sections.indices {
-            let footerIndexPath = IndexPath(item: 0, section: sectionIndex)
-            let footer = collectionView.supplementaryView(
-                forElementKind: UICollectionView.elementKindSectionFooter,
-                at: footerIndexPath
-            ) as? LibrariesSectionFooterView
-            footer?.title = footerTitle(for: sections[sectionIndex])
-        }
     }
 
     private func refreshServerHeader() {
@@ -633,7 +631,6 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
 
         if previousReloadKey == nextReloadKey {
             reconfigureVisibleLibraryCells()
-            refreshVisibleFooters()
             requestPreferredFocusUpdateIfNeeded()
             return
         }
@@ -662,8 +659,8 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
             }
 
             let item = sections[indexPath.section].items[indexPath.item]
-            guard let cell = collectionView.cellForItem(at: indexPath) as? LibraryTileCell else { continue }
-            cell.configure(item: item)
+            guard let cell = collectionView.cellForItem(at: indexPath) as? PosterCell else { continue }
+            configure(cell, with: item)
         }
     }
 
@@ -711,7 +708,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                 continue
             }
 
-            cell.configure(title: "Refresh", isRefreshing: isRefreshing, isEnabled: !isOffline)
+            cell.update(isRefreshing: isRefreshing, isEnabled: !isOffline)
         }
     }
 
@@ -752,12 +749,11 @@ private struct LibrariesSection: Hashable {
     let title: String?
     let kind: LibrariesSectionKind
     let items: [LibrariesItem]
-    let defaultSelectionTitle: String?
     let emptyMessage: String?
 }
 
 private enum LibrariesSectionKind: Hashable {
-    case library(LibrariesShelfStyle)
+    case library(MediaArtworkStyle)
     case manage
 }
 
@@ -769,7 +765,7 @@ private struct LibrariesItem: Hashable {
     let isWatched: Bool
     let mediaItem: MediaItem?
     let route: AppRoute?
-    let style: LibrariesShelfStyle
+    let style: MediaArtworkStyle
     let kind: LibrariesItemKind
     let iconName: String?
 }
@@ -791,178 +787,43 @@ private struct LibrariesItemReloadKey: Equatable {
     let id: String
     let artworkURL: URL?
     let route: AppRoute?
-    let style: LibrariesShelfStyle
+    let style: MediaArtworkStyle
     let kind: LibrariesItemKind
     let iconName: String?
 }
 
-private final class LibraryTileCell: UICollectionViewCell {
-    static let reuseIdentifier = "LibraryTileCell"
-    private static let placeholderImage = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).image { context in
-        AppTheme.uiSurfaceFill.setFill()
-        context.fill(CGRect(origin: .zero, size: CGSize(width: 8, height: 8)))
-    }
-
-    private let imageView = UIImageView()
-    private let progressView = ArtworkProgressIndicatorView()
-    private let placeholderStack = UIStackView()
-    private let iconView = UIImageView()
-    private let titleLabel = UILabel()
-    private var imageTask: Task<Void, Never>?
-    private var currentArtworkURL: URL?
-    private var isShowingArtwork = false
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        clipsToBounds = false
-        contentView.clipsToBounds = false
-        backgroundConfiguration = .clear()
-
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.clipsToBounds = false
-        imageView.layer.cornerRadius = AppTheme.Radius.artwork
-        imageView.layer.cornerCurve = .continuous
-        imageView.contentMode = .scaleAspectFill
-        PlatformMetadata.configureFocusedImageView(imageView)
-
-        iconView.tintColor = AppTheme.uiSecondaryText
-        iconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(textStyle: .title2, scale: .medium)
-
-        titleLabel.font = PlatformMetadata.uiTileTitleFont
-        titleLabel.textColor = AppTheme.uiSecondaryText
-        titleLabel.numberOfLines = 2
-        titleLabel.textAlignment = .natural
-
-        placeholderStack.axis = .vertical
-        placeholderStack.alignment = .leading
-        placeholderStack.spacing = AppTheme.Spacing.small
-        placeholderStack.translatesAutoresizingMaskIntoConstraints = false
-
-        placeholderStack.addArrangedSubview(iconView)
-        placeholderStack.addArrangedSubview(titleLabel)
-        PlatformMetadata.overlayContent(for: imageView).addSubview(placeholderStack)
-        progressView.translatesAutoresizingMaskIntoConstraints = false
-        PlatformMetadata.overlayContent(for: imageView).addSubview(progressView)
-
-        contentView.addSubview(imageView)
-
-        NSLayoutConstraint.activate([
-            imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            imageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            imageView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            imageView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-
-            placeholderStack.leadingAnchor.constraint(equalTo: PlatformMetadata.overlayContent(for: imageView).leadingAnchor, constant: AppTheme.Spacing.large),
-            placeholderStack.trailingAnchor.constraint(lessThanOrEqualTo: PlatformMetadata.overlayContent(for: imageView).trailingAnchor, constant: -AppTheme.Spacing.large),
-            placeholderStack.bottomAnchor.constraint(equalTo: PlatformMetadata.overlayContent(for: imageView).bottomAnchor, constant: -AppTheme.Spacing.large),
-
-            progressView.trailingAnchor.constraint(equalTo: PlatformMetadata.overlayContent(for: imageView).trailingAnchor, constant: -WatchProgressCircle.padding),
-            progressView.bottomAnchor.constraint(equalTo: PlatformMetadata.overlayContent(for: imageView).bottomAnchor, constant: -WatchProgressCircle.padding),
-            progressView.widthAnchor.constraint(equalToConstant: WatchProgressCircle.size),
-            progressView.heightAnchor.constraint(equalToConstant: WatchProgressCircle.size)
-        ])
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    func configure(item: LibrariesItem) {
-        let artworkURL = item.artworkURL
-        let didChangeArtwork = currentArtworkURL != artworkURL
-
-        accessibilityLabel = item.title
-        currentArtworkURL = artworkURL
-        titleLabel.text = item.title
-        iconView.image = UIImage(systemName: item.iconName ?? item.style.placeholderIconName)
-        progressView.setProgress(item.progress, isWatched: item.isWatched)
-
-        if didChangeArtwork {
-            imageTask?.cancel()
-            imageTask = nil
-            isShowingArtwork = false
-            imageView.image = Self.placeholderImage
-            placeholderStack.isHidden = false
-        }
-
-        guard let artworkURL else {
-            imageView.image = Self.placeholderImage
-            placeholderStack.isHidden = false
-            isShowingArtwork = false
-            return
-        }
-
-        guard !isShowingArtwork else { return }
-        guard imageTask == nil else { return }
-
-        if let image = ArtworkImageCache.shared.image(for: artworkURL) {
-            imageView.image = image
-            placeholderStack.isHidden = true
-            isShowingArtwork = true
-            return
-        }
-
-        imageTask = Task { [weak self] in
-            let image = await ArtworkImageCache.shared.loadImage(from: artworkURL)
-            guard !Task.isCancelled else { return }
-
-            await MainActor.run {
-                guard let self, self.currentArtworkURL == artworkURL else { return }
-                self.imageTask = nil
-                guard let image else { return }
-                self.imageView.image = image
-                self.placeholderStack.isHidden = true
-                self.isShowingArtwork = true
-            }
-        }
-    }
-
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        imageTask?.cancel()
-        imageTask = nil
-        currentArtworkURL = nil
-        isShowingArtwork = false
-        imageView.image = Self.placeholderImage
-        placeholderStack.isHidden = false
-        progressView.setProgress(nil, isWatched: false)
-    }
-}
-
-private final class LibrariesActionCell: UICollectionViewListCell {
+private final class LibrariesActionCell: UICollectionViewCell {
     static let reuseIdentifier = "LibrariesActionCell"
-    private let activityIndicator = UIActivityIndicatorView(style: .medium)
-    private let titleLabel = UILabel()
-    private let stackView = UIStackView()
-    private var isRefreshing = false
-    private var isEnabled = true
+    private let button = UIButton(configuration: .glass())
     private var title = ""
+    private var isRefreshing = false
+    private var onPrimaryAction: (() -> Void)?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         clipsToBounds = false
         contentView.clipsToBounds = false
 
-        activityIndicator.hidesWhenStopped = true
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addAction(UIAction { [weak self] _ in self?.onPrimaryAction?() }, for: .primaryActionTriggered)
+        button.configurationUpdateHandler = { [weak self] button in
+            guard let self, var configuration = button.configuration else { return }
+            if isRefreshing {
+                configuration.title = button.isFocused ? "Cancel Refresh" : "Refreshing..."
+                configuration.showsActivityIndicator = !button.isFocused
+            } else {
+                configuration.title = title
+                configuration.showsActivityIndicator = false
+            }
+            button.configuration = configuration
+        }
 
-        titleLabel.font = PlatformMetadata.uiControlFont
-        titleLabel.numberOfLines = 1
-        titleLabel.textAlignment = .center
-
-        stackView.axis = .horizontal
-        stackView.alignment = .center
-        stackView.spacing = AppTheme.Spacing.xSmall
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.addArrangedSubview(activityIndicator)
-        stackView.addArrangedSubview(titleLabel)
-
-        contentView.addSubview(stackView)
+        contentView.addSubview(button)
         NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: AppTheme.uiGlassContentInsets.leading),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -AppTheme.uiGlassContentInsets.trailing),
-            stackView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            stackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
+            button.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            button.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            button.topAnchor.constraint(equalTo: contentView.topAnchor),
+            button.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
     }
 
@@ -971,35 +832,16 @@ private final class LibrariesActionCell: UICollectionViewListCell {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func configure(title: String, isRefreshing: Bool, isEnabled: Bool) {
+    func configure(title: String, isRefreshing: Bool, isEnabled: Bool, onPrimaryAction: @escaping () -> Void) {
         self.title = title
-        self.isRefreshing = isRefreshing
-        self.isEnabled = isEnabled
-        setNeedsUpdateConfiguration()
+        self.onPrimaryAction = onPrimaryAction
+        update(isRefreshing: isRefreshing, isEnabled: isEnabled)
     }
 
-    override func updateConfiguration(using state: UICellConfigurationState) {
-        super.updateConfiguration(using: state)
-
-        let isFocused = state.isFocused
-        if isRefreshing {
-            titleLabel.text = isFocused ? "Cancel Refresh" : "Refreshing..."
-        } else {
-            titleLabel.text = title
-        }
-        if isRefreshing && !isFocused {
-            activityIndicator.startAnimating()
-        } else {
-            activityIndicator.stopAnimating()
-        }
-        let isVisuallyEnabled = isEnabled && (!isRefreshing || isFocused)
-        let foregroundColor = AppTheme.uiGlassForeground(isFocused: isFocused, isEnabled: isVisuallyEnabled)
-        titleLabel.textColor = foregroundColor
-        activityIndicator.color = foregroundColor
-
-        var background = UIBackgroundConfiguration.clear().updated(for: state)
-        AppTheme.applyGlassBackground(to: &background, isFocused: isFocused, isEnabled: isVisuallyEnabled)
-        backgroundConfiguration = background
+    func update(isRefreshing: Bool, isEnabled: Bool) {
+        self.isRefreshing = isRefreshing
+        button.isEnabled = isEnabled
+        button.setNeedsUpdateConfiguration()
     }
 }
 
@@ -1053,7 +895,7 @@ private final class LibrariesServerHeaderView: UICollectionReusableView {
     static let reuseIdentifier = "LibrariesServerHeaderView"
     private let horizontalInset = PlatformMetadata.pageGutter
     private let label = UILabel()
-    private let searchButton = UIButton(type: .system)
+    private let searchButton = UIButton()
     private var onSearch: (() -> Void)?
 
     var searchFocusTarget: UIView {
@@ -1067,27 +909,14 @@ private final class LibrariesServerHeaderView: UICollectionReusableView {
         label.textColor = AppTheme.uiPrimaryText
         label.translatesAutoresizingMaskIntoConstraints = false
 
-        var configuration = UIButton.Configuration.plain()
+        var configuration = UIButton.Configuration.glass()
         configuration.title = "Search"
         configuration.image = UIImage(systemName: "magnifyingglass")
         configuration.imagePadding = AppTheme.Spacing.small
-        configuration.contentInsets = AppTheme.uiGlassContentInsets
-        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(font: PlatformMetadata.uiControlFont)
-        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
-            var attributes = attributes
-            attributes.font = PlatformMetadata.uiControlFont
-            return attributes
-        }
         searchButton.configuration = configuration
         searchButton.accessibilityLabel = "Search Server"
         searchButton.translatesAutoresizingMaskIntoConstraints = false
         searchButton.addTarget(self, action: #selector(search), for: .primaryActionTriggered)
-        searchButton.configurationUpdateHandler = { button in
-            guard var configuration = button.configuration else { return }
-            configuration.baseForegroundColor = AppTheme.uiGlassForeground(isFocused: button.isFocused)
-            AppTheme.applyGlassBackground(to: &configuration.background, isFocused: button.isFocused)
-            button.configuration = configuration
-        }
 
         addSubview(label)
         addSubview(searchButton)
@@ -1099,8 +928,8 @@ private final class LibrariesServerHeaderView: UICollectionReusableView {
 
             searchButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -horizontalInset),
             searchButton.centerYAnchor.constraint(equalTo: label.centerYAnchor),
-            searchButton.widthAnchor.constraint(equalToConstant: 360),
-            searchButton.heightAnchor.constraint(equalToConstant: 72)
+            searchButton.widthAnchor.constraint(equalToConstant: PlatformMetadata.tvActionButtonSize.width),
+            searchButton.heightAnchor.constraint(equalToConstant: PlatformMetadata.tvActionButtonSize.height)
         ])
     }
 
@@ -1157,50 +986,20 @@ private final class LibrariesSectionHeaderView: UICollectionReusableView {
     }
 }
 
-private enum LibrariesShelfStyle: Hashable {
-    case poster
-    case wide
-
-    var aspectRatio: CGFloat {
-        switch self {
-        case .poster:
-            return 2 / 3
-        case .wide:
-            return 16 / 9
-        }
-    }
-
-    var columns: CGFloat {
+private extension MediaArtworkStyle {
+    var shelfColumns: CGFloat {
         switch self {
         case .poster:
             return 6
-        case .wide:
+        case .landscape:
             return 4
         }
     }
 
-    var mediaArtworkStyle: MediaArtworkStyle {
-        switch self {
-        case .poster:
-            return .poster
-        case .wide:
-            return .landscape
-        }
-    }
-
-    func cellSize(for availableWidth: CGFloat) -> CGSize {
+    func shelfCellSize(for availableWidth: CGFloat) -> CGSize {
         let spacing = PlatformMetadata.tileSpacing
-        let width = floor((availableWidth - (spacing * (columns - 1))) / columns)
+        let width = floor((availableWidth - (spacing * (shelfColumns - 1))) / shelfColumns)
         let height = floor(width / aspectRatio)
         return CGSize(width: width, height: height)
-    }
-
-    var placeholderIconName: String {
-        switch self {
-        case .poster:
-            return "film.stack.fill"
-        case .wide:
-            return "tv.fill"
-        }
     }
 }
