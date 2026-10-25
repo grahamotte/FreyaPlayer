@@ -28,6 +28,25 @@ extension View {
     func readableFormWidth() -> some View {
         frame(maxWidth: PlatformMetadata.readableFormWidth)
             .frame(maxWidth: .infinity)
+            .tvOSScrollClipDisabled()
+    }
+
+    @ViewBuilder
+    func tvOSScrollClipDisabled() -> some View {
+        #if os(tvOS)
+        scrollClipDisabled()
+        #else
+        self
+        #endif
+    }
+
+    @ViewBuilder
+    func neutralFormTint() -> some View {
+        #if os(tvOS)
+        tint(.primary)
+        #else
+        tint(AppTheme.primaryText)
+        #endif
     }
 }
 

@@ -158,7 +158,7 @@ extension PlatformMetadata {
 
     static func focusableRowModifier<Content: View>(_ content: Content) -> some View {
         #if os(tvOS)
-        return content.focusable()
+        return content.modifier(FocusableRow())
         #else
         return content
         #endif
@@ -262,3 +262,20 @@ struct PlatformLibrariesPageContent: View {
         #endif
     }
 }
+
+#if os(tvOS)
+private struct FocusableRow: ViewModifier {
+    @FocusState private var isFocused: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .focusable()
+            .focused($isFocused)
+            .listRowBackground(
+                RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+                    .fill(isFocused ? AppTheme.focusedSurfaceFill : AppTheme.surfaceFill)
+            )
+            .animation(AppTheme.focusAnimation, value: isFocused)
+    }
+}
+#endif

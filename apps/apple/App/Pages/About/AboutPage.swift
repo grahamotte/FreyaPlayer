@@ -47,7 +47,7 @@ struct AboutPage: View {
         }
         .readableFormWidth()
         .formBackdrop(.brand)
-        .tint(AppTheme.primaryText)
+        .neutralFormTint()
         .navigationTitle("About")
         .aboutTitleDisplayMode()
     }

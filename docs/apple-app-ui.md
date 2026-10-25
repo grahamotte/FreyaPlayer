@@ -102,7 +102,7 @@ One layout serves every item kind. `MediaView(model:data:actions:below:)` takes 
 Fuzzy title search over the local cache (`ServerTitleSearch`), shown as `MediaRow`s with the matched part of each title in bold. Every result uses a full-bleed 16:9 thumbnail (`MediaArtworkSet.widescreenURL`) so titles share one edge. The room is lit by the top result. Every platform uses the system `.searchable` field. It sits in the navigation bar on iOS and Mac and gets focus on arrival there.
 
 ### Manage / Settings (`Pages/Settings/Components/`)
-A grouped `Form` (the standard tvOS list on tvOS). Sections: Server (name, address, provider, Deactivate Server… with a confirmation alert), Cache (versions, size, Clear Cache), Libraries (on iOS/Mac a Show toggle per library and Edit to drag-reorder; on tvOS a Shown/Hidden button and glass up/down arrows), and Playback Capabilities (one section per category). On tvOS the text rows can take focus so the list can scroll.
+A grouped `Form` (the standard tvOS list on tvOS). Sections: Server (name, address, provider, Deactivate Server… with a confirmation alert), Cache (versions, size, Clear Cache), Libraries (on iOS/Mac a leading drag handle and a Show toggle per library, reordered by dragging the row; on tvOS a Shown/Hidden button and glass up/down arrows), and Playback Capabilities (one section per category). On tvOS the text rows can take focus so the list can scroll, and `tvOSFocusableRow()` lightens the focused row so focus is always visible.
 
 ### About (`Pages/About/AboutPage.swift`)
 A grouped `Form` covering free forever, private by default, open source, the bug link (a `Link` except on tvOS), and the version number.

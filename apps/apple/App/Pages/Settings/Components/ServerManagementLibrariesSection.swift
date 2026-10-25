@@ -22,12 +22,13 @@ struct ServerManagementLibrariesSection: View {
             } else {
                 ForEach(Array(libraries.enumerated()), id: \.element.id) { index, library in
                     Toggle(
-                        library.title,
                         isOn: Binding(
                             get: { !library.isHidden },
                             set: { onToggleVisibility(index, !$0) }
                         )
-                    )
+                    ) {
+                        Label(library.title, systemImage: "line.3.horizontal")
+                    }
                     .tint(AppTheme.positive)
                 }
                 .onMove { source, destination in
@@ -39,7 +40,7 @@ struct ServerManagementLibrariesSection: View {
         } header: {
             Text("Libraries")
         } footer: {
-            Text(PlatformMetadata.isTV ? "Hidden libraries don't appear on Home." : "Hidden libraries don't appear on Home. Choose Edit to reorder.")
+            Text(PlatformMetadata.isTV ? "Hidden libraries don't appear on Home." : "Hidden libraries don't appear on Home. Drag to reorder.")
         }
     }
 }
