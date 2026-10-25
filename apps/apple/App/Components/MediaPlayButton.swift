@@ -410,7 +410,7 @@ private struct PlaybackOptionsDialog: View {
                 .focused($isPlayFocused)
                 .disabled(isOffline || isLoading)
 
-                Button(role: .cancel, action: cancel) {
+                Button(action: cancel) {
                     Text("Cancel")
                         .frame(maxWidth: .infinity)
                 }
@@ -418,7 +418,6 @@ private struct PlaybackOptionsDialog: View {
             }
         }
         .padding(AppTheme.Spacing.xLarge)
-        .foregroundStyle(AppTheme.primaryText)
         .frame(width: dialogWidth)
         .presentationSizing(.fitted)
         .task {
