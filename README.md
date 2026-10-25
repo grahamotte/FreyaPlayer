@@ -14,6 +14,16 @@ Freya Player is a native Apple tvOS, iOS, and Mac app for watching video from Je
 
 This repository is built on Code Moto, a shared foundation for a Rails API, a React website, native Apple apps, and project tooling. It keeps its own Git history and configuration, and merges foundation updates without replacing that history. Components can be added or removed to suit the app. New projects are spawned from Code Moto, not from this app repository.
 
+## Install
+
+On a Mac, install with Homebrew:
+
+```sh
+brew install grahamotte/tap/freya-player
+```
+
+Update with `brew upgrade`. Each release also attaches the signed, notarized app to [GitHub Releases](https://github.com/grahamotte/FreyaPlayer/releases).
+
 ## What's included
 
 - **Backend:** Ruby on Rails with PostgreSQL and GoodJob background jobs.
