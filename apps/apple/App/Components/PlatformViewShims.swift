@@ -126,3 +126,61 @@ extension View {
         #endif
     }
 }
+
+private struct ZoomNamespaceKey: EnvironmentKey {
+    static let defaultValue: Namespace.ID? = nil
+}
+
+extension EnvironmentValues {
+    var zoomNamespace: Namespace.ID? {
+        get { self[ZoomNamespaceKey.self] }
+        set { self[ZoomNamespaceKey.self] = newValue }
+    }
+}
+
+private struct ZoomSourceModifier: ViewModifier {
+    let id: String
+    let cornerRadius: CGFloat
+    @Environment(\.zoomNamespace) private var namespace
+
+    func body(content: Content) -> some View {
+        #if os(tvOS)
+        content
+        #else
+        if let namespace {
+            content.matchedTransitionSource(id: id, in: namespace) { source in
+                source.clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            }
+        } else {
+            content
+        }
+        #endif
+    }
+}
+
+private struct ZoomDestinationModifier: ViewModifier {
+    let id: String
+    @Environment(\.zoomNamespace) private var namespace
+
+    func body(content: Content) -> some View {
+        #if os(tvOS)
+        content
+        #else
+        if let namespace {
+            content.navigationTransition(.zoom(sourceID: id, in: namespace))
+        } else {
+            content
+        }
+        #endif
+    }
+}
+
+extension View {
+    func zoomSource(id: String, cornerRadius: CGFloat = AppTheme.Radius.artwork) -> some View {
+        modifier(ZoomSourceModifier(id: id, cornerRadius: cornerRadius))
+    }
+
+    func zoomDestination(id: String) -> some View {
+        modifier(ZoomDestinationModifier(id: id))
+    }
+}

@@ -3,6 +3,7 @@ import SwiftUI
 struct AppView: View {
     @StateObject private var model: AppModel
     @State private var path: [AppRoute] = []
+    @Namespace private var zoomNamespace
 
     @MainActor
     init(model: AppModel) {
@@ -35,14 +36,19 @@ struct AppView: View {
                         ServerSearchPage(model: model, server: server)
                     case .movie(let item):
                         MovieItemPage(model: model, item: item)
+                            .zoomDestination(id: item.id)
                     case .series(let item):
                         TvSeriesItemPage(model: model, item: item)
+                            .zoomDestination(id: item.id)
                     case .season(let item):
                         TvSeasonItemPage(model: model, item: item)
+                            .zoomDestination(id: item.id)
                     case .episode(let item):
                         TvEpisodeItemPage(model: model, item: item)
+                            .zoomDestination(id: item.id)
                     case .other(let item):
                         OtherItemPage(model: model, item: item)
+                            .zoomDestination(id: item.id)
                     }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .navigateToAbout)) { _ in
@@ -74,6 +80,7 @@ struct AppView: View {
         } message: {
             Text(savedConnectionFailureMessage ?? "")
         }
+        .environment(\.zoomNamespace, zoomNamespace)
         .appChrome()
         .macWindowChrome()
     }

@@ -58,6 +58,7 @@ struct MediaRow: View {
             cornerRadius: PlatformMetadata.isTV ? 14 : 8
         )
         .frame(width: Self.thumbnailWidth(for: thumbnailStyle))
+        .zoomSource(id: item.id, cornerRadius: PlatformMetadata.isTV ? 14 : 8)
     }
 
     private var displayTitle: String {

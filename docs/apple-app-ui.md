@@ -77,11 +77,11 @@ A privacy-notice alert appears first ("Before You Use Plex"). After that, a grou
 ### Libraries Home (`Pages/Libraries/Components/`)
 The server name is the page title. One horizontal shelf per visible library, filled from `LibrariesHomeProjection` (shared by both platforms). The room is lit by the lead artwork, or by whatever is focused or hovered.
 
-- iOS/Mac: `LibrariesPage.iOSLayout` in SwiftUI. Circular glass Search and "…" buttons (the menu holds Refresh, Manage, and About) sit in the header, with a spinner while refreshing. Each shelf title has a chevron and opens its library. `PosterTile`s show a title and subtitle. Pull to refresh works on iPhone and iPad. Empty shelves show skeleton tiles while loading and the empty message afterward.
-- tvOS: `TvOSLibrariesPageContent`, a UIKit compositional collection view built from `PosterCell`s. The focused poster shows its title beneath it. Each shelf ends with a See All tile. A glass Search button sits in the header, and glass Refresh, Manage, and About buttons sit at the bottom. Shelf column counts are fixed (6 posters, 4 wide). Long-pressing Select opens quick actions.
+- iOS/Mac: `LibrariesPage.iOSLayout` in SwiftUI. The server name is the system large title (inline on Mac), with Search and More (Refresh, Manage, About) toolbar buttons and a spinner while refreshing. Each shelf starts with an `OpenLibraryTile` captioned with the library's item count, and its chevron title also opens the library. `PosterTile`s show a title and subtitle. Pull to refresh works on iPhone and iPad. Empty shelves show skeleton tiles while loading and the empty message afterward.
+- tvOS: `TvOSLibrariesPageContent`, a UIKit compositional collection view built from `PosterCell`s. The focused poster shows its title beneath it. Each shelf starts with an Open Library tile, which takes initial focus and lights the room with that shelf's lead artwork. A glass Search button sits in the header, and glass Refresh, Manage, and About buttons sit at the bottom. Shelf column counts are fixed (6 posters, 4 wide). Long-pressing Select opens quick actions.
 
 ### Library Grid (`Pages/Library/Components/`)
-The library title with a count line beneath it, then Filter (All/Unseen) and Sort (Title/Date Added/Duration, ascending or descending), Play All, and a Seen menu. Below that is a grid of posters. State and persistence live in `LibraryPageState`, which both platforms share.
+The library title and count (the system title and subtitle on iOS/Mac), separate Filter (All/Unseen) and Sort (Title/Date Added/Duration, then ascending or descending) menus (toolbar buttons on iOS/Mac, glass pills on tvOS), then Play All and a Seen menu. Below that is a grid of posters. State and persistence live in `LibraryPageState`, which both platforms share.
 
 - iOS/Mac: a SwiftUI `LazyVGrid` of `PosterTile`s, with 3 posters or 2 wide on iPhone and adaptive columns elsewhere. Skeleton tiles show while loading, and `ContentUnavailableView` shows when the grid is empty.
 - tvOS: `TvOSLibraryPageContent`, a UIKit collection view of `PosterCell`s (4 posters or 3 wide) with captions always showing, glass `GlassMenuButton`s, a hosted SwiftUI Play All and Seen button, and an index bar whose titles depend on the sort.
@@ -94,21 +94,22 @@ One layout serves every item kind. `MediaView(model:data:actions:below:)` takes 
 - Content, in order: the title, a facts line (year · rating · runtime), the synopsis (selecting it opens full details), and the action row. The row holds the caller's actions plus a circular Details button. In-progress items also show a gold time-left bar.
 - Movie, episode, and other actions: a gold Play pill ("Resume at 32:18", shortened to "Resume" on iPhone), plus circular glass Play Options and Seen buttons. Long-pressing Play also opens Play Options.
 - Series and season actions: a gold Play All pill and a Seen menu. Below them, `ItemChildListSection` shows `MediaRow`s for seasons or numbered episodes and auto-focuses the next unwatched one.
-- On tvOS the header (title through actions) stays pinned, and only the list below scrolls, fading under the header.
+- On tvOS the header (title through actions) stays pinned, and only the list below scrolls, fading under the header; the rows label themselves, so there is no "Seasons"/"Episodes" heading there. A page with nothing below (movies, episodes) centres its details beside the artwork, and wide artwork takes half the width.
+- Off tvOS the season and episode rows have no card background; spacing separates them.
 - Details opens `FullItemDetailsView`, a full-screen cover with the description, an artwork gallery, and every provider field.
 
 ### Search (`Pages/Search/ServerSearchPage.swift`)
-Fuzzy title search over the local cache (`ServerTitleSearch`), shown as `MediaRow`s with the matched part of each title in bold. The room is lit by the top result. Every platform uses the system `.searchable` field. It sits in the navigation bar on iOS and Mac and gets focus on arrival there.
+Fuzzy title search over the local cache (`ServerTitleSearch`), shown as `MediaRow`s with the matched part of each title in bold. Every result uses a full-bleed 16:9 thumbnail (`MediaArtworkSet.widescreenURL`) so titles share one edge. The room is lit by the top result. Every platform uses the system `.searchable` field. It sits in the navigation bar on iOS and Mac and gets focus on arrival there.
 
 ### Manage / Settings (`Pages/Settings/Components/`)
-A grouped `Form` (the standard tvOS list on tvOS). Sections: Server (name, address, provider, Deactivate Server… with a confirmation alert), Cache (versions, size, Clear Cache), Libraries (reorder with circular glass up and down arrows, hide with the eye button), and Playback Capabilities (one section per category). On tvOS the text rows can take focus so the list can scroll.
+A grouped `Form` (the standard tvOS list on tvOS). Sections: Server (name, address, provider, Deactivate Server… with a confirmation alert), Cache (versions, size, Clear Cache), Libraries (on iOS/Mac a Show toggle per library and Edit to drag-reorder; on tvOS a Shown/Hidden button and glass up/down arrows), and Playback Capabilities (one section per category). On tvOS the text rows can take focus so the list can scroll.
 
 ### About (`Pages/About/AboutPage.swift`)
 A grouped `Form` covering free forever, private by default, open source, the bug link (a `Link` except on tvOS), and the version number.
 
 ## Signature: Lit by the Artwork
 
-`AmbientLight` holds the current `AmbientPalette` and crossfades to a new one (0.9s, or instantly with Reduce Motion) whenever a page calls `light(url)`. Palettes are pulled from artwork by `ArtworkPalette` and cached per URL. Calls are debounced 150ms, so quick focus sweeps don't flicker. `AmbientBackdrop(light:)` draws the mesh under legibility scrims. `ArtworkLitBackground(url:fallback:)` wraps both for screens with one fixed palette.
+`AmbientLight` holds the current `AmbientPalette` and blends the mesh colours in place to a new one (1.4s smoothstep, or instantly with Reduce Motion) whenever a page calls `light(url)`; an interrupted blend continues from where it is, so the room never flashes. Palettes are pulled from artwork by `ArtworkPalette` and cached per URL. Calls are debounced 300ms, so quick focus sweeps settle once. `AmbientBackdrop(light:)` draws the mesh under legibility scrims. `ArtworkLitBackground(url:fallback:)` wraps both for screens with one fixed palette.
 
 | Screen | What lights the room |
 | --- | --- |
@@ -131,8 +132,9 @@ A grouped `Form` covering free forever, private by default, open source, the bug
 | `AppBackground` | The flat base under the mesh | `AmbientBackdrop` |
 | `ArtworkImage`, `ArtworkImageLoader` | Cached artwork with a placeholder for its style (SwiftUI); the same for UIKit cells | `PosterArtwork`, `PosterCell`, item artwork |
 | `PosterArtwork`, `PosterTile` | Artwork with a hairline edge and progress badge; that plus a marquee title and subtitle | iOS home shelves and library grid, `MediaRow` |
-| `PosterCell` | The tvOS UIKit poster: system focus parallax, a caption that appears on focus or always shows, a placeholder icon and title (See All) | tvOS home and library grid |
-| `MediaRow` | Thumbnail, title, facts, and synopsis | Seasons, episodes, search results |
+| `PosterCell` | The tvOS UIKit poster: system focus parallax, a caption that appears on focus or always shows, a placeholder icon and title (Open Library) | tvOS home and library grid |
+| `MediaRow` | Thumbnail, title, facts, and synopsis; an optional uniform 16:9 thumbnail | Seasons, episodes, search results |
+| `OpenLibraryTile` | Poster-sized grid tile captioned "Open Library" and the item count | iOS/Mac home shelves |
 | `WatchProgressBadge`, `ArtworkProgressIndicatorView` | A gold progress bar, or a gold check when watched; the UIKit host | Every artwork |
 | `MarqueeText`, `MarqueeLabel` | Scrolls truncated titles on hover or focus (SwiftUI and UIKit) | Tiles, `PosterCell` |
 | `MediaView` | Item detail layout and full details | Every item page |
@@ -154,7 +156,7 @@ Controls use system Liquid Glass. Primary actions (Play, Play All on series and 
 | Library grid | SwiftUI `LazyVGrid` and `PosterTile` | UIKit `LibraryPageCollectionViewController` with `PosterCell`, `GlassMenuButton` |
 | Tile title | Under every tile | Under the focused poster on home; under each tile in the grid |
 | Empty shelf | Skeleton while loading, then the message under the shelf | Message in the shelf footer |
-| Open a library | The chevron shelf title | A trailing See All tile |
+| Open a library | A leading Open Library tile, or the chevron shelf title | A leading Open Library tile |
 | Item header | Scrolls with its list | Pinned; only the list scrolls |
 | Sign-in form | Grouped `Form` | Standalone system fields (FP-3 layout) |
 | Quick actions | `.contextMenu` | `UIAlertController` opened by a long press of Select |

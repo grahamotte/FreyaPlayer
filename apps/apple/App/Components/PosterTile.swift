@@ -43,6 +43,7 @@ struct PosterTile: View {
                 progress: item.progress,
                 isWatched: item.isWatched
             )
+            .zoomSource(id: item.id)
             .scaleEffect(isHovered ? 1.03 : 1)
             .shadow(color: AppTheme.artworkShadow.opacity(isHovered ? 1 : 0), radius: 18, y: 10)
             .animation(AppTheme.focusAnimation, value: isHovered)
