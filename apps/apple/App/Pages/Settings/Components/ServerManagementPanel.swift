@@ -60,8 +60,7 @@ struct ServerManagementPanel: View {
         .readableFormWidth()
         .formBackdrop()
         .navigationTitle("Manage")
-        .manageEditButton()
-        .tint(AppTheme.primaryText)
+        .neutralFormTint()
         .alert("Deactivate Server?", isPresented: $isShowingDeactivateAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Deactivate", role: .destructive) {
@@ -71,21 +70,5 @@ struct ServerManagementPanel: View {
         } message: {
             Text("This removes every server and all Freya Player data from this device.")
         }
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func manageEditButton() -> some View {
-        #if os(tvOS)
-        self
-        #else
-        toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                EditButton()
-                    .tint(AppTheme.primaryText)
-            }
-        }
-        #endif
     }
 }
