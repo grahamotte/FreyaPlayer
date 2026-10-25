@@ -6,6 +6,8 @@ import UIKit
 
 struct AmbientMeshBackground: View {
     let colors: [Color]
+    var fromColors: [Color]?
+    var transitionStart: Date = .distantPast
     var hueRotationRange: Double = 10
     var blurRadius: CGFloat = 120
     var saturation: Double = 0.95
@@ -20,7 +22,11 @@ struct AmbientMeshBackground: View {
                 width: 4,
                 height: 4,
                 points: Self.meshPoints(at: time),
-                colors: Self.meshColors(from: colors)
+                colors: Self.blendedColors(
+                    from: fromColors,
+                    to: colors,
+                    progress: Self.transitionProgress(since: transitionStart, at: timeline.date)
+                )
             )
             .hueRotation(.degrees(sin(time * 0.05) * hueRotationRange))
             .blur(radius: blurRadius)
@@ -28,6 +34,20 @@ struct AmbientMeshBackground: View {
             .opacity(opacity)
             .drawingGroup(opaque: false, colorMode: .extendedLinear)
         }
+    }
+
+    static let transitionDuration: TimeInterval = 1.4
+
+    static func transitionProgress(since start: Date, at date: Date) -> Double {
+        let linear = min(max(date.timeIntervalSince(start) / transitionDuration, 0), 1)
+        return linear * linear * (3 - (2 * linear))
+    }
+
+    static func blendedColors(from fromColors: [Color]?, to colors: [Color], progress: Double) -> [Color] {
+        let target = meshColors(from: colors)
+        guard let fromColors, progress < 1 else { return target }
+        let source = meshColors(from: fromColors)
+        return zip(source, target).map { $0.mix(with: $1, by: progress) }
     }
 
     private static func meshColors(from colors: [Color]) -> [Color] {

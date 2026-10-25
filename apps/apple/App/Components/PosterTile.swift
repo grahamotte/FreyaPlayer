@@ -68,3 +68,46 @@ struct PosterTile: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+struct OpenLibraryTile: View {
+    let style: MediaArtworkStyle
+    let countText: String
+
+    @State private var isHovered = false
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: AppTheme.Radius.artwork, style: .continuous)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: PlatformMetadata.tileTitleSpacing) {
+            shape
+                .fill(isHovered ? AppTheme.focusedSurfaceFill : AppTheme.surfaceFill)
+                .overlay {
+                    Image(systemName: "square.grid.2x2")
+                        .font(.title.weight(.semibold))
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+                .overlay {
+                    shape.strokeBorder(AppTheme.hairline, lineWidth: 1)
+                }
+                .aspectRatio(style.aspectRatio, contentMode: .fit)
+
+            VStack(alignment: .leading, spacing: PlatformMetadata.tileSubtitleSpacing) {
+                Text("Open Library")
+                    .font(PlatformMetadata.tileTitleFont)
+                    .lineLimit(1)
+
+                Text(countText)
+                    .font(PlatformMetadata.labelFont)
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .lineLimit(1)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .animation(AppTheme.focusAnimation, value: isHovered)
+        .platformHover { isHovered = $0 }
+        .accessibilityElement(children: .combine)
+    }
+}

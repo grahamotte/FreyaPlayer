@@ -42,12 +42,12 @@ struct IOSLibraryPageContent: View {
         .navigationTitle(state.library.title)
         .largeNavigationTitle(subtitle: state.countText)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                LibraryPageOptionsMenu(
-                    filter: state.filter,
+            ToolbarItemGroup(placement: .primaryAction) {
+                LibraryPageFilterMenu(filter: state.filter, onChange: state.setFilter)
+
+                LibraryPageSortMenu(
                     sort: state.sort,
                     order: state.sortOrder,
-                    onFilterChange: state.setFilter,
                     onSortChange: state.setSort,
                     onSortOrderChange: state.setSortOrder
                 )

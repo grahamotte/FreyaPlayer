@@ -84,6 +84,13 @@ final class MediaTranscodingTests: XCTestCase {
 
         XCTAssertEqual(plan.path, .remux)
         XCTAssertEqual(plan.conversions.first?.description, "Matroska → Fragmented MP4")
+        XCTAssertEqual(plan.conversions.first?.isConverted, true)
+        XCTAssertEqual(plan.conversions.first?.isTranscode, false)
+        XCTAssertTrue(MediaPlaybackConversion(
+            element: .audio,
+            source: MediaTranscoding.audio(codec: "dts", channels: 6),
+            output: MediaTranscoding.audio(codec: "aac", channels: 2)
+        ).isTranscode)
         XCTAssertEqual(plan.conversions.count, 4)
         XCTAssertEqual(plan.conversions.last?.description, "None")
     }

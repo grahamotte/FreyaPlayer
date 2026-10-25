@@ -40,8 +40,10 @@ struct ItemChildListSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-            Text(title)
-                .font(PlatformMetadata.sectionTitleFont)
+            if !PlatformMetadata.isTV {
+                Text(title)
+                    .font(PlatformMetadata.sectionTitleFont)
+            }
 
             if children.isEmpty {
                 if refreshTracker.isRefreshing(.children(item.id)) {
@@ -59,9 +61,10 @@ struct ItemChildListSection: View {
                                 position: rowStyle == .numbered ? position + 1 : nil,
                                 showsSynopsis: child.kind == .episode
                             )
-                            .padding(AppTheme.Spacing.small)
+                            .padding(.vertical, AppTheme.Spacing.small)
+                            .padding(.horizontal, PlatformMetadata.isTV ? AppTheme.Spacing.small : 0)
                         }
-                        .buttonStyle(MediaSurfaceButtonStyle(restingFill: AppTheme.subtleSurfaceFill))
+                        .buttonStyle(MediaSurfaceButtonStyle(restingFill: PlatformMetadata.isTV ? AppTheme.subtleSurfaceFill : Color.clear))
                         .id(child.id)
                         .focused($focusedChildID, equals: child.id)
                     }

@@ -70,6 +70,10 @@ struct MediaView<Actions: View, Below: View>: View {
         }
     }
 
+    private var centersContent: Bool {
+        PlatformMetadata.isTV && Below.self == EmptyView.self
+    }
+
     private func usesPortraitLayout(_ proxy: GeometryProxy) -> Bool {
         !PlatformMetadata.isTV && proxy.size.height > proxy.size.width
     }
@@ -126,10 +130,11 @@ struct MediaView<Actions: View, Below: View>: View {
 
     private func splitLayout(proxy: GeometryProxy, metrics: MediaViewMetrics) -> some View {
         let availableWidth = proxy.size.width - (metrics.horizontalPadding * 2) - metrics.artworkSpacing
-        let detailWidth = availableWidth * 0.62
-        let artworkWidth = availableWidth * 0.38
+        let artworkFraction: CGFloat = centersContent && data.artworkStyle == .landscape ? 0.5 : 0.38
+        let detailWidth = availableWidth * (1 - artworkFraction)
+        let artworkWidth = availableWidth * artworkFraction
         let synopsisWidth = min(detailWidth - metrics.panelHorizontalPadding, 980)
-        let artworkTopInset = metrics.panelVerticalPadding + AppTheme.Spacing.xSmall
+        let artworkTopInset = centersContent ? 0 : metrics.panelVerticalPadding + AppTheme.Spacing.xSmall
         let artworkBounds = CGSize(
             width: artworkWidth,
             height: max(proxy.size.height - metrics.topPadding - metrics.bottomPadding - artworkTopInset, 1)
@@ -148,12 +153,12 @@ struct MediaView<Actions: View, Below: View>: View {
                 .frame(width: artworkSize.width, height: artworkSize.height)
                 .frame(width: artworkWidth)
                 .padding(.top, artworkTopInset)
-                .padding(.bottom, PlatformMetadata.isTV ? metrics.bottomPadding : 0)
-                .frame(maxHeight: .infinity, alignment: .top)
+                .padding(.bottom, PlatformMetadata.isTV && !centersContent ? metrics.bottomPadding : 0)
+                .frame(maxHeight: .infinity, alignment: centersContent ? .center : .top)
         }
         .padding(.horizontal, metrics.horizontalPadding)
         .padding(.top, metrics.topPadding)
-        .padding(.bottom, PlatformMetadata.isTV ? 0 : metrics.bottomPadding)
+        .padding(.bottom, PlatformMetadata.isTV && !centersContent ? 0 : metrics.bottomPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -164,7 +169,13 @@ struct MediaView<Actions: View, Below: View>: View {
         metrics: MediaViewMetrics,
         tracksOffset: Bool
     ) -> some View {
-        if PlatformMetadata.isTV {
+        if centersContent {
+            detailsHeader(synopsisWidth: synopsisWidth, metrics: metrics)
+                .padding(.leading, metrics.panelLeadingPadding)
+                .padding(.trailing, metrics.panelTrailingPadding)
+                .frame(width: width, alignment: .leading)
+                .frame(maxHeight: .infinity, alignment: .leading)
+        } else if PlatformMetadata.isTV {
             VStack(alignment: .leading, spacing: metrics.contentSpacing) {
                 detailsHeader(synopsisWidth: synopsisWidth, metrics: metrics)
 
@@ -229,7 +240,7 @@ struct MediaView<Actions: View, Below: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if !data.facts.isEmpty {
-                Text(data.facts.joined(separator: "  ·  "))
+                Text(data.facts.joined(separator: " · "))
                     .font(PlatformMetadata.isTV ? .callout.weight(.medium) : .subheadline.weight(.medium))
                     .foregroundStyle(AppTheme.secondaryText)
                     .lineLimit(1)

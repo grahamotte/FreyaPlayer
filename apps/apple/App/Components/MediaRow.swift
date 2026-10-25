@@ -44,26 +44,20 @@ struct MediaRow: View {
         .contentShape(Rectangle())
     }
 
-    @ViewBuilder
     private var thumbnail: some View {
-        let artwork = PosterArtwork(
-            url: item.artwork.url(for: style),
-            style: style,
+        let thumbnailStyle = usesUniformThumbnail ? MediaArtworkStyle.landscape : style
+        let url = usesUniformThumbnail && style == .poster
+            ? item.artwork.widescreenURL
+            : item.artwork.url(for: thumbnailStyle)
+
+        return PosterArtwork(
+            url: url,
+            style: thumbnailStyle,
             progress: item.kind.isPlayable ? item.progress : nil,
             isWatched: item.isWatched,
             cornerRadius: PlatformMetadata.isTV ? 14 : 8
         )
-
-        if usesUniformThumbnail {
-            let slotWidth = Self.thumbnailWidth(for: .landscape)
-            let slotHeight = slotWidth / MediaArtworkStyle.landscape.aspectRatio
-            artwork
-                .frame(height: slotHeight)
-                .frame(width: slotWidth)
-        } else {
-            artwork
-                .frame(width: Self.thumbnailWidth(for: style))
-        }
+        .frame(width: Self.thumbnailWidth(for: thumbnailStyle))
     }
 
     private var displayTitle: String {

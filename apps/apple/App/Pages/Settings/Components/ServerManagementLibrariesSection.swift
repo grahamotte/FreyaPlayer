@@ -6,29 +6,45 @@ struct ServerManagementLibrariesSection: View {
     let onMoveLibrary: (Int, Int) -> Void
 
     var body: some View {
-        Section("Libraries") {
-            ForEach(Array(libraries.enumerated()), id: \.element.id) { index, library in
-                ServerManagementLibraryRow(
-                    title: library.title,
-                    isHidden: library.isHidden,
-                    canMoveUp: index > 0,
-                    canMoveDown: index < libraries.count - 1,
-                    onToggleVisibility: {
-                        onToggleVisibility(index, !library.isHidden)
-                    },
-                    onMoveUp: {
-                        onMoveLibrary(index, -1)
-                    },
-                    onMoveDown: {
-                        onMoveLibrary(index, 1)
-                    }
-                )
+        Section {
+            if PlatformMetadata.isTV {
+                ForEach(Array(libraries.enumerated()), id: \.element.id) { index, library in
+                    TvLibraryRow(
+                        title: library.title,
+                        isHidden: library.isHidden,
+                        canMoveUp: index > 0,
+                        canMoveDown: index < libraries.count - 1,
+                        onToggleVisibility: { onToggleVisibility(index, !library.isHidden) },
+                        onMoveUp: { onMoveLibrary(index, -1) },
+                        onMoveDown: { onMoveLibrary(index, 1) }
+                    )
+                }
+            } else {
+                ForEach(Array(libraries.enumerated()), id: \.element.id) { index, library in
+                    Toggle(
+                        library.title,
+                        isOn: Binding(
+                            get: { !library.isHidden },
+                            set: { onToggleVisibility(index, !$0) }
+                        )
+                    )
+                    .tint(.green)
+                }
+                .onMove { source, destination in
+                    guard let index = source.first else { return }
+                    let target = destination > index ? destination - 1 : destination
+                    onMoveLibrary(index, target - index)
+                }
             }
+        } header: {
+            Text("Libraries")
+        } footer: {
+            Text(PlatformMetadata.isTV ? "Hidden libraries don't appear on Home." : "Hidden libraries don't appear on Home. Choose Edit to reorder.")
         }
     }
 }
 
-private struct ServerManagementLibraryRow: View {
+private struct TvLibraryRow: View {
     let title: String
     let isHidden: Bool
     let canMoveUp: Bool
@@ -41,27 +57,25 @@ private struct ServerManagementLibraryRow: View {
         HStack(spacing: PlatformMetadata.controlSpacing) {
             Text(title)
                 .lineLimit(1)
-                .strikethrough(isHidden, color: AppTheme.secondaryText)
                 .foregroundStyle(isHidden ? AppTheme.secondaryText : AppTheme.primaryText)
 
             Spacer(minLength: 0)
 
-            rowButton("arrow.up", label: "Move \(title) Up", action: onMoveUp)
-                .disabled(!canMoveUp)
+            Button(isHidden ? "Hidden" : "Shown", action: onToggleVisibility)
+                .buttonStyle(.glass)
+                .accessibilityLabel(isHidden ? "Show \(title)" : "Hide \(title)")
 
-            rowButton("arrow.down", label: "Move \(title) Down", action: onMoveDown)
-                .disabled(!canMoveDown)
+            Button(action: onMoveUp) {
+                Label("Move \(title) Up", systemImage: "arrow.up")
+            }
+            .glassIconButton()
+            .disabled(!canMoveUp)
 
-            rowButton(isHidden ? "eye.slash" : "eye", label: isHidden ? "Show \(title)" : "Hide \(title)", action: onToggleVisibility)
+            Button(action: onMoveDown) {
+                Label("Move \(title) Down", systemImage: "arrow.down")
+            }
+            .glassIconButton()
+            .disabled(!canMoveDown)
         }
-    }
-
-    private func rowButton(_ systemName: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-        }
-        .buttonStyle(.glass)
-        .buttonBorderShape(.circle)
-        .accessibilityLabel(label)
     }
 }

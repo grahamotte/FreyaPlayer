@@ -56,14 +56,7 @@ final class LibraryPageState: ObservableObject {
     }
 
     var countText: String {
-        let count = displayedItems.count
-        let noun = count == 1 ? library.itemTitle : "\(library.itemTitle)s"
-        switch filter {
-        case .all:
-            return "\(count) \(noun)"
-        case .unwatched:
-            return "\(count) unseen \(noun)"
-        }
+        library.countText(displayedItems.count, unseenOnly: filter == .unwatched)
     }
 
     /// True only when the cache is empty AND the first refresh hasn't returned

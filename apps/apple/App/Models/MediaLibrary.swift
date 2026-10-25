@@ -81,6 +81,11 @@ struct LibraryReference: Hashable, Identifiable, Codable {
         )
     }
 
+    func countText(_ count: Int, unseenOnly: Bool = false) -> String {
+        let noun = count == 1 ? itemTitle : "\(itemTitle)s"
+        return unseenOnly ? "\(count) unseen \(noun)" : "\(count) \(noun)"
+    }
+
     func watchStatusReloadID(from items: [MediaItem]) -> String {
         items.map {
             "\($0.id):\($0.isWatched):\($0.progress ?? 0):\($0.resumeOffsetMilliseconds ?? 0)"

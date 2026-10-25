@@ -61,9 +61,10 @@ struct ServerSearchPage: View {
                             title: highlightedTitle(for: result),
                             usesUniformThumbnail: true
                         )
-                        .padding(PlatformMetadata.isPhone ? AppTheme.Spacing.small : AppTheme.Spacing.medium)
+                        .padding(.vertical, AppTheme.Spacing.small)
+                        .padding(.horizontal, PlatformMetadata.isTV ? AppTheme.Spacing.medium : 0)
                     }
-                    .buttonStyle(MediaSurfaceButtonStyle(restingFill: AppTheme.subtleSurfaceFill))
+                    .buttonStyle(MediaSurfaceButtonStyle(restingFill: PlatformMetadata.isTV ? AppTheme.subtleSurfaceFill : Color.clear))
                 }
             }
             .padding(.horizontal, contentHorizontalPadding)

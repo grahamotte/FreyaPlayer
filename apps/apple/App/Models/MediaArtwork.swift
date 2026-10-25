@@ -15,6 +15,10 @@ struct MediaArtworkSet: Hashable, Codable {
             return landscapeURL ?? thumbnailURL ?? backdropURL ?? posterURL
         }
     }
+
+    var widescreenURL: URL? {
+        landscapeURL ?? backdropURL ?? posterURL ?? thumbnailURL
+    }
 }
 
 enum MediaArtworkStyle: String, Hashable, Codable {

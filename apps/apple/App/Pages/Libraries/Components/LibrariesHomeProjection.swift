@@ -33,6 +33,7 @@ struct LibrariesHomeProjection {
                 title: library.title,
                 artworkStyle: library.reference.artworkStyle,
                 libraryRoute: library.reference.route,
+                countText: library.reference.countText(items.count),
                 previewItems: library.previewItems(
                     from: items,
                     filter: filter,
@@ -49,6 +50,7 @@ struct LibrariesHomeProjection {
         let title: String
         let artworkStyle: MediaArtworkStyle
         let libraryRoute: AppRoute
+        let countText: String
         let previewItems: [MediaItem]
         let emptyStateText: String
 

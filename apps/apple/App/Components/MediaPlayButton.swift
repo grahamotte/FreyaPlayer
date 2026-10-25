@@ -510,10 +510,10 @@ private struct PlaybackOptionsDialog: View {
 
     private func playbackPlanLine(_ conversion: MediaPlaybackConversion) -> some View {
         GridRow {
-            Text("\(conversion.element.rawValue):")
+            Text(conversion.element.rawValue)
                 .foregroundStyle(AppTheme.secondaryText)
             Text(conversion.description)
-                .foregroundStyle(conversion.isConverted ? AppTheme.warning : AppTheme.primaryText)
+                .foregroundStyle(conversion.isTranscode ? AppTheme.warning : AppTheme.primaryText)
         }
     }
 

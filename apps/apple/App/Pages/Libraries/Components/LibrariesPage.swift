@@ -146,6 +146,12 @@ struct LibrariesPage: View {
             } else {
                 ScrollView(.horizontal) {
                     LazyHStack(alignment: .top, spacing: cardSpacing) {
+                        NavigationLink(value: shelf.libraryRoute) {
+                            OpenLibraryTile(style: style, countText: shelf.countText)
+                                .frame(width: cardWidth)
+                        }
+                        .buttonStyle(.plain)
+
                         ForEach(shelf.previewItems) { item in
                             NavigationLink(value: item.route) {
                                 PosterTile(item: item, style: style)

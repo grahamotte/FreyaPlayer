@@ -34,6 +34,14 @@ final class MediaLibraryTests: XCTestCase {
         XCTAssertFalse(shelf.settingHidden(true).items.isEmpty)
     }
 
+    func testCountTextPluralizesAndNamesTheFilter() {
+        let reference = makeLibraryReference()
+
+        XCTAssertEqual(reference.countText(1), "1 Movie")
+        XCTAssertEqual(reference.countText(34), "34 Movies")
+        XCTAssertEqual(reference.countText(0, unseenOnly: true), "0 unseen Movies")
+    }
+
     func testLibraryWatchStatusUsesVisibleItems() {
         let reference = makeLibraryReference()
         let item = reference.watchStatusItem(from: [

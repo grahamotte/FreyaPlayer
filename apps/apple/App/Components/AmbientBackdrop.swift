@@ -50,6 +50,8 @@ struct AmbientPalette: Equatable {
 @MainActor
 final class AmbientLight: ObservableObject {
     @Published private(set) var palette: AmbientPalette
+    @Published private(set) var fromColors: [Color]?
+    @Published private(set) var transitionStart: Date = .distantPast
 
     private var url: URL?
     private var task: Task<Void, Never>?
@@ -70,7 +72,7 @@ final class AmbientLight: ObservableObject {
         }
 
         task = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(150))
+            try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled, let palette = await AmbientPalette.load(for: url), !Task.isCancelled else { return }
             self?.show(palette)
         }
@@ -78,10 +80,18 @@ final class AmbientLight: ObservableObject {
 
     private func show(_ palette: AmbientPalette) {
         guard palette != self.palette else { return }
-        let animation: Animation? = UIAccessibility.isReduceMotionEnabled ? nil : .easeInOut(duration: 0.9)
-        withAnimation(animation) {
-            self.palette = palette
+        let now = Date()
+        if UIAccessibility.isReduceMotionEnabled {
+            fromColors = nil
+        } else {
+            fromColors = AmbientMeshBackground.blendedColors(
+                from: fromColors,
+                to: self.palette.colors,
+                progress: AmbientMeshBackground.transitionProgress(since: transitionStart, at: now)
+            )
         }
+        transitionStart = now
+        self.palette = palette
     }
 }
 
@@ -92,9 +102,13 @@ struct AmbientBackdrop: View {
         ZStack {
             AppBackground()
 
-            AmbientMeshBackground(colors: light.palette.colors, saturation: 1.05, opacity: 0.8)
-                .id(light.palette.id)
-                .transition(.opacity)
+            AmbientMeshBackground(
+                colors: light.palette.colors,
+                fromColors: light.fromColors,
+                transitionStart: light.transitionStart,
+                saturation: 1.05,
+                opacity: 0.8
+            )
 
             LinearGradient(
                 colors: [

@@ -95,7 +95,7 @@ struct MediaItem: Hashable, Identifiable, Codable {
         guard showsAddedAt, let addedAt else {
             return kind.isPlayable ? runtimeText : year.map(String.init)
         }
-        return Self.shortDateFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(addedAt)))
+        return Self.dateFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(addedAt)))
     }
 
     var addedAtFormatted: String? {
@@ -134,16 +134,9 @@ struct MediaItem: Hashable, Identifiable, Codable {
         return orderedDescendants.first { $0.kind == .episode && !$0.isWatched }
     }
 
-    private static let shortDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter
-    }()
-
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateStyle = .long
+        formatter.dateStyle = .medium
         formatter.timeStyle = .none
         return formatter
     }()

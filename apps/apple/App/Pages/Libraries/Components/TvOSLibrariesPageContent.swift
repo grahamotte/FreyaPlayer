@@ -81,6 +81,9 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
         self.isOffline = model.isOffline
         super.init(nibName: nil, bundle: nil)
         sections = makeSections(from: server)
+        if let section = sections.first(where: { $0.items.contains { $0.kind == .media } }) {
+            light.light(leadArtworkURL(in: section, focusing: 0))
+        }
     }
 
     @available(*, unavailable)
@@ -318,10 +321,15 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
         }
 
         preferredFocusItemID = nil
-        let item = sections[indexPath.section].items[indexPath.item]
+        light.light(leadArtworkURL(in: sections[indexPath.section], focusing: indexPath.item))
+    }
+
+    private func leadArtworkURL(in section: LibrariesSection, focusing index: Int) -> URL? {
+        let item = section.items[index]
         if item.kind == .media {
-            light.light(item.artworkURL)
+            return item.artworkURL
         }
+        return section.items.first { $0.kind == .media }?.artworkURL
     }
 
     private func configure(_ cell: PosterCell, with item: LibrariesItem) {
@@ -426,7 +434,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
             let style = shelf.artworkStyle
             let openItem = LibrariesItem(
                 id: "\(shelf.id)-open",
-                title: "See All",
+                title: "Open Library",
                 artworkURL: nil,
                 progress: nil,
                 isWatched: false,
@@ -434,7 +442,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                 route: shelf.libraryRoute,
                 style: style,
                 kind: .openLibrary,
-                iconName: "arrow.right"
+                iconName: "square.grid.2x2"
             )
 
             let mediaItems = shelf.previewItems.map { item in
@@ -456,7 +464,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
                 id: shelf.id,
                 title: shelf.title,
                 kind: .library(style),
-                items: mediaItems + [openItem],
+                items: [openItem] + mediaItems,
                 emptyMessage: shelf.emptyMessage
             )
         }
