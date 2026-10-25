@@ -50,6 +50,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
     private var server: ConnectedServer
     private var sections: [LibrariesSection] = []
     private var preferredFocusItemID: String?
+    private var prefetchedArtworkURLs: Set<URL> = []
     private var cacheSubscription: AnyCancellable?
     private var defaultsSubscription: AnyCancellable?
     private var refreshSubscription: AnyCancellable?
@@ -428,6 +429,17 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
         }, configuration: configuration)
     }
 
+    private func prefetchArtwork(for sections: [LibrariesSection]) {
+        let urls = sections.flatMap { $0.items.compactMap(\.artworkURL) }.filter { !prefetchedArtworkURLs.contains($0) }
+        guard !urls.isEmpty else { return }
+        prefetchedArtworkURLs.formUnion(urls)
+        Task {
+            for url in urls {
+                _ = await ArtworkImageCache.shared.loadImage(from: url)
+            }
+        }
+    }
+
     private func makeSections(from server: ConnectedServer) -> [LibrariesSection] {
         let projection = LibrariesHomeProjection(server: server, cache: model.libraryCache)
         let librarySections = projection.shelves.map { shelf in
@@ -514,6 +526,7 @@ private final class LibrariesCollectionViewController: UIViewController, UIColle
             emptyMessage: nil
         )
 
+        prefetchArtwork(for: librarySections)
         return librarySections + [manageSection]
     }
 
