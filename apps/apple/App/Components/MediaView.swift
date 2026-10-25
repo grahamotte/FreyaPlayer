@@ -129,7 +129,11 @@ struct MediaView<Actions: View, Below: View>: View {
         let detailWidth = availableWidth * 0.62
         let artworkWidth = availableWidth * 0.38
         let synopsisWidth = min(detailWidth - metrics.panelHorizontalPadding, 980)
-        let artworkBounds = CGSize(width: artworkWidth, height: proxy.size.height - (metrics.verticalPadding * 2))
+        let artworkTopInset = metrics.panelVerticalPadding + AppTheme.Spacing.xSmall
+        let artworkBounds = CGSize(
+            width: artworkWidth,
+            height: max(proxy.size.height - metrics.topPadding - metrics.bottomPadding - artworkTopInset, 1)
+        )
         let artworkSize = data.artworkStyle.fittedSize(in: artworkBounds)
 
         return HStack(spacing: metrics.artworkSpacing) {
@@ -140,12 +144,12 @@ struct MediaView<Actions: View, Below: View>: View {
                 tracksOffset: false
             )
 
-            VStack {
-                MediaArtworkView(url: data.artworkURL, title: data.title, style: data.artworkStyle)
-                    .frame(width: artworkSize.width, height: artworkSize.height)
-            }
-            .frame(width: artworkWidth)
-            .padding(.bottom, PlatformMetadata.isTV ? metrics.bottomPadding : 0)
+            MediaArtworkView(url: data.artworkURL, title: data.title, style: data.artworkStyle)
+                .frame(width: artworkSize.width, height: artworkSize.height)
+                .frame(width: artworkWidth)
+                .padding(.top, artworkTopInset)
+                .padding(.bottom, PlatformMetadata.isTV ? metrics.bottomPadding : 0)
+                .frame(maxHeight: .infinity, alignment: .top)
         }
         .padding(.horizontal, metrics.horizontalPadding)
         .padding(.top, metrics.topPadding)

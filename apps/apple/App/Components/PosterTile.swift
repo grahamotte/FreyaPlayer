@@ -5,9 +5,10 @@ struct PosterArtwork: View {
     let style: MediaArtworkStyle
     var progress: Double?
     var isWatched = false
+    var cornerRadius = AppTheme.Radius.artwork
 
     private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: AppTheme.Radius.artwork, style: .continuous)
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
     }
 
     var body: some View {
@@ -18,7 +19,6 @@ struct PosterArtwork: View {
             }
             .overlay {
                 WatchProgressBadge(progress: progress, isWatched: isWatched)
-                    .padding(WatchProgressBadge.inset)
             }
             .aspectRatio(style.aspectRatio, contentMode: .fit)
             .clipShape(shape)

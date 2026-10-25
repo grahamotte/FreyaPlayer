@@ -21,6 +21,10 @@ extension View {
         modifier(ScaledTitleFont(size: PlatformMetadata.itemTitleSize, relativeTo: .title))
     }
 
+    func macWindowChrome() -> some View {
+        PlatformMetadata.macWindowModifier(self)
+    }
+
     func readableFormWidth() -> some View {
         frame(maxWidth: PlatformMetadata.readableFormWidth)
             .frame(maxWidth: .infinity)
@@ -112,6 +116,9 @@ extension View {
     func largeNavigationTitle(subtitle: String? = nil) -> some View {
         #if os(tvOS)
         self
+        #elseif targetEnvironment(macCatalyst)
+        navigationBarTitleDisplayMode(.inline)
+            .navigationSubtitle(subtitle ?? "")
         #else
         navigationBarTitleDisplayMode(.large)
             .navigationSubtitle(subtitle ?? "")

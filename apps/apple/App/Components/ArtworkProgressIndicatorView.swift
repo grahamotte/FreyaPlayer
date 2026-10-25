@@ -38,12 +38,11 @@ final class ArtworkProgressIndicatorView: UIView {
     func pin(inside container: UIView) {
         translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(self)
-        let inset = WatchProgressBadge.inset
         NSLayoutConstraint.activate([
-            leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: inset),
-            trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -inset),
-            bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -inset),
-            heightAnchor.constraint(equalToConstant: WatchProgressBadge.checkSize)
+            leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            topAnchor.constraint(equalTo: container.topAnchor),
+            bottomAnchor.constraint(equalTo: container.bottomAnchor)
         ])
     }
 }

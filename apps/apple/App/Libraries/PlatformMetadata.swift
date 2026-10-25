@@ -163,6 +163,19 @@ extension PlatformMetadata {
         #endif
     }
 
+    static func macWindowModifier<Content: View>(_ content: Content) -> some View {
+        #if targetEnvironment(macCatalyst)
+        return content.onAppear {
+            for scene in UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }) {
+                scene.titlebar?.titleVisibility = .hidden
+                scene.titlebar?.toolbarStyle = .unified
+            }
+        }
+        #else
+        return content
+        #endif
+    }
+
     static func macCommandsModifier<Content: Scene>(_ content: Content) -> some Scene {
         #if targetEnvironment(macCatalyst)
         return content.commands {

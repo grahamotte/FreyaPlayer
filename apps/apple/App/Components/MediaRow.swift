@@ -5,6 +5,7 @@ struct MediaRow: View {
     var title: Text?
     var position: Int?
     var showsSynopsis = true
+    var usesUniformThumbnail = false
 
     private var style: MediaArtworkStyle {
         item.kind.artworkStyle
@@ -12,13 +13,7 @@ struct MediaRow: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: PlatformMetadata.isTV ? AppTheme.Spacing.xLarge : AppTheme.Spacing.medium) {
-            PosterArtwork(
-                url: item.artwork.url(for: style),
-                style: style,
-                progress: item.kind.isPlayable ? item.progress : nil,
-                isWatched: item.isWatched
-            )
-            .frame(width: thumbnailWidth)
+            thumbnail
 
             VStack(alignment: .leading, spacing: AppTheme.Spacing.xxSmall) {
                 (title ?? Text(displayTitle))
@@ -49,6 +44,28 @@ struct MediaRow: View {
         .contentShape(Rectangle())
     }
 
+    @ViewBuilder
+    private var thumbnail: some View {
+        let artwork = PosterArtwork(
+            url: item.artwork.url(for: style),
+            style: style,
+            progress: item.kind.isPlayable ? item.progress : nil,
+            isWatched: item.isWatched,
+            cornerRadius: PlatformMetadata.isTV ? 14 : 8
+        )
+
+        if usesUniformThumbnail {
+            let slotWidth = Self.thumbnailWidth(for: .landscape)
+            let slotHeight = slotWidth / MediaArtworkStyle.landscape.aspectRatio
+            artwork
+                .frame(height: slotHeight)
+                .frame(width: slotWidth)
+        } else {
+            artwork
+                .frame(width: Self.thumbnailWidth(for: style))
+        }
+    }
+
     private var displayTitle: String {
         guard let position else { return item.title }
         return "\(position). \(item.title)"
@@ -66,7 +83,7 @@ struct MediaRow: View {
         return value.isEmpty ? nil : value
     }
 
-    private var thumbnailWidth: CGFloat {
+    private static func thumbnailWidth(for style: MediaArtworkStyle) -> CGFloat {
         switch style {
         case .poster:
             if PlatformMetadata.isTV { return 104 }

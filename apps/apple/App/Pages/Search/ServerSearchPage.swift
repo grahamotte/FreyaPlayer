@@ -58,7 +58,8 @@ struct ServerSearchPage: View {
                     NavigationLink(value: result.item.route) {
                         MediaRow(
                             item: result.item,
-                            title: highlightedTitle(for: result)
+                            title: highlightedTitle(for: result),
+                            usesUniformThumbnail: true
                         )
                         .padding(PlatformMetadata.isPhone ? AppTheme.Spacing.small : AppTheme.Spacing.medium)
                     }

@@ -75,6 +75,7 @@ struct AppView: View {
             Text(savedConnectionFailureMessage ?? "")
         }
         .appChrome()
+        .macWindowChrome()
     }
 
     private var savedConnectionFailurePresented: Binding<Bool> {
