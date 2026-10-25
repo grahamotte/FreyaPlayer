@@ -85,25 +85,24 @@ struct OpenLibraryTile: View {
             shape
                 .fill(isHovered ? AppTheme.focusedSurfaceFill : AppTheme.surfaceFill)
                 .overlay {
-                    Image(systemName: "square.grid.2x2")
-                        .font(.title2.weight(.medium))
-                        .foregroundStyle(AppTheme.secondaryText)
+                    VStack(spacing: AppTheme.Spacing.small) {
+                        Image(systemName: "square.grid.2x2")
+                            .font(.title2.weight(.medium))
+
+                        Text("Open Library")
+                            .font(PlatformMetadata.tileTitleFont)
+                    }
+                    .foregroundStyle(AppTheme.primaryText)
                 }
                 .overlay {
                     shape.strokeBorder(AppTheme.hairline, lineWidth: 1)
                 }
                 .aspectRatio(style.aspectRatio, contentMode: .fit)
 
-            VStack(alignment: .leading, spacing: PlatformMetadata.tileSubtitleSpacing) {
-                Text("Open Library")
-                    .font(PlatformMetadata.tileTitleFont)
-                    .lineLimit(1)
-
-                Text(countText)
-                    .font(PlatformMetadata.labelFont)
-                    .foregroundStyle(AppTheme.secondaryText)
-                    .lineLimit(1)
-            }
+            Text(countText)
+                .font(PlatformMetadata.labelFont)
+                .foregroundStyle(AppTheme.secondaryText)
+                .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())

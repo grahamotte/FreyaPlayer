@@ -145,7 +145,7 @@ struct LibrariesPage: View {
                     .padding(.horizontal, pagePadding)
             } else {
                 ScrollView(.horizontal) {
-                    LazyHStack(alignment: .top, spacing: cardSpacing) {
+                    HStack(alignment: .top, spacing: cardSpacing) {
                         NavigationLink(value: shelf.libraryRoute) {
                             OpenLibraryTile(style: style, countText: shelf.countText)
                                 .frame(width: cardWidth)
