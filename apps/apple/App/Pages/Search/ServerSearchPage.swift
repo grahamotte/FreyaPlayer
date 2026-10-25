@@ -116,6 +116,7 @@ private extension View {
         self
         #else
         searchFocused(isFocused)
+            .searchPresentationToolbarBehavior(.avoidHidingContent)
         #endif
     }
 }
