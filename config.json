@@ -61,6 +61,7 @@
     "primaryLocale": "en-US",
     "promotionalText": "Watch your personal Plex or Jellyfin library in a native Apple platform experience.",
     "releaseType": "AFTER_APPROVAL",
+    "subtitle": "Jellyfin & Plex Media Client",
     "supportUrl": "https://github.com/grahamotte/FreyaPlayer",
     "targets": {
       "apple": {
