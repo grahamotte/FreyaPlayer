@@ -9,8 +9,9 @@
 .bundle/
 /.build
 /app/assets/builds/*
-/config/master.key
-/config/credentials.yml.enc
+/backend/config/master.key
+/backend/config/credentials.yml.enc
+xcuserdata/
 /log/*
 **/log/**
 /metabase
@@ -42,7 +43,6 @@ frontend/dist
 .mise.local.toml
 *.xcuserstate
 docs/creds.txt
-xcuserdata/
 /*/tmp
 /*/tmp/*
 website/dist
