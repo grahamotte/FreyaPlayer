@@ -1,8 +1,8 @@
 # Privacy Policy
 
-Effective date: 2026-04-01
+Effective date: 2026-10-30
 
-Freya Player is an app for tvOS that connects to Plex and Jellyfin servers chosen by the user. This app is developed by Graham Otte.
+Freya Player is an app for Apple TV, iPhone, iPad, and Mac that connects to Plex and Jellyfin servers chosen by the user. This Privacy Policy explains how Freya Player handles information.
 
 Freya Player is only a client. It does not include, host, provide, or unlock any content or streaming catalog of its own. To use it, you must connect your own **personal** Plex or Jellyfin server.
 
@@ -82,7 +82,4 @@ This Privacy Policy may be updated from time to time. When it changes, the updat
 
 ## Contact
 
-If you have questions about this Privacy Policy, contact:
-
-Graham Otte
-graham.otte@gmail.com
+If you have questions about this Privacy Policy, open an issue at https://github.com/grahamotte/FreyaPlayer/issues.

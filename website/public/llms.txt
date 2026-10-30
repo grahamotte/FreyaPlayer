@@ -1,0 +1,29 @@
+# Freya Player
+
+> Freya Player is a native Apple video player for personal Jellyfin and Plex servers, on Apple TV (tvOS), iPhone, iPad, and Mac. It is free, has no ads, subscriptions, analytics, telemetry, or crash reporting, and is open source (MIT). It requires iOS, iPadOS, tvOS, or macOS 26.2 or later.
+
+Freya Player does not provide a server or any content. You need a Jellyfin or Plex server of your own, or access to one.
+
+Install from the App Store: https://apps.apple.com/us/app/freya-player/id6761883699. On a Mac, you can also install with Homebrew: `brew install grahamotte/tap/freya-player`, or download a signed, notarized build from GitHub Releases.
+
+Features:
+
+- Connects to Jellyfin (recommended) with a server address, port, username, and password, or to Plex with a code entered at plex.tv/link. One server at a time.
+- Home shows a row for each library. Libraries can be filtered (All or Unseen), sorted by title, date added, or duration, hidden, and reordered. Search works across shown libraries and tolerates typos.
+- Plays everything Apple supports natively through the standard Apple player (AVKit), including Picture in Picture on iPhone and iPad. The server converts a file only when Apple genuinely can't play it.
+- Play Options picks resolution, audio track, and subtitles, and shows whether each stream will Direct Play, Remux, or Transcode. Subtitles are never burned in.
+- Resume position and Seen/Unseen status sync to the server. Quick actions on any poster: touch and hold on iPhone and iPad, right-click on Mac, or press and hold on Apple TV.
+- Libraries are cached on the device so Home opens quickly and can be browsed offline.
+- Data stays on the device and is sent only to the user's server. With Plex, sign-in and server discovery also go through plex.tv.
+
+## Docs
+
+- [README](https://raw.githubusercontent.com/grahamotte/FreyaPlayer/master/README.md): Installation, connecting a server, libraries, playback, and managing the server.
+- [Privacy Policy](https://freyaplayer.com/privacy): What Freya Player stores on the device and sends to Jellyfin or Plex.
+
+## Optional
+
+- [App Store](https://apps.apple.com/us/app/freya-player/id6761883699): Freya Player on the App Store.
+- [Source code](https://github.com/grahamotte/FreyaPlayer): The Freya Player repository on GitHub.
+- [Releases](https://github.com/grahamotte/FreyaPlayer/releases): Signed and notarized Mac builds and release notes.
+- [Issues](https://github.com/grahamotte/FreyaPlayer/issues): Bug reports and questions.
