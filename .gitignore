@@ -45,3 +45,7 @@ docs/creds.txt
 xcuserdata/
 /*/tmp
 /*/tmp/*
+website/dist
+website/.astro
+website/.wrangler
+website/wrangler.json
