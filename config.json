@@ -22,7 +22,7 @@
     "size": "s-1vcpu-2gb"
   },
   "apps": {
-    "build": "1.24.0",
+    "build": "1.24.1",
     "contactEmail": "graham.otte@gmail.com",
     "contactFirstName": "Graham",
     "contactLastName": "Otte",
@@ -137,7 +137,7 @@
       },
       "android": {}
     },
-    "version": "1.24.0",
-    "whatsNew": "A fresh look across Apple TV, iPhone, iPad, and Mac. Each screen now takes its color from the artwork you are browsing, and controls use the system glass style. Library shelves start with an Open Library tile, filters and sorting are easier to reach, search results are clearer, and playback is more reliable from every entry point. Libraries now reorder by dragging the handle on each row, and Apple TV settings scroll and show focus more clearly."
+    "version": "1.24.1",
+    "whatsNew": "Fixes playback failing with an authorization error on newer Jellyfin servers when changing audio, subtitles, or quality, or when Freya converts a video Apple can't play directly."
   }
 }

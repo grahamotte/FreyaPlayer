@@ -543,7 +543,7 @@ extension JellyfinItem {
             URLQueryItem(name: "maxWidth", value: String(maxWidth)),
             URLQueryItem(name: "maxHeight", value: String(maxHeight)),
             URLQueryItem(name: "quality", value: "90"),
-            URLQueryItem(name: "api_key", value: accessToken)
+            URLQueryItem(name: "ApiKey", value: accessToken)
         ]
         .compactMap { $0 }
 

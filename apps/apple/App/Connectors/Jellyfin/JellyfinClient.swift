@@ -243,7 +243,7 @@ final class JellyfinClient {
             URLQueryItem(name: "allowVideoStreamCopy", value: canCopyVideo ? "true" : "false"),
             URLQueryItem(name: "allowAudioStreamCopy", value: canCopyAudio ? "true" : "false"),
             URLQueryItem(name: "deviceId", value: deviceID),
-            URLQueryItem(name: "api_key", value: accessToken)
+            URLQueryItem(name: "ApiKey", value: accessToken)
         ]
         .compactMap { $0 }
 
@@ -314,7 +314,7 @@ final class JellyfinClient {
             mediaSource.id.map { URLQueryItem(name: "mediaSourceId", value: $0) },
             playbackInfo.playSessionId.map { URLQueryItem(name: "playSessionId", value: $0) },
             URLQueryItem(name: "deviceId", value: deviceID),
-            URLQueryItem(name: "api_key", value: accessToken)
+            URLQueryItem(name: "ApiKey", value: accessToken)
         ]
         .compactMap { $0 }
         return components.url
