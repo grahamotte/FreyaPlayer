@@ -1,9 +1,200 @@
 ---
 import config from "../../../config.json";
+import InstallCommand from "../components/InstallCommand.astro";
 import Layout from "../layouts/Layout.astro";
+import { appStoreUrl, install } from "../site";
+
+const repoUrl = config.apps.marketingUrl;
+
+const playback = [
+  {
+    title: "Apple's own player",
+    text: "Video plays in the standard Apple player, with the controls you already know and Picture in Picture on iPhone and iPad.",
+  },
+  {
+    title: "Direct play first",
+    text: "If your device can play a file as it is, it does. Your server only converts what Apple genuinely can't play.",
+  },
+  {
+    title: "No surprises",
+    text: "Play Options shows the container, video, audio, and subtitles for what you picked, and whether each plays as-is, gets repackaged, or gets converted.",
+  },
+  {
+    title: "Subtitles stay subtitles",
+    text: "They're never burned into the picture.",
+  },
+  {
+    title: "Picks up where you left off",
+    text: "Resume points and seen status save to your server, so your other Jellyfin or Plex apps stay in step.",
+  },
+];
+
+const promises = [
+  {
+    title: "Free",
+    text: "No subscriptions, no upsell, no plus premium max whatever. Oh, and no ads.",
+  },
+  {
+    title: "Private",
+    text: "No accounts, analytics, telemetry, or crash reporter. Your data stays on your device and goes only to your server.",
+  },
+  {
+    title: "Open source",
+    text: "MIT licensed. Read it, fork it, or send a pull request.",
+  },
+];
 ---
 
 <Layout>
-  <h1 class="text-3xl">{config.site.title}</h1>
-  <p class="max-w-xl text-neutral-400">{config.site.description}</p>
+  <section class="mx-auto w-full max-w-6xl px-6 pt-14 text-center sm:px-8 sm:pt-20">
+    <div class="mx-auto max-w-3xl">
+      <h1 class="font-serif text-[2.5rem] leading-[1.1] font-semibold tracking-[-0.01em] text-balance sm:text-[3.5rem]">
+        Your own movies and shows, played the Apple way.
+      </h1>
+      <p class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-pretty text-ink-2">
+        Freya Player is a small, native player for your Jellyfin or Plex server, on Apple TV, iPhone, iPad, and Mac. Connect once,
+        pick something, and press Play.
+      </p>
+      <div class="mt-9 flex flex-col items-center gap-4">
+        <a href={appStoreUrl} class="inline-block rounded-[10px]">
+          <img src="/app-store-badge.svg" alt="Download on the App Store" width="150" height="50" class="h-[50px] w-auto" />
+        </a>
+        <p class="text-sm text-ink-3">
+          Version {config.apps.version}. Requires iOS, iPadOS, tvOS, or macOS 26.2 or later.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="relative mx-auto mt-12 w-full max-w-6xl px-4 sm:mt-16 sm:px-8">
+    <div class="house-lights pointer-events-none absolute -inset-x-4 -inset-y-10 sm:-inset-y-16" aria-hidden="true"></div>
+    <img
+      src="/tv-home.webp"
+      width="2400"
+      height="1350"
+      alt="Freya Player on Apple TV. A server's home screen shows a row of movie posters, such as Plan 9 from Outer Space and Night of the Living Dead, above a row of shows."
+      class="screen relative h-auto w-full rounded-[14px] sm:rounded-[20px]"
+      fetchpriority="high"
+    />
+  </section>
+
+  <section class="mx-auto w-full max-w-6xl px-6 pt-24 sm:px-8 md:pt-32">
+    <div class="max-w-xl">
+      <h2 class="font-serif text-[2rem] leading-tight font-semibold text-balance">At home on every screen</h2>
+      <p class="mt-4 leading-relaxed text-ink-2">
+        One app, built separately where it matters. Each device gets the layout, controls, and gestures it's supposed to have.
+      </p>
+    </div>
+    <div class="mt-12 grid gap-x-6 gap-y-12 md:grid-cols-3">
+      <figure class="md:col-span-2">
+        <img src="/tv-episode.webp" width="1600" height="900" alt="An episode page on Apple TV with its title, year, length, description, and Play button beside the episode's artwork." class="screen h-auto w-full rounded-[12px]" loading="lazy" />
+        <figcaption class="mt-4">
+          <span class="font-semibold">Apple TV.</span>{" "}
+          <span class="text-ink-2">Made for the Siri Remote, from the couch. Press and hold any poster for quick actions.</span>
+        </figcaption>
+      </figure>
+      <figure class="flex flex-col">
+        <div class="screen relative aspect-[4/5] overflow-hidden rounded-[12px] md:aspect-auto md:flex-1">
+          <img src="/iphone.webp" width="720" height="1558" alt="Freya Player on iPhone, showing rows of movies and shows." class="absolute inset-0 size-full object-cover object-top" loading="lazy" />
+        </div>
+        <figcaption class="mt-4">
+          <span class="font-semibold">iPhone.</span>{" "}
+          <span class="text-ink-2">Pull to refresh, touch and hold for quick actions.</span>
+        </figcaption>
+      </figure>
+      <figure class="flex flex-col">
+        <div class="screen relative aspect-[4/5] overflow-hidden rounded-[12px] md:aspect-auto md:flex-1">
+          <img src="/ipad.webp" width="1200" height="1600" alt="Freya Player on iPad, showing rows of movies, shows, and home videos." class="absolute inset-0 size-full object-cover object-top" loading="lazy" />
+        </div>
+        <figcaption class="mt-4">
+          <span class="font-semibold">iPad.</span>{" "}
+          <span class="text-ink-2">Picture in Picture while you do something else.</span>
+        </figcaption>
+      </figure>
+      <figure class="md:col-span-2">
+        <img src="/mac-show.webp" width="1600" height="996" alt="A show page in a Freya Player window on Mac, listing its seasons beside the show's poster." class="screen h-auto w-full rounded-[12px]" loading="lazy" />
+        <figcaption class="mt-4">
+          <span class="font-semibold">Mac.</span>{" "}
+          <span class="text-ink-2">A regular Mac window. Right-click a poster for quick actions.</span>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="mx-auto grid w-full max-w-6xl gap-10 px-6 py-24 sm:px-8 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-16 md:py-32">
+    <div>
+      <div class="md:sticky md:top-10">
+        <h2 class="font-serif text-[2rem] leading-tight font-semibold text-balance">Plays it straight</h2>
+        <p class="mt-4 max-w-sm leading-relaxed text-ink-2">
+          The goal is simple: play everything Apple supports natively, and play it well.
+        </p>
+      </div>
+    </div>
+    <ul class="border-t border-line">
+      {
+        playback.map((item) => (
+          <li class="border-b border-line py-6">
+            <h3 class="font-semibold">{item.title}</h3>
+            <p class="mt-1.5 max-w-xl leading-relaxed text-ink-2">{item.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="border-y border-line bg-card">
+    <div class="mx-auto grid w-full max-w-6xl gap-10 px-6 py-20 sm:px-8 md:grid-cols-3 md:gap-12 md:py-24">
+      {
+        promises.map((item) => (
+          <div>
+            <h3 class="flex items-center gap-2.5 font-semibold">
+              <span class="size-1.5 rounded-full bg-gold" aria-hidden="true" />
+              {item.title}
+            </h3>
+            <p class="mt-2 leading-relaxed text-ink-2">{item.text}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="mx-auto w-full max-w-6xl px-6 py-24 sm:px-8 md:py-32">
+    <div class="max-w-2xl">
+      <h2 class="font-serif text-[2rem] leading-tight font-semibold text-balance">What you'll need</h2>
+      <p class="mt-4 leading-relaxed text-ink-2">
+        A Jellyfin or Plex server of your own, or access to one. Freya Player doesn't come with any movies or shows; it plays the ones
+        you already have.
+      </p>
+      <dl class="mt-8 grid gap-6 sm:grid-cols-2">
+        <div class="rounded-[14px] border border-line bg-card p-5">
+          <dt class="font-semibold">Jellyfin</dt>
+          <dd class="mt-1.5 leading-relaxed text-ink-2">Enter your server's address, username, and password. Everything stays between the app and your server.</dd>
+        </div>
+        <div class="rounded-[14px] border border-line bg-card p-5">
+          <dt class="font-semibold">Plex</dt>
+          <dd class="mt-1.5 leading-relaxed text-ink-2">Sign in with a code at plex.tv/link. Sign-in and server discovery go through plex.tv.</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="mx-auto w-full max-w-6xl px-6 pb-24 sm:px-8 md:pb-32">
+    <div class="flex flex-col items-start gap-6 rounded-[20px] border border-line bg-card px-5 py-8 sm:px-10 sm:py-10 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex items-center gap-5">
+        <img src="/icon.png" alt="" width="64" height="64" class="size-16 shrink-0 rounded-[15px]" loading="lazy" />
+        <div>
+          <h2 class="font-serif text-[1.5rem] font-semibold">Give it a try</h2>
+          <p class="mt-1 text-ink-2">
+            On a Mac, you can also use Homebrew, or grab a build from <a href={`${repoUrl}/releases`} class="underline">GitHub</a>.
+          </p>
+        </div>
+      </div>
+      <div class="flex max-w-full flex-col items-start gap-3 sm:flex-row sm:items-center lg:shrink-0">
+        <a href={appStoreUrl} class="inline-block shrink-0 rounded-[10px]">
+          <img src="/app-store-badge.svg" alt="Download on the App Store" width="150" height="50" class="h-[50px] w-auto" loading="lazy" />
+        </a>
+        <InstallCommand command={install} class="bg-floor" />
+      </div>
+    </div>
+  </section>
 </Layout>
