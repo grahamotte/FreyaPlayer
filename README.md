@@ -4,6 +4,8 @@
 
 Freya Player is a native player for Apple TV, iPhone, iPad, and Mac that streams movies and shows from your own Jellyfin or Plex server. It does not provide any content; you need a server of your own, or access to one.
 
+Learn more at [freyaplayer.com](https://freyaplayer.com).
+
 ## Install
 
 <a href="https://apps.apple.com/us/app/freya-player/id6761883699"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1700000000" alt="Download on the App Store" height="40"></a>
