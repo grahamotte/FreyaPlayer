@@ -33,6 +33,7 @@ let package = Package(
                 "Connectors/Plex/PlexConnector.swift",
                 "Connectors/Plex/PlexModels.swift",
                 "Connectors/Plex/PlexSessionStore.swift",
+                "DebugHooks.swift",
                 "FreyaPlayerApp.swift",
                 "Libraries/KeychainStore.swift",
                 "Libraries/MediaViewData+MediaItem.swift",
@@ -41,7 +42,7 @@ let package = Package(
                 "Libraries/PollingLoop.swift",
                 "Pages",
             ],
-            swiftSettings: [.swiftLanguageMode(.v5)],
+            swiftSettings: [.define("APP_DEV"), .swiftLanguageMode(.v5)],
         ),
         .testTarget(
             name: "FreyaPlayerCoreTests",
