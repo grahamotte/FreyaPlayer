@@ -176,6 +176,11 @@ enum PlaybackCompatibility {
         return min(sourceHeight ?? maximumHeight, maximumHeight)
     }
 
+    /// Temporary workaround for a tvOS 27+ platform bug, not a capability limit.
+    /// Native audio drops out or mutes on Apple TV with HomePod output, so on tvOS 27
+    /// and later Plex and Jellyfin skip direct play and audio copying and convert audio
+    /// to AAC while keeping compatible video native. Remove or narrow this only after
+    /// verifying stable native audio on physical HomePods. See docs/tvos-audio-fallback.md.
     static func requiresTranscodedAudio(majorVersion: Int) -> Bool {
         majorVersion >= 27
     }
