@@ -18,16 +18,7 @@ final class JellyfinClient {
     }
 
     func authenticate(serverURL: String, username: String, password: String) async throws -> (JellyfinAuthenticationResult, String) {
-        do {
-            return try await performAuthentication(serverURL: normalize(serverURL: serverURL), username: username, password: password)
-        } catch {
-            guard !hasScheme(serverURL),
-                  normalize(serverURL: serverURL).hasPrefix("https://") else {
-                throw error
-            }
-
-            return try await performAuthentication(serverURL: normalize(serverURL: serverURL, scheme: "http"), username: username, password: password)
-        }
+        try await performAuthentication(serverURL: normalize(serverURL: serverURL), username: username, password: password)
     }
 
     func connection(
@@ -663,13 +654,13 @@ final class JellyfinClient {
         request.setValue(authValue, forHTTPHeaderField: "Authorization")
     }
 
-    private func normalize(serverURL: String, scheme: String = "https") -> String {
+    private func normalize(serverURL: String) -> String {
         let trimmed = serverURL
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         guard !trimmed.isEmpty else { return trimmed }
 
-        let rawURL = hasScheme(trimmed) ? trimmed : "\(scheme)://\(trimmed)"
+        let rawURL = hasScheme(trimmed) ? trimmed : "https://\(trimmed)"
         guard var components = URLComponents(string: rawURL) else {
             return rawURL
         }
