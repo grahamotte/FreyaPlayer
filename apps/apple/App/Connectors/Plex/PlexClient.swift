@@ -729,9 +729,11 @@ final class PlexClient {
     }
 
     private func orderConnections(_ connections: [PlexServerConnection]) -> [PlexServerConnection] {
-        connections.sorted { lhs, rhs in
-            score(connection: lhs) > score(connection: rhs)
-        }
+        connections
+            .filter { URLComponents(string: $0.uri)?.scheme?.lowercased() == "https" }
+            .sorted { lhs, rhs in
+                score(connection: lhs) > score(connection: rhs)
+            }
     }
 
     private func score(server: PlexServer, preferredServerID: String?) -> Int {
@@ -755,9 +757,6 @@ final class PlexClient {
 
         if connection.local {
             score += 10
-        }
-        if connection.protocolType == "https" {
-            score += 5
         }
         if !connection.relay {
             score += 2
@@ -827,17 +826,9 @@ private struct PlexServer: Decodable {
 }
 
 private struct PlexServerConnection: Decodable {
-    let protocolType: String
     let uri: String
     let local: Bool
     let relay: Bool
-
-    private enum CodingKeys: String, CodingKey {
-        case protocolType = "protocol"
-        case uri
-        case local
-        case relay
-    }
 }
 
 private struct PlexDirectoryContainer<Item: Decodable>: Decodable {
