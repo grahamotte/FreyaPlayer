@@ -7,14 +7,14 @@ final class JellyfinSessionStore {
     private let userNameKey = "jellyfin.user.name"
     private let tokenKey = "jellyfin.access.token"
     private let loadSecureValue: @MainActor (String) -> String?
-    private let saveSecureValue: @MainActor (String, String) -> Void
+    private let saveSecureValue: @MainActor (String, String) throws -> Void
     private let removeSecureValue: @MainActor (String) -> Void
 
     convenience init() {
         self.init(
             defaults: UserDefaults.standard,
             loadSecureValue: { KeychainStore.value(for: $0) },
-            saveSecureValue: { KeychainStore.setValue($0, for: $1) },
+            saveSecureValue: { try KeychainStore.setValue($0, for: $1) },
             removeSecureValue: { KeychainStore.removeValue(for: $0) }
         )
     }
@@ -22,7 +22,7 @@ final class JellyfinSessionStore {
     init(
         defaults: any DefaultsStore,
         loadSecureValue: @escaping @MainActor (String) -> String?,
-        saveSecureValue: @escaping @MainActor (String, String) -> Void,
+        saveSecureValue: @escaping @MainActor (String, String) throws -> Void,
         removeSecureValue: @escaping @MainActor (String) -> Void
     ) {
         self.defaults = defaults
@@ -47,14 +47,11 @@ final class JellyfinSessionStore {
     }
 
     var accessToken: String? {
-        get { loadSecureValue(tokenKey) }
-        set {
-            if let newValue {
-                saveSecureValue(newValue, tokenKey)
-            } else {
-                removeSecureValue(tokenKey)
-            }
-        }
+        loadSecureValue(tokenKey)
+    }
+
+    func setAccessToken(_ token: String) throws {
+        try saveSecureValue(token, tokenKey)
     }
 
     var hasSavedConnection: Bool {
@@ -65,6 +62,6 @@ final class JellyfinSessionStore {
         defaults.removeObject(forKey: serverURLKey)
         defaults.removeObject(forKey: userIDKey)
         defaults.removeObject(forKey: userNameKey)
-        accessToken = nil
+        removeSecureValue(tokenKey)
     }
 }

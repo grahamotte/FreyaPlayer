@@ -227,7 +227,7 @@ final class PlexConnector: PlexConnecting {
                 userToken: userToken,
                 preferredServerID: store.serverIdentifier
             )
-            store.userToken = userToken
+            try store.setUserToken(userToken)
             store.serverIdentifier = summary.serverID
             connection = summary
             return summary.connectedServer(providerID: providerID)

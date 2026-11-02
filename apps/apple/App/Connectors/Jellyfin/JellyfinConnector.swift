@@ -47,7 +47,6 @@ final class JellyfinConnector: JellyfinConnecting {
         store.serverURL = summary.serverURL
         store.userID = summary.userID
         store.userName = summary.userName
-        store.accessToken = summary.accessToken
         connection = summary
         return summary.connectedServer(providerID: providerID)
     }
@@ -280,7 +279,7 @@ final class JellyfinConnector: JellyfinConnecting {
             store.serverURL = summary.serverURL
             store.userID = summary.userID
             store.userName = summary.userName
-            store.accessToken = summary.accessToken
+            try store.setAccessToken(summary.accessToken)
             connection = summary
             return summary.connectedServer(providerID: providerID)
         } catch {

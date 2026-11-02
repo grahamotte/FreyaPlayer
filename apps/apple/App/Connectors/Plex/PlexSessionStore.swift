@@ -8,14 +8,14 @@ final class PlexSessionStore {
     private let librarySortKeyPrefix = "plex.library.sort"
     private let librarySortOrderKeyPrefix = "plex.library.sort.order"
     private let loadSecureValue: @MainActor (String) -> String?
-    private let saveSecureValue: @MainActor (String, String) -> Void
+    private let saveSecureValue: @MainActor (String, String) throws -> Void
     private let removeSecureValue: @MainActor (String) -> Void
 
     convenience init() {
         self.init(
             defaults: UserDefaults.standard,
             loadSecureValue: { KeychainStore.value(for: $0) },
-            saveSecureValue: { KeychainStore.setValue($0, for: $1) },
+            saveSecureValue: { try KeychainStore.setValue($0, for: $1) },
             removeSecureValue: { KeychainStore.removeValue(for: $0) }
         )
     }
@@ -23,7 +23,7 @@ final class PlexSessionStore {
     init(
         defaults: any DefaultsStore,
         loadSecureValue: @escaping @MainActor (String) -> String?,
-        saveSecureValue: @escaping @MainActor (String, String) -> Void,
+        saveSecureValue: @escaping @MainActor (String, String) throws -> Void,
         removeSecureValue: @escaping @MainActor (String) -> Void
     ) {
         self.defaults = defaults
@@ -33,14 +33,11 @@ final class PlexSessionStore {
     }
 
     var userToken: String? {
-        get { loadSecureValue(tokenKey) }
-        set {
-            if let newValue {
-                saveSecureValue(newValue, tokenKey)
-            } else {
-                removeSecureValue(tokenKey)
-            }
-        }
+        loadSecureValue(tokenKey)
+    }
+
+    func setUserToken(_ token: String) throws {
+        try saveSecureValue(token, tokenKey)
     }
 
     var serverIdentifier: String? {
@@ -79,7 +76,7 @@ final class PlexSessionStore {
     }
 
     func clear() {
-        userToken = nil
+        removeSecureValue(tokenKey)
         defaults.removeObject(forKey: serverKey)
     }
 }
