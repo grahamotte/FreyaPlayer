@@ -2,6 +2,13 @@
   "domain": "freyaplayer.com",
   "githubRepo": "git@github.com:grahamotte/FreyaPlayer.git",
   "database": "freyaplayer",
+  "operatorOnlyEnvKeys": [
+    "APPLE_*",
+    "CLOUDFLARE_TOKEN",
+    "DEPLOY_PASSWORD",
+    "DEPLOY_SSH_KEY_*",
+    "DIGITAL_OCEAN_TOKEN"
+  ],
   "site": {
     "title": "Freya Player",
     "description": "A native Apple video player for personal Plex and Jellyfin libraries",
