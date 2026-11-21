@@ -643,15 +643,20 @@ final class JellyfinClient {
         }
     }
 
+    func authorizationHeaders(accessToken: String) -> [String: String] {
+        ["Authorization": authorizationValue(accessToken: accessToken)]
+    }
+
     private func applyAuthorizationHeaders(to request: inout URLRequest, accessToken: String? = nil) {
-        let authValue: String
+        request.setValue(authorizationValue(accessToken: accessToken), forHTTPHeaderField: "Authorization")
+    }
+
+    private func authorizationValue(accessToken: String?) -> String {
         if let accessToken {
-            authValue = "MediaBrowser Token=\"\(accessToken)\", Client=\"Freya Player\", Device=\"\(PlatformMetadata.deviceName)\", DeviceId=\"\(deviceID)\", Version=\"\(clientVersion)\""
-        } else {
-            authValue = "MediaBrowser Client=\"Freya Player\", Device=\"\(PlatformMetadata.deviceName)\", DeviceId=\"\(deviceID)\", Version=\"\(clientVersion)\""
+            return "MediaBrowser Token=\"\(accessToken)\", Client=\"Freya Player\", Device=\"\(PlatformMetadata.deviceName)\", DeviceId=\"\(deviceID)\", Version=\"\(clientVersion)\""
         }
 
-        request.setValue(authValue, forHTTPHeaderField: "Authorization")
+        return "MediaBrowser Client=\"Freya Player\", Device=\"\(PlatformMetadata.deviceName)\", DeviceId=\"\(deviceID)\", Version=\"\(clientVersion)\""
     }
 
     private func normalize(serverURL: String) -> String {

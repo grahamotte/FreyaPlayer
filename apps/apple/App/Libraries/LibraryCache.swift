@@ -13,6 +13,7 @@ import Combine
 final class LibraryCache: ObservableObject {
     private(set) var snapshot: LibraryCacheSnapshot
     @Published private(set) var storageSizeBytes: Int64
+    let discardedOutdatedSnapshot: Bool
 
     private let storage: LibraryCacheStorage
     private var pendingSave: Task<Void, Never>?
@@ -30,8 +31,10 @@ final class LibraryCache: ObservableObject {
         if let loadedSnapshot,
            loadedSnapshot.cacheVersion == LibraryCacheSnapshot.currentVersion {
             self.snapshot = loadedSnapshot
+            self.discardedOutdatedSnapshot = false
         } else {
             self.snapshot = LibraryCacheSnapshot()
+            self.discardedOutdatedSnapshot = loadedSnapshot != nil
             if loadedSnapshot != nil {
                 storage.clear()
             }
@@ -474,7 +477,7 @@ struct CachedServerMetadata: Codable, Equatable {
 }
 
 struct LibraryCacheSnapshot: Codable, Equatable {
-    static let currentVersion = 1
+    static let currentVersion = 2
 
     var cacheVersion: Int?
     var serverKey: String?

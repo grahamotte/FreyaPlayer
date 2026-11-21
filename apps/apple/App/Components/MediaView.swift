@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct MediaViewData {
     let title: String
@@ -700,13 +701,15 @@ private struct MediaBackdropView: View {
     let artworkURL: URL?
     let backdropURL: URL?
 
+    @State private var backdropImage: UIImage?
+
     var body: some View {
         ZStack {
             ArtworkLitBackground(url: artworkURL ?? backdropURL)
 
-            AsyncImage(url: backdropURL) { phase in
-                if case .success(let image) = phase {
-                    image
+            ZStack {
+                if let backdropImage {
+                    Image(uiImage: backdropImage)
                         .resizable()
                         .scaledToFill()
                         .blur(radius: 40)
@@ -714,6 +717,15 @@ private struct MediaBackdropView: View {
                 }
             }
             .ignoresSafeArea()
+            .task(id: backdropURL) {
+                guard let backdropURL else {
+                    backdropImage = nil
+                    return
+                }
+                let loaded = await ArtworkImageCache.shared.loadImage(from: backdropURL)
+                guard !Task.isCancelled else { return }
+                backdropImage = loaded
+            }
 
             LinearGradient(
                 colors: [

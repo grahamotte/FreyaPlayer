@@ -6,6 +6,7 @@ final class ArtworkImageCache {
 
     private let session: URLSession
     private let cache = NSCache<NSURL, UIImage>()
+    var requestHeaders: @MainActor (URL) -> [String: String]? = { _ in nil }
 
     init(session: URLSession = .shared) {
         self.session = session
@@ -25,7 +26,11 @@ final class ArtworkImageCache {
         }
 
         do {
-            let (data, _) = try await session.data(from: url)
+            var request = URLRequest(url: url)
+            for (field, value) in requestHeaders(url) ?? [:] {
+                request.setValue(value, forHTTPHeaderField: field)
+            }
+            let (data, _) = try await session.data(for: request)
             guard let image = UIImage(data: data) else { return nil }
             cache.setObject(image, forKey: url as NSURL)
             return image

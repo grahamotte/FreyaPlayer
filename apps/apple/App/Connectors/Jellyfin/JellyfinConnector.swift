@@ -12,6 +12,7 @@ final class JellyfinConnector: JellyfinConnecting {
     private let store: JellyfinSessionStore
     private var connection: JellyfinConnectionSummary?
     private var playbackContexts: [String: JellyfinPlaybackContext] = [:]
+    private lazy var artworkAuthorization: ArtworkRequestAuthorization? = savedArtworkAuthorization()
 
     init(
         client: JellyfinClient = JellyfinClient(),
@@ -48,13 +49,31 @@ final class JellyfinConnector: JellyfinConnecting {
         store.userID = summary.userID
         store.userName = summary.userName
         connection = summary
+        artworkAuthorization = makeArtworkAuthorization(serverURL: summary.serverURL, accessToken: summary.accessToken)
         return summary.connectedServer(providerID: providerID)
     }
 
     func disconnect() {
         connection = nil
+        artworkAuthorization = nil
         playbackContexts.removeAll()
         store.clear()
+    }
+
+    func artworkRequestHeaders(for url: URL) -> [String: String]? {
+        artworkAuthorization?.headers(for: url)
+    }
+
+    private func savedArtworkAuthorization() -> ArtworkRequestAuthorization? {
+        guard let serverURL = store.serverURL, let accessToken = store.accessToken else { return nil }
+        return makeArtworkAuthorization(serverURL: serverURL, accessToken: accessToken)
+    }
+
+    private func makeArtworkAuthorization(serverURL: String, accessToken: String) -> ArtworkRequestAuthorization? {
+        ArtworkRequestAuthorization(
+            serverURL: serverURL,
+            headers: client.authorizationHeaders(accessToken: accessToken)
+        )
     }
 
     func loadLibraryItems(for library: LibraryReference) async throws -> [MediaItem] {
@@ -73,7 +92,6 @@ final class JellyfinConnector: JellyfinConnecting {
                 providerID: providerID,
                 serverID: connection.serverID,
                 serverURL: connection.serverURL,
-                accessToken: connection.accessToken,
                 fallbackKind: library.defaultItemKind
             )
         }
@@ -94,7 +112,6 @@ final class JellyfinConnector: JellyfinConnecting {
             providerID: providerID,
             serverID: connection.serverID,
             serverURL: connection.serverURL,
-            accessToken: connection.accessToken,
             fallbackKind: item.kind
         )
     }
@@ -124,7 +141,6 @@ final class JellyfinConnector: JellyfinConnecting {
                 providerID: providerID,
                 serverID: connection.serverID,
                 serverURL: connection.serverURL,
-                accessToken: connection.accessToken,
                 fallbackKind: fallbackKind
             )
         }
@@ -281,6 +297,7 @@ final class JellyfinConnector: JellyfinConnecting {
             store.userName = summary.userName
             try store.setAccessToken(summary.accessToken)
             connection = summary
+            artworkAuthorization = makeArtworkAuthorization(serverURL: summary.serverURL, accessToken: summary.accessToken)
             return summary.connectedServer(providerID: providerID)
         } catch {
             disconnect()

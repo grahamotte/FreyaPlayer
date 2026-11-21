@@ -19,6 +19,7 @@ final class PlexConnector: PlexConnecting {
     private let client: PlexClient
     private let store: PlexSessionStore
     private var connection: PlexConnectionSummary?
+    private lazy var artworkAuthorization: ArtworkRequestAuthorization? = savedArtworkAuthorization()
 
     init(
         client: PlexClient = PlexClient(),
@@ -49,13 +50,39 @@ final class PlexConnector: PlexConnecting {
 
         store.serverIdentifier = summary.serverID
         connection = summary
+        saveArtworkAuthorization(for: summary)
         return summary.connectedServer(providerID: providerID)
     }
 
     func disconnect() {
         connection = nil
+        artworkAuthorization = nil
         client.clearCache()
         store.clear()
+    }
+
+    func artworkRequestHeaders(for url: URL) -> [String: String]? {
+        artworkAuthorization?.headers(for: url)
+    }
+
+    private func savedArtworkAuthorization() -> ArtworkRequestAuthorization? {
+        guard let serverURL = store.serverURL, let serverToken = store.serverToken else { return nil }
+        return makeArtworkAuthorization(serverURL: serverURL, serverToken: serverToken)
+    }
+
+    private func makeArtworkAuthorization(serverURL: String, serverToken: String) -> ArtworkRequestAuthorization? {
+        ArtworkRequestAuthorization(serverURL: serverURL, headers: ["X-Plex-Token": serverToken])
+    }
+
+    private func saveArtworkAuthorization(for summary: PlexConnectionSummary) {
+        store.serverURL = summary.serverURL
+        if store.serverToken != summary.serverToken {
+            try? store.setServerToken(summary.serverToken)
+        }
+        artworkAuthorization = makeArtworkAuthorization(
+            serverURL: summary.serverURL,
+            serverToken: summary.serverToken
+        )
     }
 
     func loadLibraryItems(for library: LibraryReference) async throws -> [MediaItem] {
@@ -88,7 +115,6 @@ final class PlexConnector: PlexConnecting {
                 providerID: providerID,
                 serverID: connection.serverID,
                 serverURL: connection.serverURL,
-                serverToken: connection.serverToken,
                 fallbackKind: library.defaultItemKind
             )
         }
@@ -103,7 +129,6 @@ final class PlexConnector: PlexConnecting {
             providerID: providerID,
             serverID: connection.serverID,
             serverURL: connection.serverURL,
-            serverToken: connection.serverToken,
             fallbackKind: item.kind
         )
     }
@@ -129,7 +154,6 @@ final class PlexConnector: PlexConnecting {
                 providerID: providerID,
                 serverID: connection.serverID,
                 serverURL: connection.serverURL,
-                serverToken: connection.serverToken,
                 fallbackKind: fallbackKind
             )
         }
@@ -230,6 +254,7 @@ final class PlexConnector: PlexConnecting {
             try store.setUserToken(userToken)
             store.serverIdentifier = summary.serverID
             connection = summary
+            saveArtworkAuthorization(for: summary)
             return summary.connectedServer(providerID: providerID)
         } catch {
             disconnect()

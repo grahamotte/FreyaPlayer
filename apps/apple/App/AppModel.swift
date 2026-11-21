@@ -85,6 +85,14 @@ final class AppModel: ObservableObject {
             }
             .store(in: &cancellables)
 
+        ArtworkImageCache.shared.requestHeaders = { [weak self] url in
+            self?.artworkRequestHeaders(for: url)
+        }
+
+        if libraryCache.discardedOutdatedSnapshot {
+            URLCache.shared.removeAllCachedResponses()
+        }
+
         if let cachedServer = libraryCache.cachedServer() {
             connectionState = .connected(cachedServer)
         }
@@ -826,6 +834,10 @@ final class AppModel: ObservableObject {
         }
 
         await pollTask?.value
+    }
+
+    private func artworkRequestHeaders(for url: URL) -> [String: String]? {
+        plexConnector.artworkRequestHeaders(for: url) ?? jellyfinConnector.artworkRequestHeaders(for: url)
     }
 
     private func connector(for providerID: MediaProviderID) -> any MediaConnector {

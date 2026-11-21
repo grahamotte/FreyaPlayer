@@ -1,9 +1,12 @@
+import Foundation
+
 protocol MediaConnector: AnyObject {
     var providerID: MediaProviderID { get }
 
     func restoreConnection() async throws -> ConnectedServer?
     func refreshConnection() async throws -> ConnectedServer
     func disconnect()
+    func artworkRequestHeaders(for url: URL) -> [String: String]?
 
     func loadLibraryItems(for library: LibraryReference) async throws -> [MediaItem]
     func loadItem(_ item: MediaItem) async throws -> MediaItem

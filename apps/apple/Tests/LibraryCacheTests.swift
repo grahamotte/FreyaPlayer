@@ -43,7 +43,7 @@ final class LibraryCacheTests: XCTestCase {
 
     @MainActor
     func testLoadedCacheWithoutCurrentVersionIsCleared() {
-        for cacheVersion in [nil, 0] as [Int?] {
+        for cacheVersion in [nil, 0, 1] as [Int?] {
             let series = makeMediaItem(id: "series", kind: .series)
             let library = makeLibraryShelf(items: [series])
             let snapshot = LibraryCacheSnapshot(
@@ -71,6 +71,7 @@ final class LibraryCacheTests: XCTestCase {
             )
 
             XCTAssertTrue(didClear)
+            XCTAssertTrue(cache.discardedOutdatedSnapshot)
             XCTAssertTrue(cache.snapshot.isEmpty)
             XCTAssertEqual(cache.applicationCacheVersion, LibraryCacheSnapshot.currentVersion)
             XCTAssertNil(cache.fileCacheVersion)
@@ -133,6 +134,7 @@ final class LibraryCacheTests: XCTestCase {
 
         XCTAssertEqual(cache.applicationCacheVersion, LibraryCacheSnapshot.currentVersion)
         XCTAssertEqual(cache.fileCacheVersion, LibraryCacheSnapshot.currentVersion)
+        XCTAssertFalse(cache.discardedOutdatedSnapshot)
 
         let initialOrder = LibraryPageSort.addedAt.items(
             from: cache.libraryItems(for: library.id),

@@ -4,6 +4,8 @@ final class PlexSessionStore {
     private let defaults: any DefaultsStore
     private let tokenKey = "plex.user.token"
     private let serverKey = "plex.server.identifier"
+    private let serverURLKey = "plex.server.url"
+    private let serverTokenKey = "plex.server.token"
     private let libraryFilterKeyPrefix = "plex.library.filter"
     private let librarySortKeyPrefix = "plex.library.sort"
     private let librarySortOrderKeyPrefix = "plex.library.sort.order"
@@ -45,6 +47,19 @@ final class PlexSessionStore {
         set { defaults.set(newValue, forKey: serverKey) }
     }
 
+    var serverURL: String? {
+        get { defaults.string(forKey: serverURLKey) }
+        set { defaults.set(newValue, forKey: serverURLKey) }
+    }
+
+    var serverToken: String? {
+        loadSecureValue(serverTokenKey)
+    }
+
+    func setServerToken(_ token: String) throws {
+        try saveSecureValue(token, serverTokenKey)
+    }
+
     func libraryFilterRawValue(forLibraryID libraryID: String, serverID: String) -> Int? {
         let key = "\(libraryFilterKeyPrefix).\(serverID).\(libraryID)"
         return defaults.object(forKey: key) as? Int
@@ -77,6 +92,8 @@ final class PlexSessionStore {
 
     func clear() {
         removeSecureValue(tokenKey)
+        removeSecureValue(serverTokenKey)
         defaults.removeObject(forKey: serverKey)
+        defaults.removeObject(forKey: serverURLKey)
     }
 }

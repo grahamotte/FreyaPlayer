@@ -162,8 +162,7 @@ extension JellyfinConnectionSummary {
                 $0.libraryShelf(
                     providerID: providerID,
                     serverID: serverID,
-                    serverURL: serverURL,
-                    accessToken: accessToken
+                    serverURL: serverURL
                 )
             }
         )
@@ -174,8 +173,7 @@ extension JellyfinLibrary {
     func libraryShelf(
         providerID: MediaProviderID,
         serverID: String,
-        serverURL: String,
-        accessToken: String
+        serverURL: String
     ) -> LibraryShelf {
         let reference = libraryReference(providerID: providerID, serverID: serverID)
 
@@ -188,7 +186,6 @@ extension JellyfinLibrary {
                     providerID: providerID,
                     serverID: serverID,
                     serverURL: serverURL,
-                    accessToken: accessToken,
                     fallbackKind: reference.defaultItemKind
                 )
             },
@@ -223,7 +220,6 @@ extension JellyfinItem {
         providerID: MediaProviderID,
         serverID: String,
         serverURL: String,
-        accessToken: String,
         fallbackKind: MediaItemKind
     ) -> MediaItem {
         let userData = userData
@@ -251,10 +247,10 @@ extension JellyfinItem {
             progress: progress,
             resumeOffsetMilliseconds: isWatched ? nil : resumeOffsetMilliseconds,
             artwork: MediaArtworkSet(
-                posterURL: posterImageURL(for: kind, baseURL: serverURL, accessToken: accessToken),
-                thumbnailURL: thumbnailImageURL(baseURL: serverURL, accessToken: accessToken),
-                landscapeURL: landscapeImageURL(for: kind, baseURL: serverURL, accessToken: accessToken),
-                backdropURL: backdropURL(baseURL: serverURL, accessToken: accessToken)
+                posterURL: posterImageURL(for: kind, baseURL: serverURL),
+                thumbnailURL: thumbnailImageURL(baseURL: serverURL),
+                landscapeURL: landscapeImageURL(for: kind, baseURL: serverURL),
+                backdropURL: backdropURL(baseURL: serverURL)
             ),
             detailSections: mediaDetailSections
         )
@@ -419,8 +415,7 @@ extension JellyfinItem {
 
     private func posterImageURL(
         for kind: MediaItemKind,
-        baseURL: String,
-        accessToken: String
+        baseURL: String
     ) -> URL? {
         guard kind == .movie || kind == .series || kind == .season || kind == .other else {
             return nil
@@ -432,7 +427,6 @@ extension JellyfinItem {
                 itemID: primaryImageItemID,
                 tag: primaryImageTag,
                 baseURL: baseURL,
-                accessToken: accessToken,
                 maxWidth: 480,
                 maxHeight: 720
             )
@@ -442,8 +436,7 @@ extension JellyfinItem {
     }
 
     private func thumbnailImageURL(
-        baseURL: String,
-        accessToken: String
+        baseURL: String
     ) -> URL? {
         guard let thumbImageItemID, let tag = thumbImageTag else {
             return nil
@@ -454,7 +447,6 @@ extension JellyfinItem {
             itemID: thumbImageItemID,
             tag: tag,
             baseURL: baseURL,
-            accessToken: accessToken,
             maxWidth: 780,
             maxHeight: 439
         )
@@ -462,8 +454,7 @@ extension JellyfinItem {
 
     private func landscapeImageURL(
         for kind: MediaItemKind,
-        baseURL: String,
-        accessToken: String
+        baseURL: String
     ) -> URL? {
         switch kind {
         case .movie, .series, .season:
@@ -475,7 +466,6 @@ extension JellyfinItem {
                     itemID: id,
                     tag: tag,
                     baseURL: baseURL,
-                    accessToken: accessToken,
                     maxWidth: 780,
                     maxHeight: 439
                 )
@@ -488,8 +478,7 @@ extension JellyfinItem {
     }
 
     private func backdropURL(
-        baseURL: String,
-        accessToken: String
+        baseURL: String
     ) -> URL? {
         if let tag = backdropImageTags?.first {
             return imageURL(
@@ -498,7 +487,6 @@ extension JellyfinItem {
                 tag: tag,
                 index: 0,
                 baseURL: baseURL,
-                accessToken: accessToken,
                 maxWidth: 1920,
                 maxHeight: 1080
             )
@@ -511,7 +499,6 @@ extension JellyfinItem {
                 tag: tag,
                 index: 0,
                 baseURL: baseURL,
-                accessToken: accessToken,
                 maxWidth: 1920,
                 maxHeight: 1080
             )
@@ -526,7 +513,6 @@ extension JellyfinItem {
         tag: String?,
         index: Int? = nil,
         baseURL: String,
-        accessToken: String,
         maxWidth: Int,
         maxHeight: Int
     ) -> URL? {
@@ -542,8 +528,7 @@ extension JellyfinItem {
             tag.map { URLQueryItem(name: "tag", value: $0) },
             URLQueryItem(name: "maxWidth", value: String(maxWidth)),
             URLQueryItem(name: "maxHeight", value: String(maxHeight)),
-            URLQueryItem(name: "quality", value: "90"),
-            URLQueryItem(name: "ApiKey", value: accessToken)
+            URLQueryItem(name: "quality", value: "90")
         ]
         .compactMap { $0 }
 

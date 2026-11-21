@@ -184,7 +184,6 @@ struct PlexMediaItem: Decodable, Identifiable, Hashable {
 
     private func imageURL(
         baseURL: String,
-        token: String,
         path: String?,
         width: Int,
         height: Int
@@ -199,8 +198,7 @@ struct PlexMediaItem: Decodable, Identifiable, Hashable {
             URLQueryItem(name: "width", value: String(width)),
             URLQueryItem(name: "height", value: String(height)),
             URLQueryItem(name: "minSize", value: "1"),
-            URLQueryItem(name: "upscale", value: "1"),
-            URLQueryItem(name: "X-Plex-Token", value: token)
+            URLQueryItem(name: "upscale", value: "1")
         ]
 
         return components.url
@@ -340,8 +338,7 @@ extension PlexConnectionSummary {
                 $0.libraryShelf(
                     providerID: providerID,
                     serverID: serverID,
-                    serverURL: serverURL,
-                    serverToken: serverToken
+                    serverURL: serverURL
                 )
             }
         )
@@ -352,8 +349,7 @@ extension PlexLibrarySection {
     func libraryShelf(
         providerID: MediaProviderID,
         serverID: String,
-        serverURL: String,
-        serverToken: String
+        serverURL: String
     ) -> LibraryShelf {
         let reference = context.libraryReference(providerID: providerID, serverID: serverID)
 
@@ -366,7 +362,6 @@ extension PlexLibrarySection {
                     providerID: providerID,
                     serverID: serverID,
                     serverURL: serverURL,
-                    serverToken: serverToken,
                     fallbackKind: context.defaultItemKind
                 )
             },
@@ -405,7 +400,6 @@ extension PlexMediaItem {
         providerID: MediaProviderID,
         serverID: String,
         serverURL: String,
-        serverToken: String,
         fallbackKind: MediaItemKind
     ) -> MediaItem {
         let kind = resolvedKind(fallbackKind: fallbackKind)
@@ -433,7 +427,6 @@ extension PlexMediaItem {
                 posterURL: nil,
                 thumbnailURL: imageURL(
                     baseURL: serverURL,
-                    token: serverToken,
                     path: thumbnailImagePath(for: kind),
                     width: thumbnailSize.width,
                     height: thumbnailSize.height
@@ -441,7 +434,6 @@ extension PlexMediaItem {
                 landscapeURL: nil,
                 backdropURL: imageURL(
                     baseURL: serverURL,
-                    token: serverToken,
                     path: backdropImagePath,
                     width: 1920,
                     height: 1080
